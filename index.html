@@ -18,375 +18,14 @@
   .card:hover .card-del { opacity:1; }
   textarea:focus, input:focus, select:focus { outline:none; }
   button:disabled { cursor:default; }
-  .spin { width:26px; height:26px; border:3px solid var(--c39); border-top-color:var(--c08); border-radius:50%; animation:girar .8s linear infinite; }
+  .spin { width:26px; height:26px; border:3px solid #D9DCE6; border-top-color:#3B3AC9; border-radius:50%; animation:girar .8s linear infinite; }
   @keyframes girar { to { transform:rotate(360deg); } }
   ::-webkit-scrollbar { width:8px; height:8px; }
-  ::-webkit-scrollbar-thumb { background:var(--c35); border-radius:8px; }
+  ::-webkit-scrollbar-thumb { background:#D3D7E0; border-radius:8px; }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.10/babel.min.js"></script>
-<style id="theme-vars">
-:root{
-  --surface:#ffffff;
-  --onaccent:#ffffff;
-  --c01:#0E8F9E;
-  --c02:#14161F;
-  --c03:#1F7A55;
-  --c04:#1F8A4C;
-  --c05:#20232E;
-  --c06:#2F6BD8;
-  --c07:#2F9E6E;
-  --c08:#3B3AC9;
-  --c09:#4A4F5E;
-  --c10:#5563DE;
-  --c11:#5A4B7A;
-  --c12:#5A6072;
-  --c13:#5B2585;
-  --c14:#5B8C4F;
-  --c15:#6B3FBF;
-  --c16:#737A8C;
-  --c17:#8A5FD6;
-  --c18:#8A6510;
-  --c19:#8A8F9E;
-  --c20:#8B3ABF;
-  --c21:#8FBFA8;
-  --c22:#A07BC0;
-  --c23:#A0A5B2;
-  --c24:#B0B5C0;
-  --c25:#B26A00;
-  --c26:#B8860B;
-  --c27:#C0392B;
-  --c28:#C0397E;
-  --c29:#C2C6D0;
-  --c30:#C4E8D5;
-  --c31:#C7C9F5;
-  --c32:#C7CBFF;
-  --c33:#CBE9DA;
-  --c34:#CFE6D9;
-  --c35:#D3D7E0;
-  --c36:#D8442F;
-  --c37:#D9843B;
-  --c38:#D9C2F0;
-  --c39:#D9DCE6;
-  --c40:#DCDFEA;
-  --c41:#DCEFE5;
-  --c42:#DDE0E7;
-  --c43:#DDEEE4;
-  --c44:#DDF1E6;
-  --c45:#E0A81F;
-  --c46:#E2E5EC;
-  --c47:#E3F3EA;
-  --c48:#E4E6F5;
-  --c49:#E4E7EE;
-  --c50:#E6D3F5;
-  --c51:#E6F0EA;
-  --c52:#E7E9EF;
-  --c53:#E8F6EF;
-  --c54:#E9F0FC;
-  --c55:#EDEFF3;
-  --c56:#EEF0F4;
-  --c57:#EEF0FB;
-  --c58:#EEF0FF;
-  --c59:#EFE9FB;
-  --c60:#EFEAFB;
-  --c61:#F0CFCA;
-  --c62:#F0D9A8;
-  --c63:#F0E2BE;
-  --c64:#F0F1F5;
-  --c65:#F0FAF5;
-  --c66:#F2F3F7;
-  --c67:#F2F5F3;
-  --c68:#F3EAFB;
-  --c69:#F3F8F5;
-  --c70:#F4F5FA;
-  --c71:#F5F6F9;
-  --c72:#F6F7FA;
-  --c73:#F7F0FC;
-  --c74:#F7F8FE;
-  --c75:#F7FCF9;
-  --c76:#F8F9FB;
-  --c77:#FAFBFC;
-  --c78:#FBF8FE;
-  --c79:#FCECEA;
-  --c80:#FCEDEA;
-  --c81:#FCF4E2;
-  --c82:#FFF4E0;
-  --c83:#FFFDF6;
-}
-html[data-theme="escuro"]{
-  --surface:#1C2231;
-  --onaccent:#ffffff;
-  --c01:#10A4B5;
-  --c02:#838BAF;
-  --c03:#248E63;
-  --c04:#249F57;
-  --c05:#878FAB;
-  --c06:#447ADC;
-  --c07:#35B27C;
-  --c08:#4F4ECE;
-  --c09:#555B6C;
-  --c10:#6A77E2;
-  --c11:#66558A;
-  --c12:#656C80;
-  --c13:#692B99;
-  --c14:#669C58;
-  --c15:#7A52C6;
-  --c16:#818798;
-  --c17:#9973DB;
-  --c18:#A17613;
-  --c19:#989CAA;
-  --c20:#974AC8;
-  --c21:#91C0A9;
-  --c22:#AB8AC7;
-  --c23:#9FA4B1;
-  --c24:#9FA5B2;
-  --c25:#CB7900;
-  --c26:#D0980C;
-  --c27:#D14233;
-  --c28:#C9498B;
-  --c29:#9DA3B4;
-  --c30:#1E4832;
-  --c31:#1E1F48;
-  --c32:#1E2148;
-  --c33:#1E4833;
-  --c34:#1E4830;
-  --c35:#262E40;
-  --c36:#DC5744;
-  --c37:#DD9150;
-  --c38:#331E48;
-  --c39:#232B43;
-  --c40:#202846;
-  --c41:#1E4832;
-  --c42:#262E40;
-  --c43:#1E482F;
-  --c44:#1E4831;
-  --c45:#E3B135;
-  --c46:#232D43;
-  --c47:#1E4830;
-  --c48:#1E2348;
-  --c49:#222C44;
-  --c50:#361E48;
-  --c51:#20462F;
-  --c52:#242B42;
-  --c53:#1E4833;
-  --c54:#1E2D48;
-  --c55:#242E42;
-  --c56:#232E43;
-  --c57:#1E2448;
-  --c58:#1E2348;
-  --c59:#2C1E48;
-  --c60:#2A1E48;
-  --c61:#48231E;
-  --c62:#E5BE6B;
-  --c63:#483C1E;
-  --c64:#242A42;
-  --c65:#1E4833;
-  --c66:#212845;
-  --c67:#26402F;
-  --c68:#341E48;
-  --c69:#1F472F;
-  --c70:#1E2548;
-  --c71:#202946;
-  --c72:#1E2848;
-  --c73:#371E48;
-  --c74:#1E2448;
-  --c75:#1E482F;
-  --c76:#1E2C48;
-  --c77:#203346;
-  --c78:#331E48;
-  --c79:#48221E;
-  --c80:#48251E;
-  --c81:#483B1E;
-  --c82:#48391E;
-  --c83:#483F1E;
-}
-html[data-theme="oceano"]{
-  --surface:#ffffff;
-  --onaccent:#ffffff;
-  --c01:#0E8F9E;
-  --c02:#141D1F;
-  --c03:#1F7A55;
-  --c04:#1F8A4C;
-  --c05:#202B2E;
-  --c06:#2FB6D8;
-  --c07:#2F9E6E;
-  --c08:#3AACC9;
-  --c09:#4A5A5E;
-  --c10:#55C3DE;
-  --c11:#5A4B7A;
-  --c12:#5A6D72;
-  --c13:#5B2585;
-  --c14:#5B8C4F;
-  --c15:#6B3FBF;
-  --c16:#73878C;
-  --c17:#8A5FD6;
-  --c18:#8A6510;
-  --c19:#8A9A9E;
-  --c20:#8B3ABF;
-  --c21:#8FBFA8;
-  --c22:#A07BC0;
-  --c23:#A0AEB2;
-  --c24:#B0BDC0;
-  --c25:#B26A00;
-  --c26:#B8860B;
-  --c27:#C0392B;
-  --c28:#C0397E;
-  --c29:#C2CDD0;
-  --c30:#C4E8D5;
-  --c31:#C7ECF5;
-  --c32:#C7F4FF;
-  --c33:#CBE9DA;
-  --c34:#CFE6D9;
-  --c35:#D3DDE0;
-  --c36:#D8442F;
-  --c37:#D9843B;
-  --c38:#D9C2F0;
-  --c39:#D9E3E6;
-  --c40:#DCE7EA;
-  --c41:#DCEFE5;
-  --c42:#DDE5E7;
-  --c43:#DDEEE4;
-  --c44:#DDF1E6;
-  --c45:#E0A81F;
-  --c46:#E2EAEC;
-  --c47:#E3F3EA;
-  --c48:#E4F2F5;
-  --c49:#E4ECEE;
-  --c50:#E6D3F5;
-  --c51:#E6F0EA;
-  --c52:#E7EDEF;
-  --c53:#E8F6EF;
-  --c54:#E9F8FC;
-  --c55:#EDF2F3;
-  --c56:#EEF3F4;
-  --c57:#EEF8FB;
-  --c58:#EEFCFF;
-  --c59:#EFE9FB;
-  --c60:#EFEAFB;
-  --c61:#F0CFCA;
-  --c62:#F0D9A8;
-  --c63:#F0E2BE;
-  --c64:#F0F4F5;
-  --c65:#F0FAF5;
-  --c66:#F2F6F7;
-  --c67:#F2F5F3;
-  --c68:#F3EAFB;
-  --c69:#F3F8F5;
-  --c70:#F4F9FA;
-  --c71:#F5F8F9;
-  --c72:#F6F9FA;
-  --c73:#F7F0FC;
-  --c74:#F7FDFE;
-  --c75:#F7FCF9;
-  --c76:#F8FAFB;
-  --c77:#FAFBFC;
-  --c78:#FBF8FE;
-  --c79:#FCECEA;
-  --c80:#FCEDEA;
-  --c81:#FCF4E2;
-  --c82:#FFF4E0;
-  --c83:#FFFDF6;
-}
-html[data-theme="esmeralda"]{
-  --surface:#ffffff;
-  --onaccent:#ffffff;
-  --c01:#0E8F9E;
-  --c02:#141F1A;
-  --c03:#1F7A55;
-  --c04:#1F8A4C;
-  --c05:#202E27;
-  --c06:#2FD884;
-  --c07:#2F9E6E;
-  --c08:#3AC982;
-  --c09:#4A5E54;
-  --c10:#55DE9A;
-  --c11:#5A4B7A;
-  --c12:#5A7266;
-  --c13:#5B2585;
-  --c14:#5B8C4F;
-  --c15:#6B3FBF;
-  --c16:#738C80;
-  --c17:#8A5FD6;
-  --c18:#8A6510;
-  --c19:#8A9E94;
-  --c20:#8B3ABF;
-  --c21:#8FBFA8;
-  --c22:#A07BC0;
-  --c23:#A0B2A9;
-  --c24:#B0C0B8;
-  --c25:#B26A00;
-  --c26:#B8860B;
-  --c27:#C0392B;
-  --c28:#C0397E;
-  --c29:#C2D0C9;
-  --c30:#C4E8D5;
-  --c31:#C7F5DE;
-  --c32:#C7FFE3;
-  --c33:#CBE9DA;
-  --c34:#CFE6D9;
-  --c35:#D3E0DA;
-  --c36:#D8442F;
-  --c37:#D9843B;
-  --c38:#D9C2F0;
-  --c39:#D9E6E0;
-  --c40:#DCEAE3;
-  --c41:#DCEFE5;
-  --c42:#DDE7E2;
-  --c43:#DDEEE4;
-  --c44:#DDF1E6;
-  --c45:#E0A81F;
-  --c46:#E2ECE7;
-  --c47:#E3F3EA;
-  --c48:#E4F5EC;
-  --c49:#E4EEE9;
-  --c50:#E6D3F5;
-  --c51:#E6F0EA;
-  --c52:#E7EFEB;
-  --c53:#E8F6EF;
-  --c54:#E9FCF2;
-  --c55:#EDF3F0;
-  --c56:#EEF4F1;
-  --c57:#EEFBF4;
-  --c58:#EEFFF6;
-  --c59:#EFE9FB;
-  --c60:#EFEAFB;
-  --c61:#F0CFCA;
-  --c62:#F0D9A8;
-  --c63:#F0E2BE;
-  --c64:#F0F5F2;
-  --c65:#F0FAF5;
-  --c66:#F2F7F4;
-  --c67:#F2F5F3;
-  --c68:#F3EAFB;
-  --c69:#F3F8F5;
-  --c70:#F4FAF7;
-  --c71:#F5F9F7;
-  --c72:#F6FAF8;
-  --c73:#F7F0FC;
-  --c74:#F7FEFB;
-  --c75:#F7FCF9;
-  --c76:#F8FBFA;
-  --c77:#FAFBFC;
-  --c78:#FBF8FE;
-  --c79:#FCECEA;
-  --c80:#FCEDEA;
-  --c81:#FCF4E2;
-  --c82:#FFF4E0;
-  --c83:#FFFDF6;
-}
-</style>
-<style id="theme-switcher-css">
-#themeBar{position:fixed;bottom:14px;right:14px;z-index:9999;display:flex;align-items:center;gap:7px;
-  background:var(--surface);border:1px solid var(--c07);border-radius:10px;padding:6px 10px;
-  box-shadow:0 4px 16px rgba(0,0,0,.12);font-family:'Inter',system-ui,sans-serif;font-size:13px}
-#themeBar label{color:var(--c04);font-weight:600}
-#themeBar select{border:1px solid var(--c07);border-radius:7px;padding:4px 8px;background:var(--surface);
-  color:var(--c02);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;outline:none}
-</style>
-<script>
-(function(){try{var t=localStorage.getItem('ge_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
-</script>
 </head>
 <body>
 <div id="root"></div>
@@ -431,8 +70,8 @@ function Ic({ n, s=16, c="currentColor", style }) {
 function Avatar({ m, size=32, w, h, radius }){
   const L=w||size, A=h||size, r=radius!==undefined?radius:(w&&h?7:"50%");
   if(m&&m.photo) return <img src={m.photo} alt={m.name||""} title={m.name||""}
-    style={{width:L,height:A,borderRadius:r,objectFit:"cover",flexShrink:0,display:"block",border:"1px solid var(--c52)"}}/>;
-  return <span title={m?.name||""} style={{width:L,height:A,borderRadius:r,background:(m&&m.color)||"var(--c23)",color:"var(--onaccent)",
+    style={{width:L,height:A,borderRadius:r,objectFit:"cover",flexShrink:0,display:"block",border:"1px solid #E7E9EF"}}/>;
+  return <span title={m?.name||""} style={{width:L,height:A,borderRadius:r,background:(m&&m.color)||"#A0A5B2",color:"#fff",
     fontSize:Math.max(9,Math.round(Math.min(L,A)*0.36)),fontWeight:700,display:"grid",placeItems:"center",flexShrink:0}}>
     {initials(m?.name||"")}</span>;
 }
@@ -440,19 +79,19 @@ function Avatar({ m, size=32, w, h, radius }){
 // ---------- Tokens ----------
 const FONT = "'Inter', system-ui, -apple-system, sans-serif";
 const COLUMNS = [
-  { id:"todo",   name:"A fazer",        tint:"var(--c36)", bg:"var(--c80)" },
-  { id:"doing",  name:"Em andamento",   tint:"var(--c06)", bg:"var(--c54)" },
-  { id:"review", name:"Revisão Interna", tint:"var(--c45)", bg:"var(--c81)" },
-  { id:"protocolado", name:"Protocolado", tint:"var(--c20)", bg:"var(--c68)" },
-  { id:"done",   name:"Concluído",      tint:"var(--c07)", bg:"var(--c53)" },
+  { id:"todo",   name:"A fazer",        tint:"#D8442F", bg:"#FCEDEA" },
+  { id:"doing",  name:"Em andamento",   tint:"#2F6BD8", bg:"#E9F0FC" },
+  { id:"review", name:"Revisão Interna", tint:"#E0A81F", bg:"#FCF4E2" },
+  { id:"protocolado", name:"Protocolado", tint:"#8B3ABF", bg:"#F3EAFB" },
+  { id:"done",   name:"Concluído",      tint:"#2F9E6E", bg:"#E8F6EF" },
 ];
 const COL = Object.fromEntries(COLUMNS.map((c)=>[c.id,c]));
-const PRIORITIES = { alta:{label:"Alta",color:"var(--c36)"}, media:{label:"Média",color:"var(--c37)"}, baixa:{label:"Baixa",color:"var(--c14)"} };
-const ROLES = { master:{label:"Master",color:"var(--c08)"}, gerente:{label:"Gerente",color:"var(--c01)"}, membro:{label:"Membro",color:"var(--c16)"} };
-const FOLDER_COLORS = ["var(--c36)","var(--c06)","var(--c20)","var(--c01)","var(--c28)","var(--c14)","var(--c37)","var(--c08)"];
-const AVATAR_COLORS = ["var(--c08)","var(--c36)","var(--c07)","var(--c37)","var(--c20)","var(--c01)","var(--c28)","var(--c10)"];
+const PRIORITIES = { alta:{label:"Alta",color:"#D8442F"}, media:{label:"Média",color:"#D9843B"}, baixa:{label:"Baixa",color:"#5B8C4F"} };
+const ROLES = { master:{label:"Master",color:"#3B3AC9"}, gerente:{label:"Gerente",color:"#0E8F9E"}, membro:{label:"Membro",color:"#737A8C"} };
+const FOLDER_COLORS = ["#D8442F","#2F6BD8","#8B3ABF","#0E8F9E","#C0397E","#5B8C4F","#D9843B","#3B3AC9"];
+const AVATAR_COLORS = ["#3B3AC9","#D8442F","#2F9E6E","#D9843B","#8B3ABF","#0E8F9E","#C0397E","#5563DE"];
 const uid = () => Math.random().toString(36).slice(2,10);
-const corDoTrabalho = (nome) => { if(!nome) return "var(--c16)"; let h=0; for(let i=0;i<nome.length;i++) h=(h*31+nome.charCodeAt(i))>>>0; return FOLDER_COLORS[h%FOLDER_COLORS.length]; };
+const corDoTrabalho = (nome) => { if(!nome) return "#737A8C"; let h=0; for(let i=0;i<nome.length;i++) h=(h*31+nome.charCodeAt(i))>>>0; return FOLDER_COLORS[h%FOLDER_COLORS.length]; };
 const initials = (n) => n.trim().split(/\s+/).slice(0,2).map((w)=>w[0]?.toUpperCase()??"").join("");
 const dm = (ts) => { const d=new Date(ts); return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}`; };
 const daysAgo = (n) => Date.now() - n*86400000;
@@ -606,85 +245,30 @@ function lerFoto3x4(file){
   });
 }
 
-// ---------- Conexão: usa o servidor (Neon) se existir; senão, modo LOCAL (navegador) ----------
-// Assim o MESMO arquivo funciona nos dois modos automaticamente:
-//  - No Netlify com a função /api: dados compartilhados (Neon).
-//  - Aberto direto no navegador / sem servidor: guarda no próprio navegador (localStorage) para testar.
+// ---------- Storage ----------
+// ---------- Conexão com o servidor (Netlify Function + Neon) ----------
+// Guarda o token da sessão do servidor (obtido no login de conexão).
 let TOKEN = null;
 try { TOKEN = sessionStorage.getItem("ge-token") || null; } catch(e) {}
 function setToken(t){ TOKEN = t; try{ if(t) sessionStorage.setItem("ge-token", t); else sessionStorage.removeItem("ge-token"); }catch(e){} }
 
-let MODO_LOCAL = null; // null = ainda não sei; true = local; false = servidor
-
-// ---- Backend LOCAL (imita o servidor usando o localStorage) ----
-const LS_DADOS = "ge-local-dados";
-const LS_USERS = "ge-local-usuarios";
-function localGet(k){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):null; }catch(e){ return null; } }
-function localSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
-function localHash(s){ let h=0; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0; return String(h); }
-function localGarantirUsuarios(){
-  let us=localGet(LS_USERS);
-  if(!us || !us.length){ us=[{usuario:"admin",senha:localHash("admin"),master:true,trocar:true}]; localSet(LS_USERS,us); }
-  return us;
-}
-function localApi(acao, extra){
-  const d=extra||{};
-  const us=localGarantirUsuarios();
-  const achar=(u)=>us.find((x)=>x.usuario.toLowerCase()===String(u||"").toLowerCase());
-  if(acao==="login"){
-    const u=achar(d.user); if(!u || u.senha!==localHash(String(d.senha||""))) throw new Error("Usuário ou senha incorretos.");
-    setToken("local:"+u.usuario); return { token:"local:"+u.usuario, user:u.usuario, master:!!u.master, trocar:!!u.trocar };
-  }
-  const quem=(TOKEN||"").replace(/^local:/,"");
-  const eu=achar(quem); if(!eu) throw new Error("Sessão expirada. Entre novamente.");
-  if(acao==="perfil") return { user:eu.usuario, master:!!eu.master, trocar:!!eu.trocar };
-  if(acao==="carregar") return { conteudo: localGet(LS_DADOS) };
-  if(acao==="salvar"){ localSet(LS_DADOS, d.conteudo||{}); return { ok:true }; }
-  if(acao==="trocarSenha"){ eu.senha=localHash(String(d.nova||"")); eu.trocar=false; localSet(LS_USERS,us); return { ok:true }; }
-  if(acao==="listarUsuarios"){ if(!eu.master) throw new Error("Apenas o master."); return { usuarios:us.map((u)=>({usuario:u.usuario,master:!!u.master})), voce:eu.usuario }; }
-  if(acao==="cadastrarUsuario"){ if(!eu.master) throw new Error("Apenas o master.");
-    if(achar(d.user)) throw new Error("Já existe um usuário com esse login.");
-    us.push({usuario:String(d.user).trim(),senha:localHash(String(d.senha||"")),master:d.master===true,trocar:true}); localSet(LS_USERS,us); return { ok:true }; }
-  if(acao==="redefinirSenha"){ if(!eu.master) throw new Error("Apenas o master."); const a=achar(d.user); if(!a) throw new Error("Usuário não encontrado."); a.senha=localHash(String(d.senha||"")); a.trocar=true; localSet(LS_USERS,us); return { ok:true }; }
-  if(acao==="excluirUsuario"){ if(!eu.master) throw new Error("Apenas o master."); const alvo=String(d.user||"").toLowerCase();
-    if(alvo===quem.toLowerCase()) throw new Error("Você não pode excluir o usuário conectado.");
-    if(us.length<=1) throw new Error("É preciso manter pelo menos um usuário.");
-    localSet(LS_USERS, us.filter((u)=>u.usuario.toLowerCase()!==alvo)); return { ok:true }; }
-  throw new Error("Ação desconhecida.");
-}
-
 async function apiCall(acao, extra){
-  // já sabemos que é local
-  if(MODO_LOCAL===true) return localApi(acao, extra);
-  // tenta o servidor
-  try{
-    const r = await fetch("/api", {
-      method:"POST", headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify(Object.assign({ acao, token: TOKEN }, extra||{}))
-    });
-    const ct = r.headers.get("content-type")||"";
-    if(!ct.includes("application/json")){
-      // não é a função de verdade (404 HTML, etc.) -> cai para o modo local
-      if(MODO_LOCAL===null){ MODO_LOCAL=true; return localApi(acao, extra); }
-    }
-    const j = await r.json().catch(()=>({erro:"Resposta inválida do servidor."}));
-    if(!r.ok) throw new Error(j.erro || "Erro no servidor.");
-    MODO_LOCAL=false; // confirmou que o servidor responde
-    return j;
-  }catch(e){
-    // erro de rede (sem servidor) -> modo local
-    if(MODO_LOCAL===null || MODO_LOCAL===true){ MODO_LOCAL=true; return localApi(acao, extra); }
-    throw e;
-  }
+  const r = await fetch("/api", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify(Object.assign({ acao, token: TOKEN }, extra||{}))
+  });
+  const j = await r.json().catch(()=>({erro:"Resposta inválida do servidor."}));
+  if(!r.ok) throw new Error(j.erro || "Erro no servidor.");
+  return j;
 }
 
-function estaLocal(){ return MODO_LOCAL===true; }
-
-// store: carregar/salvar do estado inteiro (funciona igual nos dois modos).
+// store agora fala com o banco: carregar/salvar do estado inteiro.
+// Mantém uma cópia em memória para leituras rápidas; a nuvem é a fonte da verdade.
 let MEM = null;
 const store = {
-  get(){ return MEM; },
-  set(s){ MEM = s; },
+  get(){ return MEM; },                 // usado só como fallback síncrono
+  set(s){ MEM = s; },                   // a gravação real na nuvem é feita pelo App (debounce)
   async carregar(){ const j = await apiCall("carregar"); MEM = j.conteudo || null; return MEM; },
   async salvar(s){ MEM = s; await apiCall("salvar", { conteudo: s }); },
 };
@@ -766,6 +350,7 @@ function App({ inicial, aoSair, usuarioConectado }){
   const [state,setState]=useState(()=> inicial || prepararDados(store.get(), usuarioConectado) );
   const [query,setQuery]=useState("");
   const [showCatalog,setShowCatalog]=useState(false);
+  const [folderFilter,setFolderFilter]=useState("");
   const [donePeriodo,setDonePeriodo]=useState("todos"); const [doneMembro,setDoneMembro]=useState("");
   const [showUsers,setShowUsers]=useState(false);
   const [showMsgs,setShowMsgs]=useState(false);
@@ -795,7 +380,6 @@ function App({ inicial, aoSair, usuarioConectado }){
   useEffect(()=>{
     const i=setInterval(async ()=>{
       try{
-        if(estaLocal()) return; // no modo local não há nuvem para sincronizar
         // não busca se há mudança local recente, salvamento pendente ou em andamento —
         // evita que uma leitura antiga da nuvem apague o que você acabou de fazer.
         if(salvarRef.current || salvandoRef.current) return;
@@ -816,9 +400,6 @@ function App({ inicial, aoSair, usuarioConectado }){
     return ()=>clearInterval(i);
   },[]);
   const [tique,setTique]=useState(0);
-  const [aviso,setAviso]=useState(null); // {texto, tipo}
-  const avisoRef=useRef(null);
-  const mostrarAviso=(texto,tipo="ok")=>{ setAviso({texto,tipo}); if(avisoRef.current)clearTimeout(avisoRef.current); avisoRef.current=setTimeout(()=>setAviso(null),3500); };
   useEffect(()=>{ const i=setInterval(()=>setTique((n)=>n+1),30000); return ()=>clearInterval(i); },[]);
   useEffect(()=>{
     const agora=Date.now();
@@ -874,7 +455,7 @@ function App({ inicial, aoSair, usuarioConectado }){
     let u=state.users.find((x)=>x.username.toLowerCase()===alvo);
     if(!u) u=state.users.find((x)=>x.role==="master") || state.users[0];
     if(u){ setTimeout(()=>login(u.id),0); return <div style={S.authWrap}><div className="spin"/></div>; }
-    return <div style={S.authWrap}><div style={{color:"var(--c12)",fontFamily:FONT}}>Nenhum usuário no sistema.</div></div>;
+    return <div style={S.authWrap}><div style={{color:"#5A6072",fontFamily:FONT}}>Nenhum usuário no sistema.</div></div>;
   }
   if(currentUser.mustChange) return <div style={S.authWrap}><ChangePasswordCard forced onSave={changePassword}/></div>;
 
@@ -887,12 +468,14 @@ function App({ inicial, aoSair, usuarioConectado }){
   const project=state.projects.find((p)=>p.id===state.activeProject);
   const memberById=(id)=>state.members.find((m)=>m.id===id);
   const catalog=state.taskCatalog||[];
+  const trabalhos=[...new Set(state.tasks.filter((t)=>t.project===state.activeProject&&t.folderName).map((t)=>t.folderName))].sort((a,b)=>a.localeCompare(b,"pt"));
 
   // visibilidade: master/gerente veem tudo; membro vê só as próprias
   const allProjTasks=emReunioes ? state.tasks.filter((t)=>t.tipo==="reuniao") : state.tasks.filter((t)=>t.project===state.activeProject);
   const visibleTasks=isPrivileged?allProjTasks:allProjTasks.filter((t)=>t.tipo==="reuniao" || (t.assignee&&t.assignee===myMemberId));
   let filtered=visibleTasks;
   if(emReunioes && reuniaoMembro) filtered=filtered.filter((t)=>{ const conf=t.confirmados||[]; return t.col==="done" ? conf.includes(reuniaoMembro) : !conf.includes(reuniaoMembro); });
+  if(folderFilter) filtered=filtered.filter((t)=>t.folderName===folderFilter);
   if(query) filtered=filtered.filter((t)=>t.title.toLowerCase().includes(query.toLowerCase()));
   const todasMsgs=state.messages||[];
   const minhasMsgs=isMaster?todasMsgs:todasMsgs.filter((m)=>m.paraMembro===myMemberId||m.deMembro===myMemberId);
@@ -961,12 +544,10 @@ function App({ inicial, aoSair, usuarioConectado }){
 
   // lançamento sempre na coluna "A fazer", a partir do catálogo
   const launchMany=({itens,assignee,desc})=>{
-    let criadas=0; let titulos=[];
     patch((s)=>{
       const agora=Date.now();
       const novas=(itens||[]).map((it)=>{
         const item=(s.taskCatalog||[]).find((c)=>c.id===it.catalogId); if(!item) return null;
-        titulos.push(item.title);
         return { id:uid(), project:s.activeProject, col:"todo", title:item.title,
           tipo:it.reuniao?"reuniao":"tarefa", quando:it.quando||"", confirmados:[],
           priority:it.priority||"media", hours:Math.max(0,+it.hours||0), assignee:it.reuniao?null:(assignee||null),
@@ -974,15 +555,9 @@ function App({ inicial, aoSair, usuarioConectado }){
           desc:((desc&&desc.trim())||item.desc||"").trim(),
           needsFix:false, fixNote:"", completedAt:null };
       }).filter(Boolean);
-      criadas=novas.length;
       s.tasks=[...s.tasks,...novas];
       return s;
     });
-    if(criadas>0){
-      const nome=criadas===1?`"${titulos[0]}"`:`${criadas} tarefas`;
-      const onde=estaLocal()?" (modo teste — salvo no navegador)":" — salvo";
-      mostrarAviso(`Tarefa criada: ${nome}${onde}`,"ok");
-    }
   };
   const updateTask=(id,fields)=>patch((s)=>{s.tasks=s.tasks.map((t)=>t.id===id?{...t,...fields}:t);return s;});
   const removeTask=(id)=>patch((s)=>{s.tasks=s.tasks.filter((t)=>t.id!==id);return s;});
@@ -1036,17 +611,17 @@ function App({ inicial, aoSair, usuarioConectado }){
 
           <div style={S.sideLabel}>
             <span style={{display:"inline-flex",alignItems:"center",gap:5,cursor:"pointer"}} onClick={()=>setProjAberto((v)=>!v)}>
-              <Ic n="chev" s={13} c="var(--c19)" style={{transform:projAberto?"none":"rotate(-90deg)",transition:"transform .15s"}}/>
-              Projetos <span style={{color:"var(--c24)",fontWeight:600}}>· {state.projects.length}</span>
+              <Ic n="chev" s={13} c="#8A8F9E" style={{transform:projAberto?"none":"rotate(-90deg)",transition:"transform .15s"}}/>
+              Projetos <span style={{color:"#B0B5C0",fontWeight:600}}>· {state.projects.length}</span>
             </span>
             {isPrivileged && <button style={S.iconBtn} onClick={addProject} title="Novo projeto"><Ic n="plus" s={15}/></button>}</div>
           {(()=>{ const totalReun=state.tasks.filter((t)=>t.tipo==="reuniao").length;
             const abertasReun=state.tasks.filter((t)=>t.tipo==="reuniao"&&t.col!=="done").length;
             const ativa=state.activeProject===MODO_REUNIOES;
             return (<div className="proj" style={{...S.projRow,marginBottom:6,...(ativa?S.projActiveReun:S.projReun)}} onClick={()=>patch((s)=>({...s,activeProject:MODO_REUNIOES}))}>
-              <Ic n="users" s={15} c={ativa?"var(--c15)":"var(--c17)"} style={{flexShrink:0}}/>
-              <span style={{...S.projName,fontWeight:700,color:ativa?"var(--c15)":"var(--c11)"}}>Reuniões</span>
-              <span style={{...S.numAberto,color:"var(--c15)",background:"var(--c59)",...(abertasReun>0?{}:S.numZero)}} title="Reuniões a fazer">{abertasReun}</span>
+              <Ic n="users" s={15} c={ativa?"#6B3FBF":"#8A5FD6"} style={{flexShrink:0}}/>
+              <span style={{...S.projName,fontWeight:700,color:ativa?"#6B3FBF":"#5A4B7A"}}>Reuniões</span>
+              <span style={{...S.numAberto,color:"#6B3FBF",background:"#EFE9FB",...(abertasReun>0?{}:S.numZero)}} title="Reuniões a fazer">{abertasReun}</span>
             </div>); })()}
           {projAberto ? (<div style={{display:"flex",flexDirection:"column",gap:2}}>
             {state.projects.map((p)=>{ const active=p.id===state.activeProject;
@@ -1069,17 +644,17 @@ function App({ inicial, aoSair, usuarioConectado }){
           <div style={S.equipeTabela}>
             <div style={S.etCabecalho}>
               <span style={S.etColNome}></span>
-              <span style={{...S.etColNum,background:"var(--c36)"}} title="Para fazer">Fazer</span>
-              <span style={{...S.etColNum,background:"var(--c07)"}} title="Concluído">Feito</span>
+              <span style={{...S.etColNum,background:"#D8442F"}} title="Para fazer">Fazer</span>
+              <span style={{...S.etColNum,background:"#2F9E6E"}} title="Concluído">Feito</span>
             </div>
             {state.members.filter((m)=>m.naEquipe!==false).map((m)=>{ const fazer=emAbertoMembro(m.id); const feito=concluidoMembro(m.id);
               return (<div key={m.id} style={S.etLinha} title={m.name}>
                 <span style={S.etColNome}>
                   <Avatar m={m} size={22}/>
-                  <span style={S.etNome}>{m.name}{m.id===myMemberId && <span style={{fontSize:9.5,color:"var(--c19)",marginLeft:4}}>você</span>}</span>
+                  <span style={S.etNome}>{m.name}{m.id===myMemberId && <span style={{fontSize:9.5,color:"#8A8F9E",marginLeft:4}}>você</span>}</span>
                 </span>
-                <span style={{...S.etCel,...(fazer>0?{color:"var(--c36)",fontWeight:800}:{color:"var(--c29)"})}}>{fazer}</span>
-                <span style={{...S.etCel,...(feito>0?{color:"var(--c07)",fontWeight:800}:{color:"var(--c29)"})}}>{feito}</span>
+                <span style={{...S.etCel,...(fazer>0?{color:"#D8442F",fontWeight:800}:{color:"#C2C6D0"})}}>{fazer}</span>
+                <span style={{...S.etCel,...(feito>0?{color:"#2F9E6E",fontWeight:800}:{color:"#C2C6D0"})}}>{feito}</span>
               </div>); })}
           </div>
         </div>
@@ -1087,22 +662,16 @@ function App({ inicial, aoSair, usuarioConectado }){
         <div style={S.sideFooter}>
           {isPrivileged && (<div style={S.abasLat}>
             <button style={{...S.abaLat,...(state.view==="board"?S.abaLatOn:{})}} onClick={()=>patch((s)=>({...s,view:"board"}))}>
-              <Ic n="grid" s={14} c={state.view==="board"?"var(--c08)":"var(--c12)"}/> Quadro</button>
+              <Ic n="grid" s={14} c={state.view==="board"?"#3B3AC9":"#5A6072"}/> Quadro</button>
             <button style={{...S.abaLat,...(state.view==="dash"?S.abaLatOn:{})}} onClick={()=>patch((s)=>({...s,view:"dash"}))}>
-              <Ic n="bar" s={14} c={state.view==="dash"?"var(--c08)":"var(--c12)"}/> Painel</button>
+              <Ic n="bar" s={14} c={state.view==="dash"?"#3B3AC9":"#5A6072"}/> Painel</button>
           </div>)}
-          <button style={{...S.sideBtn,...(naoLidas>0?{borderColor:"var(--c32)",background:"var(--c74)"}:{})}} onClick={()=>{ setShowMsgs(true); if(myMemberId&&naoLidas>0) marcarLidas(myMemberId); }}>
-            <Ic n="mail" s={15} c="var(--c09)"/> {isMaster?"Mensagens":"Minhas mensagens"}
+          <button style={{...S.sideBtn,...(naoLidas>0?{borderColor:"#C7CBFF",background:"#F7F8FE"}:{})}} onClick={()=>{ setShowMsgs(true); if(myMemberId&&naoLidas>0) marcarLidas(myMemberId); }}>
+            <Ic n="mail" s={15} c="#4A4F5E"/> {isMaster?"Mensagens":"Minhas mensagens"}
             {naoLidas>0 && <span style={S.badgeMsg}>{naoLidas}</span>}
           </button>
-          {isMaster && <button style={S.sideBtn} onClick={()=>setShowCatalog(true)}><Ic n="list" s={15} c="var(--c09)"/> Cadastrar tarefa</button>}
-          {isMaster && <button style={S.sideBtn} onClick={()=>setShowUsers(true)}><Ic n="userplus" s={15} c="var(--c09)"/> Cadastrar usuário</button>}
-          <div style={estaLocal()
-            ? {display:"flex",alignItems:"center",gap:6,fontSize:10.5,fontWeight:700,color:"var(--c25)",background:"var(--c82)",border:"1px solid var(--c62)",borderRadius:7,padding:"5px 9px",marginBottom:8}
-            : {display:"flex",alignItems:"center",gap:6,fontSize:10.5,fontWeight:700,color:"var(--c03)",background:"var(--c53)",border:"1px solid var(--c30)",borderRadius:7,padding:"5px 9px",marginBottom:8}}>
-            <span style={{width:7,height:7,borderRadius:"50%",background:estaLocal()?"var(--c45)":"var(--c07)",flexShrink:0}}/>
-            {estaLocal() ? "Modo teste — dados só neste navegador" : "Conectado — dados compartilhados"}
-          </div>
+          {isMaster && <button style={S.sideBtn} onClick={()=>setShowCatalog(true)}><Ic n="list" s={15} c="#4A4F5E"/> Cadastrar tarefa</button>}
+          {isMaster && <button style={S.sideBtn} onClick={()=>setShowUsers(true)}><Ic n="userplus" s={15} c="#4A4F5E"/> Cadastrar usuário</button>}
           <div style={S.userChip}>
             <span style={{...S.avatarSm,background:ROLES[currentUser.role].color}}>{initials(currentUser.username)}</span>
             <div style={{flex:1,minWidth:0}}>
@@ -1117,26 +686,31 @@ function App({ inicial, aoSair, usuarioConectado }){
       <main style={S.main}>
         <header style={S.topbar}>
           <div style={{width:"100%"}}><h1 style={S.h1}>{emReunioes ? "Reuniões" : (project?.name ?? "Sem projeto")}</h1>
-            {emReunioes && <div style={{fontSize:12.5,color:"var(--c17)",fontWeight:600,marginTop:2}}>Reuniões de todos os projetos</div>}
+            {emReunioes && <div style={{fontSize:12.5,color:"#8A5FD6",fontWeight:600,marginTop:2}}>Reuniões de todos os projetos</div>}
             {isPrivileged && !emReunioes && <ResumoSemanal tarefas={filtered}/>}
           </div>
         </header>
 
         {(!project && !emReunioes) ? (
-          <div style={S.empty}><p style={{margin:0,color:"var(--c16)"}}>Nenhum projeto ainda.</p>
-            {isPrivileged && <button style={S.primaryBtn} onClick={addProject}><Ic n="plus" s={16} c="var(--onaccent)"/> Criar projeto</button>}</div>
+          <div style={S.empty}><p style={{margin:0,color:"#737A8C"}}>Nenhum projeto ainda.</p>
+            {isPrivileged && <button style={S.primaryBtn} onClick={addProject}><Ic n="plus" s={16} c="#fff"/> Criar projeto</button>}</div>
         ) : (state.view!=="dash" || !isPrivileged) ? (
           <React.Fragment>
             <div style={{padding:"14px 26px 0",display:"flex",alignItems:"center",flexWrap:"wrap",gap:10}}>
-              <div style={S.searchWrap}><Ic n="search" s={15} c="var(--c19)"/>
+              <div style={S.searchWrap}><Ic n="search" s={15} c="#8A8F9E"/>
                 <input style={S.search} placeholder="Buscar tarefa…" value={query} onChange={(e)=>setQuery(e.target.value)}/></div>
+              {trabalhos.length>0 && !emReunioes && (
+                <select style={S.folderSelect} value={folderFilter} onChange={(e)=>setFolderFilter(e.target.value)}>
+                  <option value="">Todos os trabalhos</option>
+                  {trabalhos.map((n)=>(<option key={n} value={n}>{n}</option>))}
+                </select>)}
               {emReunioes && isPrivileged && (
                 <select style={S.folderSelect} value={reuniaoMembro} onChange={(e)=>setReuniaoMembro(e.target.value)}>
                   <option value="">Todos os membros</option>
                   {state.members.map((m)=>(<option key={m.id} value={m.id}>Pendentes de {m.name}</option>))}
                 </select>)}
-              {!isPrivileged && !myMemberId && <span style={S.warnNote}><Ic n="lock" s={12} c="var(--c36)"/> Seu usuário não está vinculado a um membro — peça ao master</span>}
-              {!isPrivileged && myMemberId && <span style={S.roleNote}><Ic n="checkc" s={12} c="var(--c07)"/> Aceite a tarefa e conclua quando terminar</span>}
+              {!isPrivileged && !myMemberId && <span style={S.warnNote}><Ic n="lock" s={12} c="#D8442F"/> Seu usuário não está vinculado a um membro — peça ao master</span>}
+              {!isPrivileged && myMemberId && <span style={S.roleNote}><Ic n="checkc" s={12} c="#2F9E6E"/> Aceite a tarefa e conclua quando terminar</span>}
             </div>
             <div style={S.board}>
               {COLUMNS.map((col)=>{
@@ -1187,11 +761,6 @@ function App({ inicial, aoSair, usuarioConectado }){
       {showUsers && <UsersModal users={state.users} members={state.members} tasks={state.tasks} currentUser={currentUser}
         onAdd={addUser} onReset={resetUserPassword} onPhoto={setMemberPhoto} onRenomear={renomearPessoa}
         onLogin={alterarLogin} onAcesso={alterarAcesso} onPainel={alternarPainel} onEquipe={alternarEquipe} onRemoverPessoa={removerPessoa} onClose={()=>setShowUsers(false)}/>}
-      {aviso && <div style={{position:"fixed",bottom:22,left:"50%",transform:"translateX(-50%)",zIndex:200,
-        background:aviso.tipo==="ok"?"var(--c03)":"var(--c27)",color:"var(--onaccent)",padding:"11px 18px",borderRadius:10,
-        fontSize:13.5,fontWeight:600,boxShadow:"0 8px 28px rgba(20,22,31,.28)",display:"flex",alignItems:"center",gap:9,maxWidth:"90vw"}}>
-        <Ic n="checkc" s={16} c="var(--onaccent)"/> {aviso.texto}
-      </div>}
     </div>
   );
 }
@@ -1222,7 +791,7 @@ function Login({ users, onLogin }){
       name="password" autoComplete="current-password" onKeyDown={(e)=>{ if(e.key==="Enter") submit(e); }}/>
     {err && <div style={S.authErr}>{err}</div>}
     <button type="submit" style={{...S.primaryBtn,width:"100%",justifyContent:"center",marginTop:14,padding:"11px"}}>Entrar</button>
-    {showHint && <p style={S.authHint}><Ic n="lock" s={12} c="var(--c19)"/> Primeiro acesso: <b>admin</b> / <b>admin</b> — você trocará a senha ao entrar.</p>}
+    {showHint && <p style={S.authHint}><Ic n="lock" s={12} c="#8A8F9E"/> Primeiro acesso: <b>admin</b> / <b>admin</b> — você trocará a senha ao entrar.</p>}
   </form>);
 }
 
@@ -1239,7 +808,7 @@ function ChangePasswordCard({ onSave, onCancel, forced, titulo, sub, salvarLabel
   };
   return (<form style={S.authCard} onSubmit={submit}>
     <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:18}}>
-      <div style={{...S.brandMark,background:"var(--c01)",boxShadow:"none"}}><Ic n="key" s={17} c="var(--onaccent)"/></div>
+      <div style={{...S.brandMark,background:"#0E8F9E",boxShadow:"none"}}><Ic n="key" s={17} c="#fff"/></div>
       <div><div style={S.brandName}>{titulo || (forced?"Defina sua senha":"Alterar senha")}</div>
         <div style={S.brandSub}>{sub || (forced?"Obrigatório no primeiro acesso":"Escolha uma nova senha")}</div></div></div>
     <label style={S.authLabel}>Nova senha</label>
@@ -1273,18 +842,22 @@ function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, ca
   useEffect(()=>{ const h=(e)=>{if(ref.current&&!ref.current.contains(e.target))setMenu(null);}; document.addEventListener("mousedown",h); return ()=>document.removeEventListener("mousedown",h); },[]);
   return (
     <div className="card" draggable={canDrag} onDragStart={onDragStart} onDragEnd={onDragEnd}
-      style={{...S.card, borderLeft:`3px solid ${ehReuniao?"var(--c20)":col.tint}`, ...(done?S.cardDone:{}), ...(fixing?S.cardPending:{}), ...(ehReuniao?S.cardReuniao:{})}} ref={ref}>
+      style={{...S.card, borderLeft:`3px solid ${ehReuniao?"#8B3ABF":col.tint}`, ...(done?S.cardDone:{}), ...(fixing?S.cardPending:{}), ...(ehReuniao?S.cardReuniao:{})}} ref={ref}>
       {ehReuniao && (<div style={S.faixaReuniao}>
-        <Ic n="calendar" s={13} c="var(--onaccent)"/> REUNIÃO
+        <Ic n="calendar" s={13} c="#fff"/> REUNIÃO
         {task.quando && <span style={S.faixaQuando}>{quandoTexto(task.quando)}</span>}
       </div>)}
       {!ehReuniao && projetoNome && <div style={S.projetoTag} title={"Projeto: "+projetoNome}>
-        <Ic n="folder" s={11} c="var(--c08)"/> {projetoNome}</div>}
+        <Ic n="folder" s={11} c="#3B3AC9"/> {projetoNome}</div>}
+      {task.folderName && <div style={{...S.folderTag,color:corTrab,background:corTrab+"14",borderColor:corTrab+"33"}}
+        title={canEdit&&isMaster?"Clique para renomear o trabalho":task.folderName}
+        onClick={()=>{ if(canEdit&&isMaster){ const v=prompt("Nome do trabalho:",task.folderName); if(v!==null)onUpdate({folderName:v.trim()}); } }}>
+        <Ic n="folder" s={11} c={corTrab}/> {task.folderName}</div>}
       <div style={{...S.cardTop,...(ehReuniao?{padding:"10px 11px 0"}:{})}}>
-        {done ? <Ic n="lock" s={13} c="var(--c21)" style={{flexShrink:0,marginTop:2}}/>
-          : fixing ? <Ic n="undo" s={13} c="var(--c26)" style={{flexShrink:0,marginTop:2}}/>
-          : canDrag ? <Ic n="grip" s={14} c="var(--c29)" style={{cursor:"grab",flexShrink:0,marginTop:2}}/>
-          : <Ic n="circle" s={12} c="var(--c29)" style={{flexShrink:0,marginTop:3}}/>}
+        {done ? <Ic n="lock" s={13} c="#8FBFA8" style={{flexShrink:0,marginTop:2}}/>
+          : fixing ? <Ic n="undo" s={13} c="#B8860B" style={{flexShrink:0,marginTop:2}}/>
+          : canDrag ? <Ic n="grip" s={14} c="#C2C6D0" style={{cursor:"grab",flexShrink:0,marginTop:2}}/>
+          : <Ic n="circle" s={12} c="#C2C6D0" style={{flexShrink:0,marginTop:3}}/>}
         <p style={{...S.cardTitle,...(ehReuniao?S.cardTituloReuniao:{})}}>{task.title}</p>
         {canEdit && isPrivileged && <button className="card-del" style={S.cardDel} onClick={onRemove}><Ic n="x" s={13}/></button>}
       </div>
@@ -1303,7 +876,7 @@ function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, ca
         const removerFazer=(id)=>{ persistir(fazer.filter((n)=>n.id!==id)); };
         return (<div style={{...S.descBox,...(ehReuniao?{margin:"8px 11px 0"}:{})}}>
           <span style={S.descLabel}>O que fazer</span>
-          {fazer.length===0 && <div style={{fontSize:11.5,color:"var(--c23)",marginBottom:6}}>Nada anotado ainda.</div>}
+          {fazer.length===0 && <div style={{fontSize:11.5,color:"#A0A5B2",marginBottom:6}}>Nada anotado ainda.</div>}
           {fazer.map((n)=>(<div key={n.id} style={S.diarioLinha}>
             <span style={S.fazerData}>{ddmm(new Date(n.data))}</span>
             {editFazer===n.id ? (<div style={{flex:1}}>
@@ -1316,15 +889,15 @@ function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, ca
             </div>) : (<React.Fragment>
               <span style={S.fazerTexto}>{n.texto}</span>
               {podeEscrever && <span style={S.diarioAcoes}>
-                <button style={S.diarioMini} title="Editar" onClick={()=>{ setEditFazer(n.id); setFazerTexto(n.texto); }}><Ic n="key" s={11} c="var(--c19)"/></button>
-                <button style={S.diarioMini} title="Remover" onClick={()=>removerFazer(n.id)}><Ic n="trash" s={11} c="var(--c28)"/></button>
+                <button style={S.diarioMini} title="Editar" onClick={()=>{ setEditFazer(n.id); setFazerTexto(n.texto); }}><Ic n="key" s={11} c="#8A8F9E"/></button>
+                <button style={S.diarioMini} title="Remover" onClick={()=>removerFazer(n.id)}><Ic n="trash" s={11} c="#C0397E"/></button>
               </span>}
             </React.Fragment>)}
           </div>))}
           {podeEscrever && <div style={{display:"flex",gap:5,marginTop:6}}>
             <input style={S.diarioInput} value={novaFazer} onChange={(e)=>setNovaFazer(e.target.value)}
               onKeyDown={(e)=>{ if(e.key==="Enter")addFazer(); }} placeholder="O que precisa ser feito…"/>
-            <button style={S.diarioAdd} onClick={addFazer}><Ic n="plus" s={13} c="var(--onaccent)"/></button>
+            <button style={S.diarioAdd} onClick={addFazer}><Ic n="plus" s={13} c="#fff"/></button>
           </div>}
         </div>);
       })()}
@@ -1341,7 +914,7 @@ function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, ca
         const removerNota=(id)=>{ onUpdate({diario:diario.filter((n)=>n.id!==id)}); };
         return (<div style={{...S.diarioBox,...(ehReuniao?{margin:"8px 11px 0"}:{})}}>
           <span style={S.descLabel}>Tarefa feita no dia</span>
-          {diario.length===0 && <div style={{fontSize:11.5,color:"var(--c23)",marginBottom:6}}>Nenhuma anotação ainda.</div>}
+          {diario.length===0 && <div style={{fontSize:11.5,color:"#A0A5B2",marginBottom:6}}>Nenhuma anotação ainda.</div>}
           {diario.map((n)=>(<div key={n.id} style={S.diarioLinha}>
             <span style={S.diarioData}>{ddmm(new Date(n.data))}</span>
             {editNota===n.id ? (<div style={{flex:1}}>
@@ -1354,15 +927,15 @@ function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, ca
             </div>) : (<React.Fragment>
               <span style={S.diarioTexto}>{n.texto}</span>
               {podeEditarLinhas && <span style={S.diarioAcoes}>
-                <button style={S.diarioMini} title="Editar" onClick={()=>{ setEditNota(n.id); setNotaTexto(n.texto); }}><Ic n="key" s={11} c="var(--c19)"/></button>
-                <button style={S.diarioMini} title="Remover" onClick={()=>removerNota(n.id)}><Ic n="trash" s={11} c="var(--c28)"/></button>
+                <button style={S.diarioMini} title="Editar" onClick={()=>{ setEditNota(n.id); setNotaTexto(n.texto); }}><Ic n="key" s={11} c="#8A8F9E"/></button>
+                <button style={S.diarioMini} title="Remover" onClick={()=>removerNota(n.id)}><Ic n="trash" s={11} c="#C0397E"/></button>
               </span>}
             </React.Fragment>)}
           </div>))}
           {podeEscrever && <div style={{display:"flex",gap:5,marginTop:6}}>
             <input style={S.diarioInput} value={novaNota} onChange={(e)=>setNovaNota(e.target.value)}
               onKeyDown={(e)=>{ if(e.key==="Enter")addNota(); }} placeholder="O que você fez hoje…"/>
-            <button style={S.diarioAdd} onClick={addNota}><Ic n="plus" s={13} c="var(--onaccent)"/></button>
+            <button style={S.diarioAdd} onClick={addNota}><Ic n="plus" s={13} c="#fff"/></button>
           </div>}
         </div>);
       })()}
@@ -1372,31 +945,31 @@ function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, ca
             <span style={S.tempoRot}>Enviada</span><span style={S.tempoVal}>{hhmm(task.createdAt)} · {ddmm(new Date(task.createdAt))}</span></div>}
           {task.acceptedAt ? (<div style={S.tempoLinha}>
             <span style={S.tempoRot}>Resposta</span>
-            <span style={{...S.tempoVal,color:"var(--c06)"}}>{durMs(task.acceptedAt-(task.createdAt||task.acceptedAt))}</span></div>)
+            <span style={{...S.tempoVal,color:"#2F6BD8"}}>{durMs(task.acceptedAt-(task.createdAt||task.acceptedAt))}</span></div>)
            : (task.col==="todo" && task.createdAt && <div style={S.tempoLinha}>
             <span style={S.tempoRot}>Aguardando</span>
-            <span style={{...S.tempoVal,color:"var(--c36)"}}>{durMs(Date.now()-task.createdAt)}</span></div>)}
+            <span style={{...S.tempoVal,color:"#D8442F"}}>{durMs(Date.now()-task.createdAt)}</span></div>)}
           {(task.workedMs>0 || task.runningSince) && <div style={S.tempoLinha}>
             <span style={S.tempoRot}>{task.runningSince?"Contando":"Tempo real"}</span>
-            <span style={{...S.tempoVal,color:task.runningSince?"var(--c07)":"var(--c05)",fontWeight:800}}>
+            <span style={{...S.tempoVal,color:task.runningSince?"#2F9E6E":"#20232E",fontWeight:800}}>
               {task.runningSince && <span style={S.pulsando}>●</span>} {durMs(tempoReal(task))}</span></div>}
           {task.hours>0 && <div style={S.tempoLinha}>
             <span style={S.tempoRot}>Previsto</span><span style={S.tempoVal}>{hm(task.hours)}</span></div>}
         </div>)}
-      {fixing && <div style={S.fixBox}><span style={S.fixLabel}><Ic n="undo" s={11} c="var(--c26)"/> O que consertar</span>
+      {fixing && <div style={S.fixBox}><span style={S.fixLabel}><Ic n="undo" s={11} c="#B8860B"/> O que consertar</span>
         {task.fixNote || "O master devolveu esta tarefa para ajuste."}</div>}
-      {done && <div style={S.doneBar}><Ic n="checkc" s={11} c="var(--c07)"/> Concluída {task.completedAt?`em ${dm(task.completedAt)}`:""}</div>}
+      {done && <div style={S.doneBar}><Ic n="checkc" s={11} c="#2F9E6E"/> Concluída {task.completedAt?`em ${dm(task.completedAt)}`:""}</div>}
 
       <div style={{...S.cardFoot,...(ehReuniao?{padding:"0 11px 10px"}:{})}}>
         <div style={{display:"flex",gap:6,alignItems:"center"}}>
           <button disabled={!canEdit||!isPrivileged} style={{...S.pill,color:pri.color,borderColor:pri.color+"44",background:pri.color+"12",...((!canEdit||!isPrivileged)?{opacity:.75}:{})}}
             onClick={()=>canEdit&&isPrivileged&&setMenu(menu==="pri"?null:"pri")}><Ic n="flag" s={11} c={pri.color}/> {pri.label}</button>
-          <button disabled={!canEdit} style={{...S.pill,color:"var(--c12)",borderColor:"var(--c42)",background:"var(--c71)",...(!canEdit?{opacity:.75}:{})}}
-            onClick={()=>canEdit&&setMenu(menu==="hrs"?null:"hrs")}><Ic n="clock" s={11} c="var(--c12)"/> prev. {task.hours||0}h</button>
+          <button disabled={!canEdit} style={{...S.pill,color:"#5A6072",borderColor:"#DDE0E7",background:"#F5F6F9",...(!canEdit?{opacity:.75}:{})}}
+            onClick={()=>canEdit&&setMenu(menu==="hrs"?null:"hrs")}><Ic n="clock" s={11} c="#5A6072"/> prev. {task.hours||0}h</button>
         </div>
-        {ehReuniao ? (<span style={S.todosTag} title="Reunião para toda a equipe"><Ic n="users" s={11} c="var(--c20)"/> Todos</span>)
+        {ehReuniao ? (<span style={S.todosTag} title="Reunião para toda a equipe"><Ic n="users" s={11} c="#8B3ABF"/> Todos</span>)
           : (<button disabled={!canEdit||!isPrivileged} style={S.assignBtn} onClick={()=>canEdit&&isPrivileged&&setMenu(menu==="asg"?null:"asg")} title={member?.name??"Sem responsável"}>
-            {member ? <Avatar m={member} size={24}/> : <span style={S.avatarEmpty}><Ic n="circle" s={11} c="var(--c23)"/></span>}
+            {member ? <Avatar m={member} size={24}/> : <span style={S.avatarEmpty}><Ic n="circle" s={11} c="#A0A5B2"/></span>}
           </button>)}
       </div>
 
@@ -1408,34 +981,34 @@ function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, ca
         </div>
         {quemConfirmou.length>0 ? (<div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:5}}>
           {quemConfirmou.map((m)=>(<Avatar key={m.id} m={m} size={22}/>))}
-        </div>) : <div style={{fontSize:11.5,color:"var(--c23)",marginTop:4}}>ninguém confirmou ainda</div>}
+        </div>) : <div style={{fontSize:11.5,color:"#A0A5B2",marginTop:4}}>ninguém confirmou ainda</div>}
       </div>)}
       {ehReuniao && meuMembroId && !isMaster && (
         jaConfirmei
-          ? <div style={{...S.confFeito,margin:"8px 11px 10px"}}><Ic n="checkc" s={13} c="var(--c07)"/> Você confirmou que viu</div>
-          : <button style={{...S.doneBtn,background:"var(--c20)",margin:"8px 11px 10px",width:"auto"}} onClick={onConfirmar}>
-              <Ic n="checkc" s={13} c="var(--onaccent)"/> Confirmar que vi</button>)}
+          ? <div style={{...S.confFeito,margin:"8px 11px 10px"}}><Ic n="checkc" s={13} c="#2F9E6E"/> Você confirmou que viu</div>
+          : <button style={{...S.doneBtn,background:"#8B3ABF",margin:"8px 11px 10px",width:"auto"}} onClick={onConfirmar}>
+              <Ic n="checkc" s={13} c="#fff"/> Confirmar que vi</button>)}
       {ehReuniao && isMaster && task.col!=="done" && (
         <button style={{...S.doneBtn,margin:"8px 11px 10px",width:"auto"}} onClick={onComplete}>
-          <Ic n="checkc" s={13} c="var(--onaccent)"/> Encerrar reunião</button>)}
+          <Ic n="checkc" s={13} c="#fff"/> Encerrar reunião</button>)}
 
       {/* fluxo da tarefa */}
       {!ehReuniao && task.col==="todo" && canAct && (
-        <button style={{...S.doneBtn,background:COL.doing.tint}} onClick={onAccept}><Ic n="check" s={13} c="var(--onaccent)"/> Aceitar tarefa</button>)}
+        <button style={{...S.doneBtn,background:COL.doing.tint}} onClick={onAccept}><Ic n="check" s={13} c="#fff"/> Aceitar tarefa</button>)}
       {!ehReuniao && task.col==="doing" && canAct && (
-        <button style={{...S.doneBtn,background:COL.review.tint}} onClick={onDoingToReview}><Ic n="checkc" s={13} c="var(--onaccent)"/> Ir para Revisão Interna</button>)}
+        <button style={{...S.doneBtn,background:COL.review.tint}} onClick={onDoingToReview}><Ic n="checkc" s={13} c="#fff"/> Ir para Revisão Interna</button>)}
       {!ehReuniao && inReview && canAct && (
-        <button style={{...S.doneBtn,background:COL.protocolado.tint}} onClick={onToProtocolado}><Ic n="checkc" s={13} c="var(--onaccent)"/> Ir para Protocolado</button>)}
+        <button style={{...S.doneBtn,background:COL.protocolado.tint}} onClick={onToProtocolado}><Ic n="checkc" s={13} c="#fff"/> Ir para Protocolado</button>)}
       {!ehReuniao && inReview && isMaster && (
-        <button style={S.cancelBtn} onClick={onBackToDoing}><Ic n="undo" s={12} c="var(--c16)"/> Voltar para Em andamento</button>)}
+        <button style={S.cancelBtn} onClick={onBackToDoing}><Ic n="undo" s={12} c="#737A8C"/> Voltar para Em andamento</button>)}
       {!ehReuniao && inProtocolado && isMaster && (
-        <button style={S.doneBtn} onClick={onComplete}><Ic n="checkc" s={13} c="var(--onaccent)"/> Concluir</button>)}
+        <button style={S.doneBtn} onClick={onComplete}><Ic n="checkc" s={13} c="#fff"/> Concluir</button>)}
       {!ehReuniao && inProtocolado && isMaster && (
-        <button style={S.reviewBtn} onClick={onBackToReview}><Ic n="undo" s={13} c="var(--c26)"/> Voltar para Revisão Interna</button>)}
+        <button style={S.reviewBtn} onClick={onBackToReview}><Ic n="undo" s={13} c="#B8860B"/> Voltar para Revisão Interna</button>)}
       {!ehReuniao && inProtocolado && isMaster && (
-        <button style={S.cancelBtn} onClick={onProtocoladoToDoing}><Ic n="undo" s={12} c="var(--c16)"/> Voltar para Em andamento</button>)}
+        <button style={S.cancelBtn} onClick={onProtocoladoToDoing}><Ic n="undo" s={12} c="#737A8C"/> Voltar para Em andamento</button>)}
       {!ehReuniao && done && isMaster && (
-        <button style={S.reviewBtn} onClick={onSendToReview}><Ic n="undo" s={13} c="var(--c26)"/> Enviar para Revisão Interna</button>)}
+        <button style={S.reviewBtn} onClick={onSendToReview}><Ic n="undo" s={13} c="#B8860B"/> Enviar para Revisão Interna</button>)}
 
       {menu==="pri" && (<div style={S.menu}>{Object.entries(PRIORITIES).map(([k,v])=>(
         <button key={k} style={S.menuItem} onClick={()=>{onUpdate({priority:k});setMenu(null);}}><span style={{...S.dot,background:v.color}}/> {v.label}</button>))}</div>)}
@@ -1447,7 +1020,7 @@ function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, ca
         <button style={S.menuItem} onClick={()=>{const v=prompt("Horas de serviço:",task.hours||0);if(v!==null&&!isNaN(+v))onUpdate({hours:Math.max(0,+v)});setMenu(null);}}><Ic n="clock" s={13}/> Valor personalizado…</button>
       </div>)}
       {menu==="asg" && (<div style={S.menu}>
-        <button style={S.menuItem} onClick={()=>{onUpdate({assignee:null});setMenu(null);}}><span style={S.avatarEmpty}><Ic n="circle" s={11} c="var(--c23)"/></span> Ninguém</button>
+        <button style={S.menuItem} onClick={()=>{onUpdate({assignee:null});setMenu(null);}}><span style={S.avatarEmpty}><Ic n="circle" s={11} c="#A0A5B2"/></span> Ninguém</button>
         {members.map((m)=>(<button key={m.id} style={S.menuItem} onClick={()=>{onUpdate({assignee:m.id});setMenu(null);}}><Avatar m={m} size={24}/> {m.name}</button>))}
       </div>)}
     </div>
@@ -1480,14 +1053,14 @@ function ConcluidoCalendario({ tarefas, membros, membroFiltro, onMembroFiltro, i
 
   return (<div style={S.calBox}>
     <div style={S.calNav}>
-      <button style={S.calNavBtn} onClick={()=>{ setOffset(offset-1); setAbertos({}); }} title="Semana anterior"><Ic n="chev" s={14} c="var(--c08)" style={{transform:"rotate(90deg)"}}/> Anterior</button>
+      <button style={S.calNavBtn} onClick={()=>{ setOffset(offset-1); setAbertos({}); }} title="Semana anterior"><Ic n="chev" s={14} c="#3B3AC9" style={{transform:"rotate(90deg)"}}/> Anterior</button>
       <div style={S.calPeriodo}>
-        <div style={{fontWeight:800,fontSize:12.5,color:"var(--c05)"}}>{ddmm(dias[0])} — {ddmm(dias[6])}</div>
-        <div style={{fontSize:10.5,color:"var(--c19)",fontWeight:600}}>{offset===0?"Esta semana":offset===-1?"Semana passada":offset<0?`${-offset} semanas atrás`:offset===1?"Próxima semana":`${offset} semanas à frente`}</div>
+        <div style={{fontWeight:800,fontSize:12.5,color:"#20232E"}}>{ddmm(dias[0])} — {ddmm(dias[6])}</div>
+        <div style={{fontSize:10.5,color:"#8A8F9E",fontWeight:600}}>{offset===0?"Esta semana":offset===-1?"Semana passada":offset<0?`${-offset} semanas atrás`:offset===1?"Próxima semana":`${offset} semanas à frente`}</div>
       </div>
-      <button style={{...S.calNavBtn,...(offset>=0?{visibility:"hidden"}:{})}} onClick={()=>{ setOffset(offset+1); setAbertos({}); }} title="Próxima semana">Próxima <Ic n="chev" s={14} c="var(--c08)" style={{transform:"rotate(-90deg)"}}/></button>
+      <button style={{...S.calNavBtn,...(offset>=0?{visibility:"hidden"}:{})}} onClick={()=>{ setOffset(offset+1); setAbertos({}); }} title="Próxima semana">Próxima <Ic n="chev" s={14} c="#3B3AC9" style={{transform:"rotate(-90deg)"}}/></button>
     </div>
-    {offset!==0 && <button style={S.calVoltarHoje} onClick={()=>{ setOffset(0); setAbertos({}); }}><Ic n="calendar" s={13} c="var(--c08)"/> Voltar para hoje</button>}
+    {offset!==0 && <button style={S.calVoltarHoje} onClick={()=>{ setOffset(0); setAbertos({}); }}><Ic n="calendar" s={13} c="#3B3AC9"/> Voltar para hoje</button>}
     <button style={S.calToggleTodos} onClick={()=>{
       const estaAberto=(d)=>{ const k=chaveDia(d); const padrao=offset===0?mesmoDia(d,hoje):true; return k in abertos?abertos[k]:padrao; };
       const algumAberto=dias.some((d)=>doDia(d).length>0 && estaAberto(d));
@@ -1512,21 +1085,21 @@ function ConcluidoCalendario({ tarefas, membros, membroFiltro, onMembroFiltro, i
         const aberto = temItens && (chave in abertos ? abertos[chave] : padraoAberto);
         return (<div key={i} style={{...S.calDia,...(eHoje?S.calDiaHoje:{}),...(fds&&!temItens?{opacity:.55}:{})}}>
           <div style={{...S.calDiaTopo,cursor:temItens?"pointer":"default",...(aberto?S.calDiaTopoAberto:{})}} onClick={()=>temItens&&alternarDia(d)}>
-            <span style={{...S.calDiaNome,...(eHoje?{color:"var(--c15)"}:{}),flex:1}}>{eHoje?"Hoje":DIAS_SEM[d.getDay()]} {d.getDate()}</span>
+            <span style={{...S.calDiaNome,...(eHoje?{color:"#6B3FBF"}:{}),flex:1}}>{eHoje?"Hoje":DIAS_SEM[d.getDay()]} {d.getDate()}</span>
             {temItens
               ? <span style={S.calDiaResumo}>{itens.length} · {hms(horasDia(d))}</span>
               : <span style={S.calDiaVazio}>—</span>}
-            {temItens && <span style={S.calDiaSeta}><Ic n="chev" s={15} c={aberto?"var(--c15)":"var(--c19)"} style={{transform:aberto?"none":"rotate(-90deg)",transition:"transform .15s"}}/></span>}
+            {temItens && <span style={S.calDiaSeta}><Ic n="chev" s={15} c={aberto?"#6B3FBF":"#8A8F9E"} style={{transform:aberto?"none":"rotate(-90deg)",transition:"transform .15s"}}/></span>}
           </div>
           {aberto && itens.map((t)=>{ const m=membroById(t.assignee); const reuniao=t.tipo==="reuniao";
-            return (<div key={t.id} className="cal-item" style={{...S.calItem,...(reuniao?{borderLeft:"3px solid var(--c20)"}:{})}}>
-              {reuniao ? <span style={{...S.avatarSm,background:"var(--c20)"}}><Ic n="calendar" s={11} c="var(--onaccent)"/></span>
-                       : (m ? <Avatar m={m} size={22}/> : <span style={S.avatarEmpty}><Ic n="circle" s={10} c="var(--c23)"/></span>)}
+            return (<div key={t.id} className="cal-item" style={{...S.calItem,...(reuniao?{borderLeft:"3px solid #8B3ABF"}:{})}}>
+              {reuniao ? <span style={{...S.avatarSm,background:"#8B3ABF"}}><Ic n="calendar" s={11} c="#fff"/></span>
+                       : (m ? <Avatar m={m} size={22}/> : <span style={S.avatarEmpty}><Ic n="circle" s={10} c="#A0A5B2"/></span>)}
               <span style={S.calItemTitulo} title={(m?m.name+" · ":"")+t.title}>{t.title}</span>
               <span style={S.calItemHora}>{hhmm(t.completedAt)}</span>
               <span style={S.calItemTempo}>{hms(horasReais(t))}</span>
               {isMaster && !reuniao && <button className="cal-rev" style={S.calRev} title="Enviar para Revisão Interna"
-                onClick={()=>onRevisao(t.id)}><Ic n="undo" s={12} c="var(--c26)"/></button>}
+                onClick={()=>onRevisao(t.id)}><Ic n="undo" s={12} c="#B8860B"/></button>}
             </div>); })}
         </div>);
       })}
@@ -1535,7 +1108,7 @@ function ConcluidoCalendario({ tarefas, membros, membroFiltro, onMembroFiltro, i
     {porMembro.length>0 && (<div style={S.calResumoMembros}>
       <div style={S.calResumoRot}>Na semana</div>
       {porMembro.map((r)=>(<div key={r.id} style={S.calResumoLinha}>
-        {r.membro ? <Avatar m={r.membro} size={20}/> : <span style={{...S.avatarSm,width:20,height:20,background:"var(--c20)"}}><Ic n="calendar" s={10} c="var(--onaccent)"/></span>}
+        {r.membro ? <Avatar m={r.membro} size={20}/> : <span style={{...S.avatarSm,width:20,height:20,background:"#8B3ABF"}}><Ic n="calendar" s={10} c="#fff"/></span>}
         <span style={S.calResumoNome}>{r.membro?r.membro.name:"Reuniões"}</span>
         <span style={S.calResumoQtd}>{r.qtd}</span>
         <span style={S.calResumoTempo}>{hms(r.horas)}</span>
@@ -1585,14 +1158,14 @@ function LaunchTask({ catalog, members, onLaunch, onOpenCatalog, isMaster }){
   if(catalog.length===0) return (<div style={S.launchEmpty}>
     Nenhuma tarefa cadastrada.{isMaster && <React.Fragment> <span style={S.linkBtn} onClick={onOpenCatalog}>Cadastrar tarefa</span></React.Fragment>}
   </div>);
-  if(!open) return <button style={S.addRow} onClick={()=>setOpen(true)}><Ic n="plus" s={15} c="var(--c19)"/> Lançar tarefa</button>;
+  if(!open) return <button style={S.addRow} onClick={()=>setOpen(true)}><Ic n="plus" s={15} c="#8A8F9E"/> Lançar tarefa</button>;
 
   return (<div style={S.launchBox}>
     {linhas.map((l,i)=>(
       <div key={l.key} style={S.linhaTarefa}>
         <div style={S.linhaTopo}>
           <span style={S.linhaNum}>Tarefa {i+1}</span>
-          {linhas.length>1 && <button style={S.linhaX} onClick={()=>tirarLinha(l.key)} title="Remover esta tarefa"><Ic n="x" s={12} c="var(--c24)"/></button>}
+          {linhas.length>1 && <button style={S.linhaX} onClick={()=>tirarLinha(l.key)} title="Remover esta tarefa"><Ic n="x" s={12} c="#B0B5C0"/></button>}
         </div>
         <select style={S.launchInput} value={l.catalogId} onChange={(e)=>{mudar(l.key,"catalogId",e.target.value); setErr("");}}>
           <option value="">Escolher…</option>
@@ -1600,7 +1173,7 @@ function LaunchTask({ catalog, members, onLaunch, onOpenCatalog, isMaster }){
         </select>
         <label style={{...S.reuniaoTag,...(l.reuniao?S.reuniaoTagOn:{})}}>
           <input type="checkbox" checked={!!l.reuniao} onChange={(e)=>mudar(l.key,"reuniao",e.target.checked)} style={{margin:0}}/>
-          <Ic n="calendar" s={12} c={l.reuniao?"var(--c20)":"var(--c19)"}/> É uma reunião
+          <Ic n="calendar" s={12} c={l.reuniao?"#8B3ABF":"#8A8F9E"}/> É uma reunião
         </label>
         {l.reuniao && (<div style={{marginTop:6}}><div style={S.launchLabel}>Quando</div>
           <input style={S.launchInput} type="datetime-local" value={l.quando} onChange={(e)=>mudar(l.key,"quando",e.target.value)}/></div>)}
@@ -1618,7 +1191,7 @@ function LaunchTask({ catalog, members, onLaunch, onOpenCatalog, isMaster }){
                 <option value="d">dias</option>
               </select>
             </div>
-            {l.unidade==="d" && +l.tempo>0 && <div style={{fontSize:10.5,color:"var(--c19)",marginTop:3}}>= {(+l.tempo*HORAS_POR_DIA)} h de trabalho ({HORAS_POR_DIA}h/dia)</div>}
+            {l.unidade==="d" && +l.tempo>0 && <div style={{fontSize:10.5,color:"#8A8F9E",marginTop:3}}>= {(+l.tempo*HORAS_POR_DIA)} h de trabalho ({HORAS_POR_DIA}h/dia)</div>}
           </div>
           <div style={{flex:1}}><div style={S.launchLabel}>Prioridade</div>
             <select style={{...S.launchInput,color:PRIORITIES[l.priority].color,fontWeight:600}} value={l.priority}
@@ -1629,7 +1202,7 @@ function LaunchTask({ catalog, members, onLaunch, onOpenCatalog, isMaster }){
       </div>
     ))}
 
-    <button style={S.addLinhaBtn} onClick={addLinha}><Ic n="plus" s={13} c="var(--c08)"/> Adicionar outra tarefa</button>
+    <button style={S.addLinhaBtn} onClick={addLinha}><Ic n="plus" s={13} c="#3B3AC9"/> Adicionar outra tarefa</button>
 
     {validas.length>0 && <div style={S.resumoLote}>{validas.length} {validas.length===1?"tarefa":"tarefas"} · previsto {hm(totalPrev)}</div>}
 
@@ -1639,7 +1212,7 @@ function LaunchTask({ catalog, members, onLaunch, onOpenCatalog, isMaster }){
         {members.map((m)=>(<option key={m.id} value={m.id}>{m.name}</option>))}
       </select>
       {validas.some((l)=>l.reuniao) && <div style={S.fileHint}>As reuniões marcadas vão para toda a equipe, sem responsável.</div>}
-    </div>) : (validas.length>0 && <div style={S.avisoTodos}><Ic n="users" s={13} c="var(--c20)"/> Reunião: vai para toda a equipe</div>)}
+    </div>) : (validas.length>0 && <div style={S.avisoTodos}><Ic n="users" s={13} c="#8B3ABF"/> Reunião: vai para toda a equipe</div>)}
 
     <div><div style={S.launchLabel}>Observação (vale para todas)</div>
       <textarea style={{...S.launchInput,minHeight:54,resize:"vertical"}} value={desc} onChange={(e)=>setDesc(e.target.value)}
@@ -1649,7 +1222,7 @@ function LaunchTask({ catalog, members, onLaunch, onOpenCatalog, isMaster }){
 
     <div style={{display:"flex",gap:6}}>
       <button style={{...S.primaryBtn,background:COL.todo.tint,padding:"7px 14px",fontSize:13}} onClick={submit}>
-        <Ic n="check" s={14} c="var(--onaccent)"/> Lançar{validas.length>1?` ${validas.length} tarefas`:""}</button>
+        <Ic n="check" s={14} c="#fff"/> Lançar{validas.length>1?` ${validas.length} tarefas`:""}</button>
       <button style={S.ghostBtn} onClick={()=>{limpar();setOpen(false);}}>Cancelar</button>
     </div>
   </div>);
@@ -1662,8 +1235,8 @@ function LineChart({ rows, series, height=260 }){
   const x=(i)=> mL+(n<=1?iw/2:(i/(n-1))*iw); const y=(v)=> mT+ih-(v/maxY)*ih;
   const ticks=[0,.25,.5,.75,1].map((t)=>Math.round(maxY*t)); const step=Math.max(1,Math.ceil(n/7));
   return (<svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height}} preserveAspectRatio="xMidYMid meet">
-    {ticks.map((t,i)=>(<g key={i}><line x1={mL} x2={W-mR} y1={y(t)} y2={y(t)} stroke="var(--c55)"/><text x={mL-6} y={y(t)+3} fontSize="10" fill="var(--c19)" textAnchor="end">{t}</text></g>))}
-    {rows.map((r,i)=> i%step===0 && (<text key={i} x={x(i)} y={H-6} fontSize="10" fill="var(--c19)" textAnchor="middle">{r.date}</text>))}
+    {ticks.map((t,i)=>(<g key={i}><line x1={mL} x2={W-mR} y1={y(t)} y2={y(t)} stroke="#EDEFF3"/><text x={mL-6} y={y(t)+3} fontSize="10" fill="#8A8F9E" textAnchor="end">{t}</text></g>))}
+    {rows.map((r,i)=> i%step===0 && (<text key={i} x={x(i)} y={H-6} fontSize="10" fill="#8A8F9E" textAnchor="middle">{r.date}</text>))}
     {series.map((s)=>{ const d=rows.map((r,i)=>`${i===0?"M":"L"} ${x(i).toFixed(1)} ${y(r[s.key]||0).toFixed(1)}`).join(" "); const last=rows[n-1]?.[s.key]||0;
       return (<g key={s.key}><path d={d} fill="none" stroke={s.color} strokeWidth="2.5"/><circle cx={x(n-1)} cy={y(last)} r="3.2" fill={s.color}/></g>); })}
   </svg>);
@@ -1672,11 +1245,11 @@ function BarsV({ data, height=260 }){
   const W=600,H=height,mL=30,mR=14,mT=18,mB=26; const iw=W-mL-mR, ih=H-mT-mB;
   const maxY=niceMax(Math.max(1,...data.map((d)=>d.value))); const bw=iw/Math.max(1,data.length); const y=(v)=>mT+ih-(v/maxY)*ih; const ticks=[0,.5,1].map((t)=>Math.round(maxY*t));
   return (<svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height}} preserveAspectRatio="xMidYMid meet">
-    {ticks.map((t,i)=>(<g key={i}><line x1={mL} x2={W-mR} y1={y(t)} y2={y(t)} stroke="var(--c55)"/><text x={mL-6} y={y(t)+3} fontSize="10" fill="var(--c19)" textAnchor="end">{t}</text></g>))}
+    {ticks.map((t,i)=>(<g key={i}><line x1={mL} x2={W-mR} y1={y(t)} y2={y(t)} stroke="#EDEFF3"/><text x={mL-6} y={y(t)+3} fontSize="10" fill="#8A8F9E" textAnchor="end">{t}</text></g>))}
     {data.map((d,i)=>{ const bx=mL+i*bw+bw*0.22, bwidth=bw*0.56, by=y(d.value), bh=mT+ih-by;
       return (<g key={i}><rect x={bx} y={by} width={bwidth} height={Math.max(0,bh)} rx="5" fill={d.color}/>
-        <text x={bx+bwidth/2} y={by-5} fontSize="11" fontWeight="700" fill="var(--c05)" textAnchor="middle">{d.value}</text>
-        <text x={bx+bwidth/2} y={H-8} fontSize="10.5" fill="var(--c19)" textAnchor="middle">{d.name}</text></g>); })}
+        <text x={bx+bwidth/2} y={by-5} fontSize="11" fontWeight="700" fill="#20232E" textAnchor="middle">{d.value}</text>
+        <text x={bx+bwidth/2} y={H-8} fontSize="10.5" fill="#8A8F9E" textAnchor="middle">{d.name}</text></g>); })}
   </svg>);
 }
 function BarsH({ data, height=260, unit="" }){
@@ -1684,9 +1257,9 @@ function BarsH({ data, height=260, unit="" }){
   const maxX=niceMax(Math.max(1,...data.map((d)=>d.value))); const bh=ih/Math.max(1,data.length); const x=(v)=>mL+(v/maxX)*iw;
   return (<svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height}} preserveAspectRatio="xMidYMid meet">
     {data.map((d,i)=>{ const by=mT+i*bh+bh*0.2, bheight=bh*0.6, bw=x(d.value)-mL;
-      return (<g key={i}><text x={mL-8} y={by+bheight/2+3.5} fontSize="10.5" fill="var(--c19)" textAnchor="end">{d.name}</text>
+      return (<g key={i}><text x={mL-8} y={by+bheight/2+3.5} fontSize="10.5" fill="#8A8F9E" textAnchor="end">{d.name}</text>
         <rect x={mL} y={by} width={Math.max(0,bw)} height={bheight} rx="5" fill={d.color}/>
-        <text x={x(d.value)+6} y={by+bheight/2+3.5} fontSize="11" fontWeight="700" fill="var(--c05)">{d.value}{unit}</text></g>); })}
+        <text x={x(d.value)+6} y={by+bheight/2+3.5} fontSize="11" fontWeight="700" fill="#20232E">{d.value}{unit}</text></g>); })}
   </svg>);
 }
 function StackedBars({ data, segs, height=260 }){
@@ -1694,16 +1267,16 @@ function StackedBars({ data, segs, height=260 }){
   const totals=data.map((d)=>segs.reduce((a,s)=>a+(d.values[s.key]||0),0)); const maxY=niceMax(Math.max(1,...totals)); const bw=iw/Math.max(1,data.length);
   const y=(v)=>mT+ih-(v/maxY)*ih; const ticks=[0,.5,1].map((t)=>Math.round(maxY*t));
   return (<svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height}} preserveAspectRatio="xMidYMid meet">
-    {ticks.map((t,i)=>(<g key={i}><line x1={mL} x2={W-mR} y1={y(t)} y2={y(t)} stroke="var(--c55)"/><text x={mL-6} y={y(t)+3} fontSize="10" fill="var(--c19)" textAnchor="end">{t}</text></g>))}
+    {ticks.map((t,i)=>(<g key={i}><line x1={mL} x2={W-mR} y1={y(t)} y2={y(t)} stroke="#EDEFF3"/><text x={mL-6} y={y(t)+3} fontSize="10" fill="#8A8F9E" textAnchor="end">{t}</text></g>))}
     {data.map((d,i)=>{ const bx=mL+i*bw+bw*0.22, bwidth=bw*0.56; let acc=0;
       return (<g key={i}>{segs.map((s,j)=>{ const v=d.values[s.key]||0; if(v<=0)return null; const top=acc+v; const yy=y(top); const hh=y(acc)-y(top); acc=top;
           return <rect key={j} x={bx} y={yy} width={bwidth} height={Math.max(0,hh)} fill={s.color}/>; })}
-        <text x={bx+bwidth/2} y={H-8} fontSize="10.5" fill="var(--c19)" textAnchor="middle">{d.name}</text></g>); })}
+        <text x={bx+bwidth/2} y={H-8} fontSize="10.5" fill="#8A8F9E" textAnchor="middle">{d.name}</text></g>); })}
   </svg>);
 }
 function Legend({ items }){
   return (<div style={{display:"flex",gap:14,flexWrap:"wrap",marginTop:10,justifyContent:"center"}}>
-    {items.map((it)=>(<span key={it.label} style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:12,color:"var(--c12)"}}>
+    {items.map((it)=>(<span key={it.label} style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:12,color:"#5A6072"}}>
       <span style={{width:10,height:10,borderRadius:3,background:it.color}}/>{it.label}</span>))}</div>);
 }
 
@@ -1729,9 +1302,9 @@ function SemanaPanel({ tasks, members }){
   return (
     <Panel title="Horas trabalhadas na semana" sub={`${ddmm(dias[0])} a ${ddmm(dias[6])} · horas lançadas no dia em que a tarefa foi concluída`}>
       <div style={{display:"flex",gap:8,marginBottom:12,flexWrap:"wrap"}}>
-        <button style={S.smallBtn} onClick={()=>setOffset(offset-1)}><Ic n="undo" s={13} c="var(--c12)"/> Semana anterior</button>
-        <button style={{...S.smallBtn,...(offset===0?{background:"var(--c57)",color:"var(--c08)",borderColor:"var(--c32)"}:{})}} onClick={()=>setOffset(0)}>Esta semana</button>
-        <button style={S.smallBtn} onClick={()=>setOffset(offset+1)}>Próxima semana <Ic n="chev" s={13} c="var(--c12)"/></button>
+        <button style={S.smallBtn} onClick={()=>setOffset(offset-1)}><Ic n="undo" s={13} c="#5A6072"/> Semana anterior</button>
+        <button style={{...S.smallBtn,...(offset===0?{background:"#EEF0FB",color:"#3B3AC9",borderColor:"#C7CBFF"}:{})}} onClick={()=>setOffset(0)}>Esta semana</button>
+        <button style={S.smallBtn} onClick={()=>setOffset(offset+1)}>Próxima semana <Ic n="chev" s={13} c="#5A6072"/></button>
       </div>
 
       <div style={{overflowX:"auto"}}>
@@ -1740,7 +1313,7 @@ function SemanaPanel({ tasks, members }){
           <div style={S.semLinha}>
             <div style={S.semNome}></div>
             {dias.map((d,i)=>{ const fds=d.getDay()===0||d.getDay()===6; const eHoje=mesmoDia(d,hoje);
-              return (<div key={i} style={{...S.semDiaHead,...(eHoje?S.semHoje:{}),...(fds?{color:"var(--c24)"}:{})}}>
+              return (<div key={i} style={{...S.semDiaHead,...(eHoje?S.semHoje:{}),...(fds?{color:"#B0B5C0"}:{})}}>
                 <div style={{fontSize:11,fontWeight:700}}>{eHoje?"Hoje":DIAS_SEM[d.getDay()]}</div>
                 <div style={{fontSize:12.5,fontWeight:600}}>{d.getDate()}</div>
               </div>); })}
@@ -1751,23 +1324,23 @@ function SemanaPanel({ tasks, members }){
 
           {/* uma linha por membro */}
           {linhas.map((l)=>(
-            <div key={l.id} style={{...S.semLinha,borderTop:"1px solid var(--c55)",paddingTop:10,marginTop:8}}>
+            <div key={l.id} style={{...S.semLinha,borderTop:"1px solid #EDEFF3",paddingTop:10,marginTop:8}}>
               <div style={S.semNome}>
                 <Avatar m={l} size={24}/>
                 <span style={{fontSize:13,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{l.name}</span>
               </div>
               {dias.map((d,i)=>{ const fds=d.getDay()===0||d.getDay()===6; const v=l.porDia[i];
-                if(fds && !v) return <div key={i} style={{...S.semCel,color:"var(--c29)",background:"transparent"}}>–</div>;
+                if(fds && !v) return <div key={i} style={{...S.semCel,color:"#C2C6D0",background:"transparent"}}>–</div>;
                 return (<div key={i} style={{...S.semCel,...(v>0?S.semCelCheia:{})}} title={`${DIAS_SEM[d.getDay()]} ${ddmm(d)}: ${hm(v)}`}>{v>0?hm(v):"0"}</div>); })}
               <div style={S.semTotal}>{hms(l.total)}</div>
               <div style={S.semTotal}>{hms(capacidade)}<div style={S.semSub}>{capacidade.toFixed(2).replace(".",",")}h/sem.</div></div>
               <div style={{minWidth:150,padding:"0 8px"}}>
-                <div style={S.semBarra}><div style={{...S.semBarraFill,width:l.pct+"%",background:l.pct>100?"var(--c36)":l.color}}/></div>
+                <div style={S.semBarra}><div style={{...S.semBarraFill,width:l.pct+"%",background:l.pct>100?"#D8442F":l.color}}/></div>
                 <div style={{...S.semSub,textAlign:"center",marginTop:3}}>{l.pct}% · {hms(l.total)} de {hms(capacidade)}</div>
               </div>
             </div>
           ))}
-          {linhas.length===0 && <p style={{color:"var(--c19)",fontSize:13,textAlign:"center",padding:16}}>Nenhum membro para mostrar.</p>}
+          {linhas.length===0 && <p style={{color:"#8A8F9E",fontSize:13,textAlign:"center",padding:16}}>Nenhum membro para mostrar.</p>}
         </div>
       </div>
     </Panel>
@@ -1804,65 +1377,44 @@ function ResumoSemanal({ tarefas }){
           </div>); })}
       </div>
       <div style={S.rsNav}>
-        <button style={S.rsNavBtn} onClick={()=>setOffset(offset-1)}><Ic n="chev" s={13} c="var(--c08)" style={{transform:"rotate(90deg)"}}/> Anterior</button>
+        <button style={S.rsNavBtn} onClick={()=>setOffset(offset-1)}><Ic n="chev" s={13} c="#3B3AC9" style={{transform:"rotate(90deg)"}}/> Anterior</button>
         <div style={{textAlign:"center"}}>
-          <div style={{fontSize:12,fontWeight:800,color:"var(--c05)"}}>{ddmm(ini)} — {ddmm(somaDias(ini,6))}</div>
-          <div style={{fontSize:10.5,color:"var(--c19)",fontWeight:600}}>{rotuloSemana} · resumo semanal</div>
-          {semanaAtual && <div style={{fontSize:9.5,color:"var(--c23)",marginTop:1}}>pendentes contam sempre aqui; concluídas ficam na semana em que foram feitas</div>}
+          <div style={{fontSize:12,fontWeight:800,color:"#20232E"}}>{ddmm(ini)} — {ddmm(somaDias(ini,6))}</div>
+          <div style={{fontSize:10.5,color:"#8A8F9E",fontWeight:600}}>{rotuloSemana} · resumo semanal</div>
+          {semanaAtual && <div style={{fontSize:9.5,color:"#A0A5B2",marginTop:1}}>pendentes contam sempre aqui; concluídas ficam na semana em que foram feitas</div>}
         </div>
-        <button style={{...S.rsNavBtn,...(offset>=0?{visibility:"hidden"}:{})}} onClick={()=>setOffset(offset+1)}>Próxima <Ic n="chev" s={13} c="var(--c08)" style={{transform:"rotate(-90deg)"}}/></button>
+        <button style={{...S.rsNavBtn,...(offset>=0?{visibility:"hidden"}:{})}} onClick={()=>setOffset(offset+1)}>Próxima <Ic n="chev" s={13} c="#3B3AC9" style={{transform:"rotate(-90deg)"}}/></button>
       </div>
-      {offset!==0 && <button style={S.rsHoje} onClick={()=>setOffset(0)}><Ic n="calendar" s={12} c="var(--c08)"/> Voltar para esta semana</button>}
+      {offset!==0 && <button style={S.rsHoje} onClick={()=>setOffset(0)}><Ic n="calendar" s={12} c="#3B3AC9"/> Voltar para esta semana</button>}
   </div>);
 }
 
 function Dashboard({ tasks, members }){
-  const [semanaOff,setSemanaOff]=useState(0);
-  const ini=inicioSemana(semanaOff); const fim=somaDias(ini,7); const semanaAtual=semanaOff===0;
-  const rotulo = semanaOff===0?"Esta semana":semanaOff===-1?"Semana passada":semanaOff<0?`${-semanaOff} semanas atrás`:semanaOff===1?"Próxima semana":`${semanaOff} semanas à frente`;
-  // filtra as tarefas da semana escolhida: concluídas contam na semana em que foram concluídas;
-  // pendentes contam na semana atual (mesma regra do resumo semanal).
-  const daSemana=useMemo(()=> tasks.filter((t)=>{
-    if(t.col==="done"){ if(!t.completedAt) return false; const d=new Date(t.completedAt); return d>=ini && d<fim; }
-    return semanaAtual;
-  }),[tasks,semanaOff]);
-  const tasksSemana=daSemana;
-  const stats=useMemo(()=> members.map((m)=>{ const mine=tasksSemana.filter((t)=>t.assignee===m.id);
+  const stats=useMemo(()=> members.map((m)=>{ const mine=tasks.filter((t)=>t.assignee===m.id);
     return { id:m.id, name:m.name.split(" ")[0], full:m.name, color:m.color, photo:m.photo,
       value:mine.filter((t)=>t.col==="done").length, done:mine.filter((t)=>t.col==="done").length,
       active:mine.filter((t)=>t.col!=="done").length, hours:mine.reduce((a,t)=>a+horasReais(t),0),
       values:{ todo:mine.filter((t)=>t.col==="todo").length, doing:mine.filter((t)=>t.col==="doing").length, review:mine.filter((t)=>t.col==="review").length, done:mine.filter((t)=>t.col==="done").length } };
-  }),[tasksSemana,members]);
-  const evolution=useMemo(()=>{ const rows=[];
-    for(let i=6;i>=0;i--){ const dia=somaDias(ini,6-i); const cutoff=dia.getTime()+86400000; const row={date:dm(dia.getTime())};
-      members.forEach((m)=>{ row[m.name.split(" ")[0]]=tasks.filter((t)=>t.assignee===m.id&&t.completedAt&&t.completedAt>=ini.getTime()&&t.completedAt<cutoff).length; }); rows.push(row); }
-    return rows; },[tasks,members,semanaOff]);
+  }),[tasks,members]);
+  const evolution=useMemo(()=>{ const days=14; const rows=[];
+    for(let i=days-1;i>=0;i--){ const cutoff=daysAgo(i)+86400000; const row={date:dm(daysAgo(i))};
+      members.forEach((m)=>{ row[m.name.split(" ")[0]]=tasks.filter((t)=>t.assignee===m.id&&t.completedAt&&t.completedAt<cutoff).length; }); rows.push(row); }
+    return rows; },[tasks,members]);
   const totalDone=stats.reduce((a,s)=>a+s.done,0); const totalHours=stats.reduce((a,s)=>a+s.hours,0);
   const memberSeries=members.map((m)=>({key:m.name.split(" ")[0],color:m.color,label:m.name.split(" ")[0]}));
   const segs=COLUMNS.map((c)=>({key:c.id,color:c.tint,label:c.name}));
   return (<div style={S.dash}>
-    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:12,flexWrap:"wrap"}}>
-      <div style={{display:"flex",alignItems:"center",gap:8}}>
-        <button style={S.calNavBtn} onClick={()=>setSemanaOff((o)=>o-1)}><Ic n="chev" s={14} c="var(--c08)" style={{transform:"rotate(90deg)"}}/> Anterior</button>
-        <div style={{textAlign:"center",minWidth:150}}>
-          <div style={{fontWeight:800,fontSize:14}}>{dm(ini.getTime())} — {dm(somaDias(ini,6).getTime())}</div>
-          <div style={{fontSize:10.5,color:"var(--c19)",fontWeight:600}}>{rotulo}</div>
-        </div>
-        <button style={{...S.calNavBtn,opacity:semanaOff>=0?.45:1}} disabled={semanaOff>=0} onClick={()=>setSemanaOff((o)=>Math.min(0,o+1))}>Próxima <Ic n="chev" s={14} c="var(--c08)" style={{transform:"rotate(-90deg)"}}/></button>
-      </div>
-      {!semanaAtual && <button style={S.calNavBtn} onClick={()=>setSemanaOff(0)}>Voltar para esta semana</button>}
-    </div>
     <div style={S.kpis}>
       <Kpi label="Tarefas concluídas" value={totalDone} accent={COL.done.tint}/>
-      <Kpi label="Horas de serviço" value={hms(totalHours)} accent="var(--c08)"/>
-      <Kpi label={semanaAtual?"Em revisão":"Concluídas na semana"} value={semanaAtual?tasksSemana.filter((t)=>t.col==="review").length:totalDone} accent={COL.review.tint}/>
-      <Kpi label={semanaAtual?"Em aberto":"Membros ativos"} value={semanaAtual?tasksSemana.filter((t)=>t.col!=="done").length:stats.filter((s)=>s.done>0).length} accent={COL.todo.tint}/>
+      <Kpi label="Horas de serviço" value={hms(totalHours)} accent="#3B3AC9"/>
+      <Kpi label="Em revisão" value={tasks.filter((t)=>t.col==="review").length} accent={COL.review.tint}/>
+      <Kpi label="Em aberto" value={tasks.filter((t)=>t.col!=="done").length} accent={COL.todo.tint}/>
     </div>
     <SemanaPanel tasks={tasks} members={members}/>
     <div style={S.grid2}>
-      <Panel title="Evolução de conclusões por membro" sub={"Dia a dia · "+rotulo.toLowerCase()}><LineChart rows={evolution} series={memberSeries}/><Legend items={memberSeries}/></Panel>
-      <Panel title="Tarefas concluídas por membro" sub={rotulo}><BarsV data={stats}/></Panel>
-      <Panel title="Tempo de serviço por membro" sub={"Horas · "+rotulo.toLowerCase()}><BarsH data={stats.map((s)=>({name:s.name,value:Math.round(s.hours*100)/100,color:s.color}))} unit="h"/></Panel>
+      <Panel title="Evolução de conclusões por membro" sub="Acumulado — últimos 14 dias"><LineChart rows={evolution} series={memberSeries}/><Legend items={memberSeries}/></Panel>
+      <Panel title="Tarefas concluídas por membro"><BarsV data={stats}/></Panel>
+      <Panel title="Tempo de serviço por membro" sub="Horas registradas nas tarefas"><BarsH data={stats.map((s)=>({name:s.name,value:Math.round(s.hours*100)/100,color:s.color}))} unit="h"/></Panel>
       <Panel title="Carga de trabalho atual" sub="Distribuição por etapa"><StackedBars data={stats} segs={segs}/><Legend items={segs}/></Panel>
     </div>
     <Panel title="Resumo por integrante">
@@ -1881,7 +1433,7 @@ function Dashboard({ tasks, members }){
 }
 const Kpi=({label,value,accent})=>(<div style={S.kpi}><div style={{...S.kpiBar,background:accent}}/><div><div style={S.kpiVal}>{value}</div><div style={S.kpiLabel}>{label}</div></div></div>);
 const Panel=({title,sub,children})=>(<div style={S.panel}><div style={{marginBottom:10}}><div style={S.panelTitle}>{title}</div>{sub&&<div style={S.panelSub}>{sub}</div>}</div>{children}</div>);
-const Metric=({label,value})=>(<div><div style={{fontSize:18,fontWeight:800,letterSpacing:"-.02em"}}>{value}</div><div style={{fontSize:10.5,color:"var(--c19)",textTransform:"uppercase",letterSpacing:".05em",fontWeight:600}}>{label}</div></div>);
+const Metric=({label,value})=>(<div><div style={{fontSize:18,fontWeight:800,letterSpacing:"-.02em"}}>{value}</div><div style={{fontSize:10.5,color:"#8A8F9E",textTransform:"uppercase",letterSpacing:".05em",fontWeight:600}}>{label}</div></div>);
 
 // ---------- Modais ----------
 function CatalogModal({ catalog, onAdd, onRemove, onEdit, onClose }){
@@ -1905,28 +1457,28 @@ function CatalogModal({ catalog, onAdd, onRemove, onEdit, onClose }){
   return (<div style={S.overlay} onClick={onClose}>
     <div style={S.modal} onClick={(e)=>e.stopPropagation()}>
       <div style={S.modalHead}><h2 style={S.modalTitle}>Cadastro de tarefas</h2><button style={S.iconBtn} onClick={onClose}><Ic n="x" s={18}/></button></div>
-      <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16,...(editando?{border:"1px solid var(--c32)",background:"var(--c74)",borderRadius:11,padding:12}:{})}}>
-        {editando && <div style={{fontSize:11.5,fontWeight:800,color:"var(--c08)",textTransform:"uppercase",letterSpacing:".05em"}}>Editando tarefa</div>}
+      <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16,...(editando?{border:"1px solid #C7CBFF",background:"#F7F8FE",borderRadius:11,padding:12}:{})}}>
+        {editando && <div style={{fontSize:11.5,fontWeight:800,color:"#3B3AC9",textTransform:"uppercase",letterSpacing:".05em"}}>Editando tarefa</div>}
         <input style={{...S.authInput,margin:0}} placeholder="Nome da tarefa" value={title} onChange={(e)=>{setTitle(e.target.value);setErr("");}} onKeyDown={(e)=>e.key==="Enter"&&submit()}/>
         <textarea style={{...S.authInput,margin:0,minHeight:70,resize:"vertical"}} placeholder="O que precisa ser feito (aparece no cartão da tarefa)" value={desc} onChange={(e)=>setDesc(e.target.value)}/>
         {err && <div style={S.authErr}>{err}</div>}
         <div style={{display:"flex",gap:8}}>
           <button style={{...S.primaryBtn,alignSelf:"flex-start"}} onClick={submit}>
-            <Ic n={editando?"check":"plus"} s={16} c="var(--onaccent)"/> {editando?"Salvar alterações":"Cadastrar tarefa"}</button>
+            <Ic n={editando?"check":"plus"} s={16} c="#fff"/> {editando?"Salvar alterações":"Cadastrar tarefa"}</button>
           {editando && <button style={S.ghostBtn} onClick={cancelarEdicao}>Cancelar</button>}
         </div>
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:6}}>
-        {catalog.map((c)=>(<div key={c.id} style={{...S.memberRow,...(editId===c.id?{background:"var(--c74)",borderRadius:9}:{})}}>
-          <span style={{...S.dot,background:"var(--c29)",width:10,height:10}}/>
-          <div style={{flex:1,minWidth:0}}><div style={{fontWeight:600,fontSize:14,color:"var(--c02)"}}>{c.title}</div>
-            {c.desc && <div style={{fontSize:12,color:"var(--c12)",marginTop:3,lineHeight:1.4}}>{c.desc}</div>}</div>
-          <button style={S.smallBtn} onClick={()=>iniciarEdicao(c)}><Ic n="key" s={13} c="var(--c12)"/> Editar</button>
-          <button style={{...S.projDel,position:"static",opacity:0.6}} onClick={()=>onRemove(c.id)}><Ic n="trash" s={15} c="var(--c28)"/></button>
+        {catalog.map((c)=>(<div key={c.id} style={{...S.memberRow,...(editId===c.id?{background:"#F7F8FE",borderRadius:9}:{})}}>
+          <span style={{...S.dot,background:"#C2C6D0",width:10,height:10}}/>
+          <div style={{flex:1,minWidth:0}}><div style={{fontWeight:600,fontSize:14,color:"#14161F"}}>{c.title}</div>
+            {c.desc && <div style={{fontSize:12,color:"#5A6072",marginTop:3,lineHeight:1.4}}>{c.desc}</div>}</div>
+          <button style={S.smallBtn} onClick={()=>iniciarEdicao(c)}><Ic n="key" s={13} c="#5A6072"/> Editar</button>
+          <button style={{...S.projDel,position:"static",opacity:0.6}} onClick={()=>onRemove(c.id)}><Ic n="trash" s={15} c="#C0397E"/></button>
         </div>))}
-        {catalog.length===0 && <p style={{color:"var(--c19)",fontSize:14,textAlign:"center",padding:20}}>Nenhuma tarefa cadastrada ainda.</p>}
+        {catalog.length===0 && <p style={{color:"#8A8F9E",fontSize:14,textAlign:"center",padding:20}}>Nenhuma tarefa cadastrada ainda.</p>}
       </div>
-      <p style={S.hint}><Ic n="list" s={12} c="var(--c16)"/> No quadro, o lançamento acontece só na coluna "A fazer": escolha a tarefa, o tempo e o responsável.</p>
+      <p style={S.hint}><Ic n="list" s={12} c="#737A8C"/> No quadro, o lançamento acontece só na coluna "A fazer": escolha a tarefa, o tempo e o responsável.</p>
     </div>
   </div>);
 }
@@ -1939,18 +1491,18 @@ function RevisaoModal({ tarefa, onConfirmar, onClose }){
     <form style={S.modalPequeno} onClick={(e)=>e.stopPropagation()} onSubmit={enviar}>
       <div style={S.modalHead}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{...S.brandMark,width:34,height:34,fontSize:15,background:"var(--c45)",boxShadow:"none"}}><Ic n="undo" s={17} c="var(--onaccent)"/></div>
+          <div style={{...S.brandMark,width:34,height:34,fontSize:15,background:"#E0A81F",boxShadow:"none"}}><Ic n="undo" s={17} c="#fff"/></div>
           <div><h2 style={{...S.modalTitle,marginBottom:1}}>Enviar para Revisão Interna</h2>
-            <div style={{fontSize:12,color:"var(--c19)"}}>{tarefa?tarefa.title:""}</div></div>
+            <div style={{fontSize:12,color:"#8A8F9E"}}>{tarefa?tarefa.title:""}</div></div>
         </div>
         <button type="button" style={S.iconBtn} onClick={onClose}><Ic n="x" s={18}/></button>
       </div>
       <label style={S.launchLabel}>O que precisa ser consertado?</label>
       <textarea ref={ref} autoFocus style={{...S.authInput,margin:"0 0 4px",minHeight:80,resize:"vertical"}} value={nota}
         onChange={(e)=>setNota(e.target.value)} placeholder="Explique o ajuste (opcional). O membro verá esse texto no cartão."/>
-      <div style={{fontSize:11.5,color:"var(--c19)",display:"flex",alignItems:"center",gap:5}}><Ic n="clock" s={12} c="var(--c19)"/> A tarefa volta a contar tempo ao ir para revisão.</div>
+      <div style={{fontSize:11.5,color:"#8A8F9E",display:"flex",alignItems:"center",gap:5}}><Ic n="clock" s={12} c="#8A8F9E"/> A tarefa volta a contar tempo ao ir para revisão.</div>
       <div style={{display:"flex",gap:8,marginTop:14}}>
-        <button type="submit" style={{...S.primaryBtn,flex:1,justifyContent:"center",background:"var(--c45)"}}><Ic n="undo" s={15} c="var(--onaccent)"/> Enviar para Revisão Interna</button>
+        <button type="submit" style={{...S.primaryBtn,flex:1,justifyContent:"center",background:"#E0A81F"}}><Ic n="undo" s={15} c="#fff"/> Enviar para Revisão Interna</button>
         <button type="button" style={S.ghostBtn} onClick={onClose}>Cancelar</button>
       </div>
     </form>
@@ -1962,15 +1514,15 @@ function ConfirmModal({ titulo, mensagem, confirmarLabel, perigo, onConfirmar, o
     <div style={S.modalPequeno} onClick={(e)=>e.stopPropagation()}>
       <div style={S.modalHead}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{...S.brandMark,width:34,height:34,fontSize:15,background:perigo?"var(--c36)":"var(--c08)",boxShadow:"none"}}><Ic n={perigo?"trash":"info"} s={17} c="var(--onaccent)"/></div>
+          <div style={{...S.brandMark,width:34,height:34,fontSize:15,background:perigo?"#D8442F":"#3B3AC9",boxShadow:"none"}}><Ic n={perigo?"trash":"info"} s={17} c="#fff"/></div>
           <h2 style={{...S.modalTitle,marginBottom:0}}>{titulo}</h2>
         </div>
         <button type="button" style={S.iconBtn} onClick={onCancelar}><Ic n="x" s={18}/></button>
       </div>
-      <p style={{fontSize:13.5,color:"var(--c09)",lineHeight:1.5,margin:"4px 0 0"}}>{mensagem}</p>
+      <p style={{fontSize:13.5,color:"#4A4F5E",lineHeight:1.5,margin:"4px 0 0"}}>{mensagem}</p>
       <div style={{display:"flex",gap:8,marginTop:18}}>
-        <button style={{...S.primaryBtn,flex:1,justifyContent:"center",...(perigo?{background:"var(--c36)"}:{})}} onClick={onConfirmar}>
-          {perigo && <Ic n="trash" s={15} c="var(--onaccent)"/>} {confirmarLabel||"Confirmar"}</button>
+        <button style={{...S.primaryBtn,flex:1,justifyContent:"center",...(perigo?{background:"#D8442F"}:{})}} onClick={onConfirmar}>
+          {perigo && <Ic n="trash" s={15} c="#fff"/>} {confirmarLabel||"Confirmar"}</button>
         <button style={S.ghostBtn} onClick={onCancelar}>Cancelar</button>
       </div>
     </div>
@@ -1991,9 +1543,9 @@ function NovoProjetoModal({ existentes, onCriar, onClose }){
     <form style={S.modalPequeno} onClick={(e)=>e.stopPropagation()} onSubmit={criar}>
       <div style={S.modalHead}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{...S.brandMark,width:34,height:34,fontSize:15}}><Ic n="folder" s={17} c="var(--onaccent)"/></div>
+          <div style={{...S.brandMark,width:34,height:34,fontSize:15}}><Ic n="folder" s={17} c="#fff"/></div>
           <div><h2 style={{...S.modalTitle,marginBottom:1}}>Novo projeto</h2>
-            <div style={{fontSize:12,color:"var(--c19)"}}>Dê um nome para organizar as tarefas</div></div>
+            <div style={{fontSize:12,color:"#8A8F9E"}}>Dê um nome para organizar as tarefas</div></div>
         </div>
         <button type="button" style={S.iconBtn} onClick={onClose}><Ic n="x" s={18}/></button>
       </div>
@@ -2002,7 +1554,7 @@ function NovoProjetoModal({ existentes, onCriar, onClose }){
         onChange={(e)=>{setNome(e.target.value);setErr("");}} placeholder="Ex.: Obra 104, Lançamento do site…"/>
       {err && <div style={S.authErr}>{err}</div>}
       <div style={{display:"flex",gap:8,marginTop:14}}>
-        <button type="submit" style={{...S.primaryBtn,flex:1,justifyContent:"center"}}><Ic n="plus" s={16} c="var(--onaccent)"/> Criar projeto</button>
+        <button type="submit" style={{...S.primaryBtn,flex:1,justifyContent:"center"}}><Ic n="plus" s={16} c="#fff"/> Criar projeto</button>
         <button type="button" style={S.ghostBtn} onClick={onClose}>Cancelar</button>
       </div>
     </form>
@@ -2039,8 +1591,8 @@ function MensagensModal({ mensagens, membros, isMaster, meuMembroId, onEnviar, o
       <div style={S.modalHead}>
         <div>
           <h2 style={S.modalTitle}>{isMaster?"Mensagens da equipe":"Mensagens"}</h2>
-          <div style={{fontSize:12,color:"var(--c19)",marginTop:2,display:"flex",alignItems:"center",gap:5}}>
-            <Ic n="lock" s={11} c="var(--c19)"/> {isMaster?"Cada mensagem só aparece para quem foi enviada":"Só você e quem receber veem estas mensagens"}
+          <div style={{fontSize:12,color:"#8A8F9E",marginTop:2,display:"flex",alignItems:"center",gap:5}}>
+            <Ic n="lock" s={11} c="#8A8F9E"/> {isMaster?"Cada mensagem só aparece para quem foi enviada":"Só você e quem receber veem estas mensagens"}
           </div>
         </div>
         <button style={S.iconBtn} onClick={onClose}><Ic n="x" s={18}/></button>
@@ -2057,8 +1609,8 @@ function MensagensModal({ mensagens, membros, isMaster, meuMembroId, onEnviar, o
           <textarea style={{...S.authInput,margin:0,minHeight:76,resize:"vertical"}} value={texto}
             onChange={(e)=>{setTexto(e.target.value);setErr("");setOk("");}} placeholder="Escreva aqui — só quem receber vai ver."/></div>
         {err && <div style={S.authErr}>{err}</div>}
-        {ok && <div style={{...S.authErr,background:"var(--c53)",color:"var(--c03)"}}>{ok}</div>}
-        <button style={{...S.primaryBtn,alignSelf:"flex-start"}} onClick={enviar}><Ic n="mail" s={16} c="var(--onaccent)"/> Enviar mensagem</button>
+        {ok && <div style={{...S.authErr,background:"#E8F6EF",color:"#1F7A55"}}>{ok}</div>}
+        <button style={{...S.primaryBtn,alignSelf:"flex-start"}} onClick={enviar}><Ic n="mail" s={16} c="#fff"/> Enviar mensagem</button>
       </div>)}
 
       {!isMaster && (<div style={{...S.abasLat,marginBottom:12}}>
@@ -2071,18 +1623,18 @@ function MensagensModal({ mensagens, membros, isMaster, meuMembroId, onEnviar, o
           return (<div key={m.id} style={{...S.msgItem,...(recebida&&!m.lida?S.msgNova:{})}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:5,flexWrap:"wrap"}}>
               {isMaster
-                ? <span style={S.msgPara}><Ic n="mail" s={11} c="var(--c08)"/> {remetente(m)} → {nome(m.paraMembro)}</span>
+                ? <span style={S.msgPara}><Ic n="mail" s={11} c="#3B3AC9"/> {remetente(m)} → {nome(m.paraMembro)}</span>
                 : (recebida
-                    ? <span style={S.msgPara}><Ic n="mail" s={11} c="var(--c08)"/> de {remetente(m)}</span>
-                    : <span style={{...S.msgPara,color:"var(--c07)"}}><Ic n="mail" s={11} c="var(--c07)"/> para {nome(m.paraMembro)}</span>)}
+                    ? <span style={S.msgPara}><Ic n="mail" s={11} c="#3B3AC9"/> de {remetente(m)}</span>
+                    : <span style={{...S.msgPara,color:"#2F9E6E"}}><Ic n="mail" s={11} c="#2F9E6E"/> para {nome(m.paraMembro)}</span>)}
               {recebida && !m.lida && <span style={S.msgNovaTag}>nova</span>}
-              <span style={{fontSize:11,color:"var(--c23)",marginLeft:"auto"}}>{hhmm(m.em)} · {ddmm(new Date(m.em))}</span>
-              {podeApagar(m) && <button style={{...S.projDel,position:"static",opacity:.6}} onClick={()=>onApagar(m.id)}><Ic n="trash" s={13} c="var(--c28)"/></button>}
+              <span style={{fontSize:11,color:"#A0A5B2",marginLeft:"auto"}}>{hhmm(m.em)} · {ddmm(new Date(m.em))}</span>
+              {podeApagar(m) && <button style={{...S.projDel,position:"static",opacity:.6}} onClick={()=>onApagar(m.id)}><Ic n="trash" s={13} c="#C0397E"/></button>}
             </div>
-            <div style={{fontSize:13.5,color:"var(--c05)",lineHeight:1.45,whiteSpace:"pre-wrap"}}>{m.texto}</div>
+            <div style={{fontSize:13.5,color:"#20232E",lineHeight:1.45,whiteSpace:"pre-wrap"}}>{m.texto}</div>
           </div>);
         })}
-        {lista.length===0 && <p style={{color:"var(--c19)",fontSize:14,textAlign:"center",padding:20}}>
+        {lista.length===0 && <p style={{color:"#8A8F9E",fontSize:14,textAlign:"center",padding:20}}>
           {isMaster?"Nenhuma mensagem trocada ainda.":(aba==="recebidas"?"Nenhuma mensagem para você.":"Você ainda não enviou mensagens.")}</p>}
       </div>
     </div>
@@ -2125,8 +1677,8 @@ function UsersModal({ users, members, tasks=[], currentUser, onAdd, onReset, onP
       <div style={S.modalHead}>
         <div>
           <h2 style={S.modalTitle}>Cadastro de usuários</h2>
-          <div style={{fontSize:12,color:"var(--c19)",marginTop:2,display:"flex",alignItems:"center",gap:5}}>
-            <Ic n="users" s={11} c="var(--c19)"/> Quem é cadastrado aqui já entra na equipe
+          <div style={{fontSize:12,color:"#8A8F9E",marginTop:2,display:"flex",alignItems:"center",gap:5}}>
+            <Ic n="users" s={11} c="#8A8F9E"/> Quem é cadastrado aqui já entra na equipe
           </div>
         </div>
         <button style={S.iconBtn} onClick={onClose}><Ic n="x" s={18}/></button>
@@ -2146,27 +1698,27 @@ function UsersModal({ users, members, tasks=[], currentUser, onAdd, onReset, onP
             {["master","membro"].map((k)=>(
               <button key={k} onClick={()=>setRole(k)}
                 style={{...S.acessoBtn,...(role===k?{borderColor:ROLES[k].color,background:ROLES[k].color+"12",color:ROLES[k].color}:{})}}>
-                <Ic n={k==="master"?"shield":"users"} s={14} c={role===k?ROLES[k].color:"var(--c19)"}/> {ROLES[k].label}
+                <Ic n={k==="master"?"shield":"users"} s={14} c={role===k?ROLES[k].color:"#8A8F9E"}/> {ROLES[k].label}
               </button>))}
           </div>
           <div style={S.fileHint}>{role==="master"
             ? "Master vê tudo, lança tarefas, cadastra e acompanha o painel."
             : "Membro vê só as próprias tarefas e as reuniões, sem acesso ao painel."}</div>
         </div>
-        <label style={{...S.reuniaoTag,marginTop:0,...(noPainel?{borderColor:"var(--c32)",background:"var(--c74)",color:"var(--c08)"}:{})}}>
+        <label style={{...S.reuniaoTag,marginTop:0,...(noPainel?{borderColor:"#C7CBFF",background:"#F7F8FE",color:"#3B3AC9"}:{})}}>
           <input type="checkbox" checked={noPainel} onChange={(e)=>setNoPainel(e.target.checked)} style={{margin:0}}/>
-          <Ic n="bar" s={12} c={noPainel?"var(--c08)":"var(--c19)"}/> Aparece nos gráficos do painel
+          <Ic n="bar" s={12} c={noPainel?"#3B3AC9":"#8A8F9E"}/> Aparece nos gráficos do painel
         </label>
-        <label style={{...S.reuniaoTag,marginTop:0,...(naEquipe?{borderColor:"var(--c33)",background:"var(--c65)",color:"var(--c03)"}:{})}}>
+        <label style={{...S.reuniaoTag,marginTop:0,...(naEquipe?{borderColor:"#CBE9DA",background:"#F0FAF5",color:"#1F7A55"}:{})}}>
           <input type="checkbox" checked={naEquipe} onChange={(e)=>setNaEquipe(e.target.checked)} style={{margin:0}}/>
-          <Ic n="users" s={12} c={naEquipe?"var(--c03)":"var(--c19)"}/> Aparece na lista da equipe (barra lateral)
+          <Ic n="users" s={12} c={naEquipe?"#1F7A55":"#8A8F9E"}/> Aparece na lista da equipe (barra lateral)
         </label>
         {err && <div style={S.authErr}>{err}</div>}
-        {ok && <div style={{...S.authErr,background:"var(--c53)",color:"var(--c03)"}}>{ok}</div>}
-        <button style={{...S.primaryBtn,alignSelf:"flex-start"}} onClick={submit}><Ic n="userplus" s={16} c="var(--onaccent)"/> Cadastrar usuário</button>
+        {ok && <div style={{...S.authErr,background:"#E8F6EF",color:"#1F7A55"}}>{ok}</div>}
+        <button style={{...S.primaryBtn,alignSelf:"flex-start"}} onClick={submit}><Ic n="userplus" s={16} c="#fff"/> Cadastrar usuário</button>
       </div>
 
-      <div style={{fontSize:11,fontWeight:800,letterSpacing:".06em",textTransform:"uppercase",color:"var(--c23)",marginBottom:8}}>Equipe · {members.length}</div>
+      <div style={{fontSize:11,fontWeight:800,letterSpacing:".06em",textTransform:"uppercase",color:"#A0A5B2",marginBottom:8}}>Equipe · {members.length}</div>
       <div style={{display:"flex",flexDirection:"column",gap:6}}>
         {members.map((m)=>{
           const u=userDe(m.id);
@@ -2175,40 +1727,40 @@ function UsersModal({ users, members, tasks=[], currentUser, onAdd, onReset, onP
           return (<div key={m.id} style={{...S.memberRow,alignItems:"flex-start"}}>
             <Avatar m={m} w={36} h={48} radius={7}/>
             <div style={{flex:1,minWidth:0}}>
-              <div style={{fontWeight:600,fontSize:14,color:"var(--c02)",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                {m.name}{isSelf&&<span style={{fontSize:11,color:"var(--c19)",fontWeight:500}}>(você)</span>}</div>
+              <div style={{fontWeight:600,fontSize:14,color:"#14161F",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                {m.name}{isSelf&&<span style={{fontSize:11,color:"#8A8F9E",fontWeight:500}}>(você)</span>}</div>
               <div style={{marginTop:3,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
                 {u ? <button style={{...S.roleBadge,color:ROLES[u.role].color,background:ROLES[u.role].color+"14",border:"none",cursor:lastMaster?"not-allowed":"pointer",fontFamily:FONT}}
                        title={lastMaster?"Deve existir ao menos um master":"Clique para trocar o acesso"}
                        onClick={()=>{ if(!lastMaster) onAcesso(u.id, u.role==="master"?"membro":"master"); }}>
                        {ROLES[u.role].label}</button>
-                   : <span style={{...S.roleBadge,color:"var(--c19)",background:"var(--c55)"}}>sem login</span>}
-                {u && <span style={{fontSize:11,color:"var(--c19)"}}>login: {u.username}</span>}
-                <span style={{fontSize:11,color:"var(--c19)"}}>{ativas(m.id)} tarefas ativas</span>
-                {u && u.mustChange && <span style={{fontSize:11,color:"var(--c37)"}}>trocará a senha ao entrar</span>}
+                   : <span style={{...S.roleBadge,color:"#8A8F9E",background:"#EDEFF3"}}>sem login</span>}
+                {u && <span style={{fontSize:11,color:"#8A8F9E"}}>login: {u.username}</span>}
+                <span style={{fontSize:11,color:"#8A8F9E"}}>{ativas(m.id)} tarefas ativas</span>
+                {u && u.mustChange && <span style={{fontSize:11,color:"#D9843B"}}>trocará a senha ao entrar</span>}
               </div>
               <div style={{display:"flex",gap:6,marginTop:7,flexWrap:"wrap"}}>
-                <button style={S.smallBtn} onClick={()=>escolherFoto(m.id)}><Ic n="userplus" s={13} c="var(--c12)"/> {m.photo?"Trocar foto":"Colocar foto 3x4"}</button>
-                {m.photo && <button style={S.smallBtn} onClick={()=>onPhoto(m.id,null)}><Ic n="x" s={13} c="var(--c12)"/> Tirar foto</button>}
-                <button style={S.smallBtn} onClick={()=>editar(m,u)}><Ic n="key" s={13} c="var(--c12)"/> Editar</button>
-                <button style={{...S.smallBtn,...(m.noPainel!==false?{color:"var(--c08)",borderColor:"var(--c32)",background:"var(--c74)"}:{})}}
+                <button style={S.smallBtn} onClick={()=>escolherFoto(m.id)}><Ic n="userplus" s={13} c="#5A6072"/> {m.photo?"Trocar foto":"Colocar foto 3x4"}</button>
+                {m.photo && <button style={S.smallBtn} onClick={()=>onPhoto(m.id,null)}><Ic n="x" s={13} c="#5A6072"/> Tirar foto</button>}
+                <button style={S.smallBtn} onClick={()=>editar(m,u)}><Ic n="key" s={13} c="#5A6072"/> Editar</button>
+                <button style={{...S.smallBtn,...(m.noPainel!==false?{color:"#3B3AC9",borderColor:"#C7CBFF",background:"#F7F8FE"}:{})}}
                   title={m.noPainel!==false?"Aparece nos gráficos do painel":"Fora dos gráficos do painel"}
-                  onClick={()=>onPainel(m.id)}><Ic n="bar" s={13} c={m.noPainel!==false?"var(--c08)":"var(--c19)"}/> {m.noPainel!==false?"No painel":"Fora do painel"}</button>
-                <button style={{...S.smallBtn,...(m.naEquipe!==false?{color:"var(--c03)",borderColor:"var(--c33)",background:"var(--c65)"}:{})}}
+                  onClick={()=>onPainel(m.id)}><Ic n="bar" s={13} c={m.noPainel!==false?"#3B3AC9":"#8A8F9E"}/> {m.noPainel!==false?"No painel":"Fora do painel"}</button>
+                <button style={{...S.smallBtn,...(m.naEquipe!==false?{color:"#1F7A55",borderColor:"#CBE9DA",background:"#F0FAF5"}:{})}}
                   title={m.naEquipe!==false?"Aparece na lista da equipe":"Fora da lista da equipe"}
-                  onClick={()=>onEquipe(m.id)}><Ic n="users" s={13} c={m.naEquipe!==false?"var(--c03)":"var(--c19)"}/> {m.naEquipe!==false?"Na equipe":"Fora da equipe"}</button>
-                {u && <button style={S.smallBtn} onClick={()=>setRedefinirUser(u)}><Ic n="lock" s={13} c="var(--c12)"/> Redefinir senha</button>}
+                  onClick={()=>onEquipe(m.id)}><Ic n="users" s={13} c={m.naEquipe!==false?"#1F7A55":"#8A8F9E"}/> {m.naEquipe!==false?"Na equipe":"Fora da equipe"}</button>
+                {u && <button style={S.smallBtn} onClick={()=>setRedefinirUser(u)}><Ic n="lock" s={13} c="#5A6072"/> Redefinir senha</button>}
               </div>
             </div>
             <button style={{...S.projDel,position:"static",opacity:(isSelf||lastMaster)?0.25:0.6,cursor:(isSelf||lastMaster)?"not-allowed":"pointer"}}
               disabled={!!(isSelf||lastMaster)}
               title={isSelf?"Você não pode se excluir":lastMaster?"Deve existir ao menos um master":"Excluir da equipe"}
               onClick={()=>{ if(!isSelf&&!lastMaster&&confirm(`Excluir "${m.name}" da equipe? O login é apagado e as tarefas dela ficam sem responsável.`)) onRemoverPessoa(m.id); }}>
-              <Ic n="trash" s={15} c="var(--c28)"/></button>
+              <Ic n="trash" s={15} c="#C0397E"/></button>
           </div>); })}
       </div>
       <input ref={arquivoRef} type="file" accept="image/*" style={{display:"none"}} onChange={aoEscolher}/>
-      <p style={S.hint}><Ic n="lock" s={12} c="var(--c16)"/> A foto é recortada em 3x4 automaticamente. Login local — não use senhas reais/sensíveis aqui.</p>
+      <p style={S.hint}><Ic n="lock" s={12} c="#737A8C"/> A foto é recortada em 3x4 automaticamente. Login local — não use senhas reais/sensíveis aqui.</p>
     </div>
     {redefinirUser && <div style={S.overlay} onClick={()=>setRedefinirUser(null)}><div onClick={(e)=>e.stopPropagation()}>
       <ChangePasswordCard titulo={`Redefinir senha de ${redefinirUser.username}`} sub="O usuário troca a senha no próximo acesso" salvarLabel="Redefinir senha"
@@ -2251,7 +1803,7 @@ function EditarPessoaModal({ alvo, users, onSalvar, onFechar }){
       {temLogin && <>
         <div style={{...S.launchLabel,marginTop:10}}>Usuário (login)</div>
         <input style={{...S.authInput,margin:0}} value={login} onChange={(e)=>{setLogin(e.target.value);setErr("");}} />
-        <div style={{fontSize:11.5,color:"var(--c19)",marginTop:4}}>É com esse login que a pessoa entra na tela de conexão.</div>
+        <div style={{fontSize:11.5,color:"#8A8F9E",marginTop:4}}>É com esse login que a pessoa entra na tela de conexão.</div>
       </>}
       {err && <div style={{...S.authErr,marginTop:10}}>{err}</div>}
       <div style={{display:"flex",gap:8,marginTop:16}}>
@@ -2264,230 +1816,230 @@ function EditarPessoaModal({ alvo, users, onSalvar, onFechar }){
 
 // ---------- Styles ----------
 const S = {
-  app:{display:"flex",height:"100vh",fontFamily:FONT,background:"var(--c56)",color:"var(--c02)"},
-  sidebar:{width:250,flexShrink:0,background:"var(--onaccent)",borderRight:"1px solid var(--c46)",padding:"20px 16px",display:"flex",flexDirection:"column"},
+  app:{display:"flex",height:"100vh",fontFamily:FONT,background:"#EEF0F4",color:"#14161F"},
+  sidebar:{width:250,flexShrink:0,background:"#FFFFFF",borderRight:"1px solid #E2E5EC",padding:"20px 16px",display:"flex",flexDirection:"column"},
   brand:{display:"flex",alignItems:"center",gap:11,marginBottom:26},
-  brandMark:{width:34,height:34,borderRadius:9,background:"var(--c08)",color:"var(--onaccent)",display:"grid",placeItems:"center",fontSize:16,boxShadow:"0 2px 8px rgba(59,58,201,.35)",flexShrink:0},
-  brandName:{fontWeight:800,fontSize:16,letterSpacing:"-.02em"}, brandSub:{fontSize:11,color:"var(--c19)",marginTop:-1},
-  sideLabel:{display:"flex",alignItems:"center",justifyContent:"space-between",fontSize:11,fontWeight:700,letterSpacing:".08em",textTransform:"uppercase",color:"var(--c19)",marginBottom:8},
-  iconBtn:{border:"none",background:"transparent",color:"var(--c16)",cursor:"pointer",padding:4,borderRadius:6,display:"grid",placeItems:"center"},
-  projRow:{display:"flex",alignItems:"center",gap:9,padding:"8px 9px",borderRadius:9,cursor:"pointer",fontSize:13.5,color:"var(--c09)",position:"relative"},
-  projActive:{background:"var(--c57)",color:"var(--c08)",fontWeight:600},
-  projName:{flex:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}, projCount:{fontSize:11,color:"var(--c23)",fontWeight:600},
+  brandMark:{width:34,height:34,borderRadius:9,background:"#3B3AC9",color:"#fff",display:"grid",placeItems:"center",fontSize:16,boxShadow:"0 2px 8px rgba(59,58,201,.35)",flexShrink:0},
+  brandName:{fontWeight:800,fontSize:16,letterSpacing:"-.02em"}, brandSub:{fontSize:11,color:"#8A8F9E",marginTop:-1},
+  sideLabel:{display:"flex",alignItems:"center",justifyContent:"space-between",fontSize:11,fontWeight:700,letterSpacing:".08em",textTransform:"uppercase",color:"#8A8F9E",marginBottom:8},
+  iconBtn:{border:"none",background:"transparent",color:"#737A8C",cursor:"pointer",padding:4,borderRadius:6,display:"grid",placeItems:"center"},
+  projRow:{display:"flex",alignItems:"center",gap:9,padding:"8px 9px",borderRadius:9,cursor:"pointer",fontSize:13.5,color:"#4A4F5E",position:"relative"},
+  projActive:{background:"#EEF0FB",color:"#3B3AC9",fontWeight:600},
+  projName:{flex:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}, projCount:{fontSize:11,color:"#A0A5B2",fontWeight:600},
   contadores:{display:"inline-flex",alignItems:"center",gap:5,flexShrink:0},
-  numAberto:{minWidth:22,textAlign:"center",fontSize:11,fontWeight:800,color:"var(--c06)",background:"var(--c54)",borderRadius:20,padding:"2px 7px"},
-  numFeito:{minWidth:22,textAlign:"center",fontSize:11,fontWeight:800,color:"var(--c07)",background:"var(--c53)",borderRadius:20,padding:"2px 7px"},
-  numZero:{color:"var(--c29)",background:"var(--c66)"},
-  projDel:{border:"none",color:"var(--c28)",cursor:"pointer",padding:2,position:"absolute",right:6,background:"var(--surface)",borderRadius:5},
+  numAberto:{minWidth:22,textAlign:"center",fontSize:11,fontWeight:800,color:"#2F6BD8",background:"#E9F0FC",borderRadius:20,padding:"2px 7px"},
+  numFeito:{minWidth:22,textAlign:"center",fontSize:11,fontWeight:800,color:"#2F9E6E",background:"#E8F6EF",borderRadius:20,padding:"2px 7px"},
+  numZero:{color:"#C2C6D0",background:"#F2F3F7"},
+  projDel:{border:"none",color:"#C0397E",cursor:"pointer",padding:2,position:"absolute",right:6,background:"#fff",borderRadius:5},
   sideMember:{display:"flex",alignItems:"center",gap:8,padding:"3px 2px"},
-  equipeTabela:{border:"1px solid var(--c52)",borderRadius:10,overflow:"hidden"},
-  etCabecalho:{display:"flex",alignItems:"stretch",background:"var(--c70)",borderBottom:"1px solid var(--c52)"},
+  equipeTabela:{border:"1px solid #E7E9EF",borderRadius:10,overflow:"hidden"},
+  etCabecalho:{display:"flex",alignItems:"stretch",background:"#F4F5FA",borderBottom:"1px solid #E7E9EF"},
   etColNome:{flex:1,minWidth:0,display:"flex",alignItems:"center",gap:8,padding:"0 8px"},
-  etColNum:{width:40,flexShrink:0,color:"var(--onaccent)",fontSize:9.5,fontWeight:800,letterSpacing:".03em",textTransform:"uppercase",display:"grid",placeItems:"center",padding:"5px 0"},
-  etLinha:{display:"flex",alignItems:"center",borderBottom:"1px solid var(--c64)",minHeight:38},
+  etColNum:{width:40,flexShrink:0,color:"#fff",fontSize:9.5,fontWeight:800,letterSpacing:".03em",textTransform:"uppercase",display:"grid",placeItems:"center",padding:"5px 0"},
+  etLinha:{display:"flex",alignItems:"center",borderBottom:"1px solid #F0F1F5",minHeight:38},
   etNome:{fontSize:12.5,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"},
-  etCel:{width:40,flexShrink:0,textAlign:"center",fontSize:13,fontWeight:700,borderLeft:"1px solid var(--c64)",alignSelf:"stretch",display:"grid",placeItems:"center"},
-  sideFooter:{borderTop:"1px solid var(--c55)",paddingTop:12,marginTop:12},
-  abasLat:{display:"flex",gap:4,background:"var(--c49)",borderRadius:10,padding:3,marginBottom:10},
-  abaLat:{flex:1,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6,border:"none",background:"transparent",color:"var(--c12)",fontWeight:600,fontSize:12.5,padding:"8px 6px",borderRadius:8,cursor:"pointer",fontFamily:FONT},
-  abaLatOn:{background:"var(--surface)",color:"var(--c08)",boxShadow:"0 1px 4px rgba(20,22,31,.1)"},
-  sideBtn:{display:"flex",alignItems:"center",gap:8,width:"100%",border:"1px solid var(--c46)",background:"var(--surface)",color:"var(--c09)",padding:"9px 11px",borderRadius:9,cursor:"pointer",fontSize:13,fontWeight:600,fontFamily:FONT,marginBottom:8},
-  badgeMsg:{marginLeft:"auto",background:"var(--c36)",color:"var(--onaccent)",fontSize:10.5,fontWeight:800,minWidth:18,height:18,borderRadius:20,display:"grid",placeItems:"center",padding:"0 5px"},
-  userChip:{display:"flex",alignItems:"center",gap:9,padding:"8px 10px",borderRadius:10,background:"var(--c72)",border:"1px solid var(--c55)"},
+  etCel:{width:40,flexShrink:0,textAlign:"center",fontSize:13,fontWeight:700,borderLeft:"1px solid #F0F1F5",alignSelf:"stretch",display:"grid",placeItems:"center"},
+  sideFooter:{borderTop:"1px solid #EDEFF3",paddingTop:12,marginTop:12},
+  abasLat:{display:"flex",gap:4,background:"#E4E7EE",borderRadius:10,padding:3,marginBottom:10},
+  abaLat:{flex:1,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6,border:"none",background:"transparent",color:"#5A6072",fontWeight:600,fontSize:12.5,padding:"8px 6px",borderRadius:8,cursor:"pointer",fontFamily:FONT},
+  abaLatOn:{background:"#fff",color:"#3B3AC9",boxShadow:"0 1px 4px rgba(20,22,31,.1)"},
+  sideBtn:{display:"flex",alignItems:"center",gap:8,width:"100%",border:"1px solid #E2E5EC",background:"#fff",color:"#4A4F5E",padding:"9px 11px",borderRadius:9,cursor:"pointer",fontSize:13,fontWeight:600,fontFamily:FONT,marginBottom:8},
+  badgeMsg:{marginLeft:"auto",background:"#D8442F",color:"#fff",fontSize:10.5,fontWeight:800,minWidth:18,height:18,borderRadius:20,display:"grid",placeItems:"center",padding:"0 5px"},
+  userChip:{display:"flex",alignItems:"center",gap:9,padding:"8px 10px",borderRadius:10,background:"#F6F7FA",border:"1px solid #EDEFF3"},
   roleBadge:{display:"inline-block",fontSize:10.5,fontWeight:700,padding:"1px 7px",borderRadius:20,marginTop:2},
-  avatar:{width:32,height:32,borderRadius:"50%",color:"var(--onaccent)",fontSize:11,fontWeight:700,display:"grid",placeItems:"center",flexShrink:0},
+  avatar:{width:32,height:32,borderRadius:"50%",color:"#fff",fontSize:11,fontWeight:700,display:"grid",placeItems:"center",flexShrink:0},
   main:{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"},
   resumoQuadro:{display:"flex",gap:8,marginTop:10,flexWrap:"wrap"},
   rsWrap:{marginTop:10},
   rsCards:{display:"flex",gap:8,flexWrap:"wrap",marginTop:8},
-  rsBarra:{height:5,borderRadius:20,background:"var(--c55)",marginTop:6,overflow:"hidden"},
+  rsBarra:{height:5,borderRadius:20,background:"#EDEFF3",marginTop:6,overflow:"hidden"},
   rsNav:{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginTop:8,maxWidth:520},
-  rsNavBtn:{border:"1px solid var(--c46)",background:"var(--surface)",borderRadius:8,padding:"5px 10px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4,fontSize:11.5,fontWeight:700,color:"var(--c08)",fontFamily:FONT},
-  rsHoje:{marginTop:6,border:"1px solid var(--c32)",background:"var(--c74)",color:"var(--c08)",borderRadius:8,padding:"5px 11px",fontSize:11.5,fontWeight:700,cursor:"pointer",fontFamily:FONT,display:"inline-flex",alignItems:"center",gap:6},
-  resumoItem:{flex:"1 1 120px",minWidth:110,border:"1px solid var(--c52)",borderRadius:11,padding:"9px 13px",background:"var(--surface)",display:"flex",flexDirection:"column",gap:1},
-  resumoTotal:{background:"var(--c70)",borderColor:"var(--c40)"},
-  resumoNum:{fontSize:21,fontWeight:800,color:"var(--c05)",lineHeight:1.1},
-  resumoRot:{fontSize:11.5,fontWeight:600,color:"var(--c19)"},
-  topbar:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"18px 26px",borderBottom:"1px solid var(--c46)",background:"var(--c56)",gap:16},
-  h1:{margin:0,fontSize:21,fontWeight:800,letterSpacing:"-.02em"}, sub:{margin:"3px 0 0",fontSize:13,color:"var(--c19)",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"},
-  pendingTag:{display:"inline-flex",alignItems:"center",gap:4,background:"var(--c81)",color:"var(--c26)",fontWeight:700,fontSize:11.5,padding:"2px 9px",borderRadius:20},
-  tabs:{display:"flex",background:"var(--c49)",borderRadius:10,padding:3},
-  tab:{display:"inline-flex",alignItems:"center",gap:6,border:"none",background:"transparent",color:"var(--c12)",fontWeight:600,fontSize:13,padding:"7px 13px",borderRadius:8,cursor:"pointer",fontFamily:FONT},
-  tabOn:{background:"var(--surface)",color:"var(--c08)",boxShadow:"0 1px 4px rgba(20,22,31,.1)"},
-  roleNote:{display:"inline-flex",alignItems:"center",gap:5,fontSize:12,color:"var(--c07)",fontWeight:600},
-  warnNote:{display:"inline-flex",alignItems:"center",gap:5,fontSize:12,color:"var(--c36)",fontWeight:600},
-  searchWrap:{display:"inline-flex",alignItems:"center",gap:8,background:"var(--surface)",border:"1px solid var(--c46)",padding:"8px 12px",borderRadius:10,width:240},
-  search:{border:"none",background:"transparent",fontSize:13.5,flex:1,fontFamily:FONT,color:"var(--c02)"},
+  rsNavBtn:{border:"1px solid #E2E5EC",background:"#fff",borderRadius:8,padding:"5px 10px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4,fontSize:11.5,fontWeight:700,color:"#3B3AC9",fontFamily:FONT},
+  rsHoje:{marginTop:6,border:"1px solid #C7CBFF",background:"#F7F8FE",color:"#3B3AC9",borderRadius:8,padding:"5px 11px",fontSize:11.5,fontWeight:700,cursor:"pointer",fontFamily:FONT,display:"inline-flex",alignItems:"center",gap:6},
+  resumoItem:{flex:"1 1 120px",minWidth:110,border:"1px solid #E7E9EF",borderRadius:11,padding:"9px 13px",background:"#fff",display:"flex",flexDirection:"column",gap:1},
+  resumoTotal:{background:"#F4F5FA",borderColor:"#DCDFEA"},
+  resumoNum:{fontSize:21,fontWeight:800,color:"#20232E",lineHeight:1.1},
+  resumoRot:{fontSize:11.5,fontWeight:600,color:"#8A8F9E"},
+  topbar:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"18px 26px",borderBottom:"1px solid #E2E5EC",background:"#EEF0F4",gap:16},
+  h1:{margin:0,fontSize:21,fontWeight:800,letterSpacing:"-.02em"}, sub:{margin:"3px 0 0",fontSize:13,color:"#8A8F9E",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"},
+  pendingTag:{display:"inline-flex",alignItems:"center",gap:4,background:"#FCF4E2",color:"#B8860B",fontWeight:700,fontSize:11.5,padding:"2px 9px",borderRadius:20},
+  tabs:{display:"flex",background:"#E4E7EE",borderRadius:10,padding:3},
+  tab:{display:"inline-flex",alignItems:"center",gap:6,border:"none",background:"transparent",color:"#5A6072",fontWeight:600,fontSize:13,padding:"7px 13px",borderRadius:8,cursor:"pointer",fontFamily:FONT},
+  tabOn:{background:"#fff",color:"#3B3AC9",boxShadow:"0 1px 4px rgba(20,22,31,.1)"},
+  roleNote:{display:"inline-flex",alignItems:"center",gap:5,fontSize:12,color:"#2F9E6E",fontWeight:600},
+  warnNote:{display:"inline-flex",alignItems:"center",gap:5,fontSize:12,color:"#D8442F",fontWeight:600},
+  searchWrap:{display:"inline-flex",alignItems:"center",gap:8,background:"#fff",border:"1px solid #E2E5EC",padding:"8px 12px",borderRadius:10,width:240},
+  search:{border:"none",background:"transparent",fontSize:13.5,flex:1,fontFamily:FONT,color:"#14161F"},
   board:{flex:1,display:"flex",gap:16,padding:22,overflowX:"auto",alignItems:"flex-start"},
-  column:{width:288,flexShrink:0,background:"var(--c72)",borderRadius:14,padding:12,maxHeight:"100%",display:"flex",flexDirection:"column",border:"1px solid var(--c52)"},
+  column:{width:288,flexShrink:0,background:"#F6F7FA",borderRadius:14,padding:12,maxHeight:"100%",display:"flex",flexDirection:"column",border:"1px solid #E7E9EF"},
   colHead:{display:"flex",alignItems:"center",gap:8,padding:"4px 6px 12px"},
   dot:{width:9,height:9,borderRadius:"50%",flexShrink:0},
   colName:{fontWeight:700,fontSize:13.5,flex:1}, colCount:{fontSize:11,fontWeight:700,padding:"1px 8px",borderRadius:20},
-  colEmpty:{fontSize:12,color:"var(--c24)",textAlign:"center",padding:"14px 0",margin:0},
-  doneFiltro:{display:"flex",flexDirection:"column",gap:5,padding:"0 2px 10px",borderBottom:"1px solid var(--c52)",marginBottom:9},
-  filtroSel:{width:"100%",border:"1px solid var(--c46)",background:"var(--surface)",borderRadius:8,padding:"6px 8px",fontSize:12,fontFamily:FONT,color:"var(--c09)",cursor:"pointer"},
-  doneResumo:{fontSize:11,fontWeight:700,color:"var(--c07)",background:"var(--c53)",borderRadius:7,padding:"4px 8px",textAlign:"center"},
+  colEmpty:{fontSize:12,color:"#B0B5C0",textAlign:"center",padding:"14px 0",margin:0},
+  doneFiltro:{display:"flex",flexDirection:"column",gap:5,padding:"0 2px 10px",borderBottom:"1px solid #E7E9EF",marginBottom:9},
+  filtroSel:{width:"100%",border:"1px solid #E2E5EC",background:"#fff",borderRadius:8,padding:"6px 8px",fontSize:12,fontFamily:FONT,color:"#4A4F5E",cursor:"pointer"},
+  doneResumo:{fontSize:11,fontWeight:700,color:"#2F9E6E",background:"#E8F6EF",borderRadius:7,padding:"4px 8px",textAlign:"center"},
   calBox:{display:"flex",flexDirection:"column",flex:1,minHeight:0},
   calNav:{display:"flex",alignItems:"center",gap:6,marginBottom:8},
-  calToggleTodos:{width:"100%",border:"1px solid var(--c52)",background:"var(--c76)",color:"var(--c12)",borderRadius:8,padding:"6px",fontSize:11.5,fontWeight:700,cursor:"pointer",fontFamily:FONT,marginBottom:8},
-  calNavBtn:{border:"1px solid var(--c46)",background:"var(--surface)",borderRadius:8,padding:"6px 10px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4,fontSize:12,fontWeight:700,color:"var(--c08)",fontFamily:FONT},
-  calVoltarHoje:{width:"100%",border:"1px solid var(--c32)",background:"var(--c74)",color:"var(--c08)",borderRadius:8,padding:"7px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:FONT,marginBottom:8,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6},
+  calToggleTodos:{width:"100%",border:"1px solid #E7E9EF",background:"#F8F9FB",color:"#5A6072",borderRadius:8,padding:"6px",fontSize:11.5,fontWeight:700,cursor:"pointer",fontFamily:FONT,marginBottom:8},
+  calNavBtn:{border:"1px solid #E2E5EC",background:"#fff",borderRadius:8,padding:"6px 10px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4,fontSize:12,fontWeight:700,color:"#3B3AC9",fontFamily:FONT},
+  calVoltarHoje:{width:"100%",border:"1px solid #C7CBFF",background:"#F7F8FE",color:"#3B3AC9",borderRadius:8,padding:"7px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:FONT,marginBottom:8,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6},
   calPeriodo:{flex:1,textAlign:"center"},
-  calHoje:{border:"none",background:"transparent",color:"var(--c08)",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:FONT,padding:0,marginTop:2},
-  calDia:{border:"1px solid var(--c55)",borderRadius:9,padding:"7px 8px",background:"var(--surface)"},
-  calDiaHoje:{borderColor:"var(--c38)",background:"var(--c78)"},
+  calHoje:{border:"none",background:"transparent",color:"#3B3AC9",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:FONT,padding:0,marginTop:2},
+  calDia:{border:"1px solid #EDEFF3",borderRadius:9,padding:"7px 8px",background:"#fff"},
+  calDiaHoje:{borderColor:"#D9C2F0",background:"#FBF8FE"},
   calDiaTopo:{display:"flex",alignItems:"center",gap:8},
   calDiaTopoAberto:{},
-  calDiaSeta:{width:26,height:26,borderRadius:7,background:"var(--c66)",display:"grid",placeItems:"center",flexShrink:0},
-  calDiaNome:{fontSize:11.5,fontWeight:800,color:"var(--c12)",textTransform:"uppercase",letterSpacing:".04em"},
-  calDiaResumo:{fontSize:11,fontWeight:700,color:"var(--c03)",background:"var(--c53)",borderRadius:20,padding:"2px 8px"},
-  calDiaVazio:{fontSize:12,color:"var(--c29)"},
-  calItem:{display:"flex",alignItems:"center",gap:6,marginTop:6,background:"var(--c76)",border:"1px solid var(--c55)",borderRadius:8,padding:"5px 7px"},
-  calItemTitulo:{flex:1,minWidth:0,fontSize:12,fontWeight:500,color:"var(--c05)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"},
-  calItemHora:{fontSize:10.5,color:"var(--c23)",fontWeight:600},
-  calItemTempo:{fontSize:10.5,fontWeight:800,color:"var(--c03)"},
-  calRev:{border:"1px solid var(--c63)",background:"var(--c81)",borderRadius:6,padding:"3px 5px",cursor:"pointer",display:"grid",placeItems:"center",flexShrink:0},
-  calResumoMembros:{marginTop:8,paddingTop:8,borderTop:"1px solid var(--c55)",display:"flex",flexDirection:"column",gap:4},
-  calResumoRot:{fontSize:9.5,fontWeight:800,letterSpacing:".06em",textTransform:"uppercase",color:"var(--c23)",marginBottom:2},
+  calDiaSeta:{width:26,height:26,borderRadius:7,background:"#F2F3F7",display:"grid",placeItems:"center",flexShrink:0},
+  calDiaNome:{fontSize:11.5,fontWeight:800,color:"#5A6072",textTransform:"uppercase",letterSpacing:".04em"},
+  calDiaResumo:{fontSize:11,fontWeight:700,color:"#1F7A55",background:"#E8F6EF",borderRadius:20,padding:"2px 8px"},
+  calDiaVazio:{fontSize:12,color:"#C2C6D0"},
+  calItem:{display:"flex",alignItems:"center",gap:6,marginTop:6,background:"#F8F9FB",border:"1px solid #EDEFF3",borderRadius:8,padding:"5px 7px"},
+  calItemTitulo:{flex:1,minWidth:0,fontSize:12,fontWeight:500,color:"#20232E",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"},
+  calItemHora:{fontSize:10.5,color:"#A0A5B2",fontWeight:600},
+  calItemTempo:{fontSize:10.5,fontWeight:800,color:"#1F7A55"},
+  calRev:{border:"1px solid #F0E2BE",background:"#FCF4E2",borderRadius:6,padding:"3px 5px",cursor:"pointer",display:"grid",placeItems:"center",flexShrink:0},
+  calResumoMembros:{marginTop:8,paddingTop:8,borderTop:"1px solid #EDEFF3",display:"flex",flexDirection:"column",gap:4},
+  calResumoRot:{fontSize:9.5,fontWeight:800,letterSpacing:".06em",textTransform:"uppercase",color:"#A0A5B2",marginBottom:2},
   calResumoLinha:{display:"flex",alignItems:"center",gap:7},
-  calResumoNome:{flex:1,minWidth:0,fontSize:12,fontWeight:600,color:"var(--c09)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"},
-  calResumoQtd:{fontSize:10.5,fontWeight:700,color:"var(--c19)",background:"var(--c55)",borderRadius:20,padding:"1px 7px"},
-  calResumoTempo:{fontSize:11.5,fontWeight:800,color:"var(--c03)",minWidth:58,textAlign:"right"},
-  calTotal:{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:8,paddingTop:8,borderTop:"1px solid var(--c52)",fontSize:11.5,fontWeight:800,color:"var(--c05)"},
+  calResumoNome:{flex:1,minWidth:0,fontSize:12,fontWeight:600,color:"#4A4F5E",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"},
+  calResumoQtd:{fontSize:10.5,fontWeight:700,color:"#8A8F9E",background:"#EDEFF3",borderRadius:20,padding:"1px 7px"},
+  calResumoTempo:{fontSize:11.5,fontWeight:800,color:"#1F7A55",minWidth:58,textAlign:"right"},
+  calTotal:{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:8,paddingTop:8,borderTop:"1px solid #E7E9EF",fontSize:11.5,fontWeight:800,color:"#20232E"},
   cardList:{display:"flex",flexDirection:"column",gap:9,overflowY:"auto",flex:1,paddingRight:2},
-  card:{background:"var(--surface)",borderRadius:11,padding:"11px 11px 10px",border:"1px solid var(--c52)",position:"relative"},
-  cardReuniao:{border:"1px solid var(--c38)",boxShadow:"0 2px 10px rgba(139,58,191,.12)",padding:0,overflow:"hidden"},
-  faixaReuniao:{display:"flex",alignItems:"center",gap:6,background:"var(--c20)",color:"var(--onaccent)",fontSize:10.5,fontWeight:800,letterSpacing:".08em",padding:"6px 10px"},
+  card:{background:"#fff",borderRadius:11,padding:"11px 11px 10px",border:"1px solid #E7E9EF",position:"relative"},
+  cardReuniao:{border:"1px solid #D9C2F0",boxShadow:"0 2px 10px rgba(139,58,191,.12)",padding:0,overflow:"hidden"},
+  faixaReuniao:{display:"flex",alignItems:"center",gap:6,background:"#8B3ABF",color:"#fff",fontSize:10.5,fontWeight:800,letterSpacing:".08em",padding:"6px 10px"},
   faixaQuando:{marginLeft:"auto",background:"rgba(255,255,255,.22)",padding:"1px 8px",borderRadius:20,fontSize:10.5,letterSpacing:0,fontWeight:700,textTransform:"none"},
-  cardTituloReuniao:{fontSize:14.5,fontWeight:700,color:"var(--c13)"},
-  cardDone:{background:"var(--c75)",borderColor:"var(--c41)"},
-  cardPending:{background:"var(--c83)",borderColor:"var(--c63)"},
+  cardTituloReuniao:{fontSize:14.5,fontWeight:700,color:"#5B2585"},
+  cardDone:{background:"#F7FCF9",borderColor:"#DCEFE5"},
+  cardPending:{background:"#FFFDF6",borderColor:"#F0E2BE"},
   cardTop:{display:"flex",gap:5,alignItems:"flex-start"},
-  cardTitle:{overflowWrap:"anywhere",wordBreak:"break-word",margin:0,fontSize:13.5,fontWeight:500,lineHeight:1.35,flex:1,color:"var(--c05)"},
-  cardDel:{border:"none",background:"transparent",color:"var(--c24)",cursor:"pointer",padding:1,flexShrink:0},
+  cardTitle:{overflowWrap:"anywhere",wordBreak:"break-word",margin:0,fontSize:13.5,fontWeight:500,lineHeight:1.35,flex:1,color:"#20232E"},
+  cardDel:{border:"none",background:"transparent",color:"#B0B5C0",cursor:"pointer",padding:1,flexShrink:0},
   cardFoot:{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:10},
   openFolderBtn:{display:"flex",alignItems:"center",justifyContent:"center",gap:6,flex:1,border:"1px solid",padding:"6px 9px",borderRadius:8,fontSize:11.5,fontWeight:700,cursor:"pointer",fontFamily:FONT},
-  copyBtn:{display:"grid",placeItems:"center",border:"1px solid var(--c46)",background:"var(--surface)",borderRadius:8,padding:"6px 9px",cursor:"pointer"},
-  descBox:{fontSize:12,color:"var(--c09)",background:"var(--c72)",border:"1px solid var(--c55)",borderRadius:8,padding:"7px 9px",marginTop:8,lineHeight:1.45,overflowWrap:"anywhere",wordBreak:"break-word",whiteSpace:"pre-wrap"},
-  diarioBox:{background:"var(--c69)",border:"1px solid var(--c43)",borderRadius:8,padding:"7px 9px",marginTop:8},
-  diarioLinha:{display:"flex",alignItems:"flex-start",gap:7,padding:"3px 0",borderTop:"1px solid var(--c51)"},
-  diarioData:{fontSize:10,fontWeight:800,color:"var(--c07)",background:"var(--c47)",borderRadius:5,padding:"2px 5px",flexShrink:0,marginTop:1},
-  diarioTexto:{flex:1,fontSize:12,fontWeight:600,color:"var(--c07)",lineHeight:1.4,overflowWrap:"anywhere",wordBreak:"break-word",whiteSpace:"pre-wrap"},
-  fazerData:{fontSize:10,fontWeight:800,color:"var(--onaccent)",background:"var(--c04)",borderRadius:5,padding:"2px 5px",flexShrink:0,marginTop:1},
-  fazerTexto:{flex:1,fontSize:12.5,fontWeight:700,color:"var(--c04)",lineHeight:1.4,overflowWrap:"anywhere",wordBreak:"break-word",whiteSpace:"pre-wrap"},
+  copyBtn:{display:"grid",placeItems:"center",border:"1px solid #E2E5EC",background:"#fff",borderRadius:8,padding:"6px 9px",cursor:"pointer"},
+  descBox:{fontSize:12,color:"#4A4F5E",background:"#F6F7FA",border:"1px solid #EDEFF3",borderRadius:8,padding:"7px 9px",marginTop:8,lineHeight:1.45,overflowWrap:"anywhere",wordBreak:"break-word",whiteSpace:"pre-wrap"},
+  diarioBox:{background:"#F3F8F5",border:"1px solid #DDEEE4",borderRadius:8,padding:"7px 9px",marginTop:8},
+  diarioLinha:{display:"flex",alignItems:"flex-start",gap:7,padding:"3px 0",borderTop:"1px solid #E6F0EA"},
+  diarioData:{fontSize:10,fontWeight:800,color:"#2F9E6E",background:"#E3F3EA",borderRadius:5,padding:"2px 5px",flexShrink:0,marginTop:1},
+  diarioTexto:{flex:1,fontSize:12,fontWeight:600,color:"#2F9E6E",lineHeight:1.4,overflowWrap:"anywhere",wordBreak:"break-word",whiteSpace:"pre-wrap"},
+  fazerData:{fontSize:10,fontWeight:800,color:"#fff",background:"#1F8A4C",borderRadius:5,padding:"2px 5px",flexShrink:0,marginTop:1},
+  fazerTexto:{flex:1,fontSize:12.5,fontWeight:700,color:"#1F8A4C",lineHeight:1.4,overflowWrap:"anywhere",wordBreak:"break-word",whiteSpace:"pre-wrap"},
   diarioAcoes:{display:"inline-flex",gap:2,flexShrink:0},
   diarioMini:{border:"none",background:"transparent",cursor:"pointer",padding:2,borderRadius:5,display:"grid",placeItems:"center"},
-  diarioInput:{flex:1,border:"1px solid var(--c34)",borderRadius:7,padding:"6px 8px",fontSize:12,fontFamily:FONT,color:"var(--c05)",background:"var(--surface)",outline:"none"},
-  diarioAdd:{border:"none",background:"var(--c07)",color:"var(--onaccent)",borderRadius:7,width:32,flexShrink:0,cursor:"pointer",display:"grid",placeItems:"center"},
-  diarioEdit:{width:"100%",boxSizing:"border-box",border:"1px solid var(--c34)",borderRadius:6,padding:"5px 7px",fontSize:12,fontFamily:FONT,color:"var(--c05)",background:"var(--surface)",minHeight:44,resize:"vertical",outline:"none",lineHeight:1.4},
-  diarioSalvar:{border:"none",background:"var(--c07)",color:"var(--onaccent)",borderRadius:6,padding:"4px 10px",fontSize:11.5,fontWeight:700,cursor:"pointer",fontFamily:FONT},
-  diarioCancelar:{border:"1px solid var(--c46)",background:"var(--surface)",color:"var(--c12)",borderRadius:6,padding:"4px 10px",fontSize:11.5,fontWeight:600,cursor:"pointer",fontFamily:FONT},
-  descLabel:{display:"block",fontSize:9.5,fontWeight:800,letterSpacing:".06em",textTransform:"uppercase",color:"var(--c23)",marginBottom:3},
+  diarioInput:{flex:1,border:"1px solid #CFE6D9",borderRadius:7,padding:"6px 8px",fontSize:12,fontFamily:FONT,color:"#20232E",background:"#fff",outline:"none"},
+  diarioAdd:{border:"none",background:"#2F9E6E",color:"#fff",borderRadius:7,width:32,flexShrink:0,cursor:"pointer",display:"grid",placeItems:"center"},
+  diarioEdit:{width:"100%",boxSizing:"border-box",border:"1px solid #CFE6D9",borderRadius:6,padding:"5px 7px",fontSize:12,fontFamily:FONT,color:"#20232E",background:"#fff",minHeight:44,resize:"vertical",outline:"none",lineHeight:1.4},
+  diarioSalvar:{border:"none",background:"#2F9E6E",color:"#fff",borderRadius:6,padding:"4px 10px",fontSize:11.5,fontWeight:700,cursor:"pointer",fontFamily:FONT},
+  diarioCancelar:{border:"1px solid #E2E5EC",background:"#fff",color:"#5A6072",borderRadius:6,padding:"4px 10px",fontSize:11.5,fontWeight:600,cursor:"pointer",fontFamily:FONT},
+  descLabel:{display:"block",fontSize:9.5,fontWeight:800,letterSpacing:".06em",textTransform:"uppercase",color:"#A0A5B2",marginBottom:3},
   descTexto:{overflowWrap:"anywhere",wordBreak:"break-word",whiteSpace:"pre-wrap"},
-  descEditArea:{width:"100%",boxSizing:"border-box",border:"1px solid var(--c32)",borderRadius:7,padding:"6px 8px",fontSize:12,fontFamily:FONT,color:"var(--c05)",background:"var(--surface)",minHeight:60,resize:"vertical",lineHeight:1.45,outline:"none"},
-  descSalvar:{display:"inline-flex",alignItems:"center",gap:5,border:"none",background:"var(--c08)",color:"var(--onaccent)",borderRadius:7,padding:"5px 11px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:FONT},
-  descCancelar:{border:"1px solid var(--c46)",background:"var(--surface)",color:"var(--c12)",borderRadius:7,padding:"5px 11px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:FONT},
-  descDica:{fontSize:10.5,color:"var(--c23)",alignSelf:"center",marginLeft:"auto"},
-  descAdd:{display:"flex",alignItems:"center",gap:5,width:"100%",marginTop:8,border:"1px dashed var(--c46)",background:"transparent",color:"var(--c19)",padding:"6px 9px",borderRadius:8,fontSize:11.5,fontWeight:600,cursor:"pointer",fontFamily:FONT},
-  fixBox:{fontSize:12,color:"var(--c18)",background:"var(--c81)",border:"1px solid var(--c63)",borderRadius:8,padding:"7px 9px",marginTop:8,lineHeight:1.45,overflowWrap:"anywhere",wordBreak:"break-word",whiteSpace:"pre-wrap"},
-  fixLabel:{display:"flex",alignItems:"center",gap:4,fontSize:9.5,fontWeight:800,letterSpacing:".06em",textTransform:"uppercase",color:"var(--c26)",marginBottom:2},
-  tempoBox:{marginTop:8,background:"var(--c76)",border:"1px solid var(--c55)",borderRadius:9,padding:"7px 9px",display:"flex",flexDirection:"column",gap:3},
+  descEditArea:{width:"100%",boxSizing:"border-box",border:"1px solid #C7CBFF",borderRadius:7,padding:"6px 8px",fontSize:12,fontFamily:FONT,color:"#20232E",background:"#fff",minHeight:60,resize:"vertical",lineHeight:1.45,outline:"none"},
+  descSalvar:{display:"inline-flex",alignItems:"center",gap:5,border:"none",background:"#3B3AC9",color:"#fff",borderRadius:7,padding:"5px 11px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:FONT},
+  descCancelar:{border:"1px solid #E2E5EC",background:"#fff",color:"#5A6072",borderRadius:7,padding:"5px 11px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:FONT},
+  descDica:{fontSize:10.5,color:"#A0A5B2",alignSelf:"center",marginLeft:"auto"},
+  descAdd:{display:"flex",alignItems:"center",gap:5,width:"100%",marginTop:8,border:"1px dashed #E2E5EC",background:"transparent",color:"#8A8F9E",padding:"6px 9px",borderRadius:8,fontSize:11.5,fontWeight:600,cursor:"pointer",fontFamily:FONT},
+  fixBox:{fontSize:12,color:"#8A6510",background:"#FCF4E2",border:"1px solid #F0E2BE",borderRadius:8,padding:"7px 9px",marginTop:8,lineHeight:1.45,overflowWrap:"anywhere",wordBreak:"break-word",whiteSpace:"pre-wrap"},
+  fixLabel:{display:"flex",alignItems:"center",gap:4,fontSize:9.5,fontWeight:800,letterSpacing:".06em",textTransform:"uppercase",color:"#B8860B",marginBottom:2},
+  tempoBox:{marginTop:8,background:"#F8F9FB",border:"1px solid #EDEFF3",borderRadius:9,padding:"7px 9px",display:"flex",flexDirection:"column",gap:3},
   tempoLinha:{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8},
-  tempoRot:{fontSize:10,fontWeight:700,letterSpacing:".04em",textTransform:"uppercase",color:"var(--c23)"},
-  tempoVal:{fontSize:12,fontWeight:600,color:"var(--c09)"},
-  pulsando:{color:"var(--c07)",fontSize:9},
-  pendingBar:{display:"flex",alignItems:"center",gap:5,fontSize:11,fontWeight:600,color:"var(--c26)",background:"var(--c81)",padding:"4px 8px",borderRadius:7,marginTop:8},
-  doneBar:{display:"flex",alignItems:"center",gap:5,fontSize:11,fontWeight:600,color:"var(--c07)",background:"var(--c53)",padding:"4px 8px",borderRadius:7,marginTop:8},
-  confBox:{background:"var(--c73)",border:"1px solid var(--c50)",borderRadius:9,padding:"7px 9px",marginTop:8},
+  tempoRot:{fontSize:10,fontWeight:700,letterSpacing:".04em",textTransform:"uppercase",color:"#A0A5B2"},
+  tempoVal:{fontSize:12,fontWeight:600,color:"#4A4F5E"},
+  pulsando:{color:"#2F9E6E",fontSize:9},
+  pendingBar:{display:"flex",alignItems:"center",gap:5,fontSize:11,fontWeight:600,color:"#B8860B",background:"#FCF4E2",padding:"4px 8px",borderRadius:7,marginTop:8},
+  doneBar:{display:"flex",alignItems:"center",gap:5,fontSize:11,fontWeight:600,color:"#2F9E6E",background:"#E8F6EF",padding:"4px 8px",borderRadius:7,marginTop:8},
+  confBox:{background:"#F7F0FC",border:"1px solid #E6D3F5",borderRadius:9,padding:"7px 9px",marginTop:8},
   confTopo:{display:"flex",alignItems:"center",justifyContent:"space-between"},
-  confRot:{fontSize:10,fontWeight:800,letterSpacing:".05em",textTransform:"uppercase",color:"var(--c22)"},
-  confNum:{fontSize:12,fontWeight:800,color:"var(--c20)"},
-  confFeito:{display:"flex",alignItems:"center",justifyContent:"center",gap:6,background:"var(--c53)",color:"var(--c03)",border:"1px solid var(--c33)",borderRadius:8,padding:"7px 10px",fontSize:12.5,fontWeight:700},
-  doneBtn:{display:"flex",alignItems:"center",justifyContent:"center",gap:6,width:"100%",marginTop:8,border:"none",background:"var(--c07)",color:"var(--onaccent)",padding:"7px 10px",borderRadius:8,fontSize:12.5,fontWeight:600,cursor:"pointer",fontFamily:FONT},
-  reviewBtn:{display:"flex",alignItems:"center",justifyContent:"center",gap:6,width:"100%",marginTop:8,border:"1px solid var(--c63)",background:"var(--c81)",color:"var(--c26)",padding:"7px 10px",borderRadius:8,fontSize:12.5,fontWeight:600,cursor:"pointer",fontFamily:FONT},
-  rejectBtn:{display:"inline-flex",alignItems:"center",gap:5,border:"1px solid var(--c61)",background:"var(--c80)",color:"var(--c27)",padding:"7px 11px",borderRadius:8,fontSize:12.5,fontWeight:600,cursor:"pointer",fontFamily:FONT},
-  cancelBtn:{display:"flex",alignItems:"center",justifyContent:"center",gap:5,width:"100%",marginTop:8,border:"1px solid var(--c46)",background:"var(--surface)",color:"var(--c16)",padding:"6px 10px",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:FONT},
+  confRot:{fontSize:10,fontWeight:800,letterSpacing:".05em",textTransform:"uppercase",color:"#A07BC0"},
+  confNum:{fontSize:12,fontWeight:800,color:"#8B3ABF"},
+  confFeito:{display:"flex",alignItems:"center",justifyContent:"center",gap:6,background:"#E8F6EF",color:"#1F7A55",border:"1px solid #CBE9DA",borderRadius:8,padding:"7px 10px",fontSize:12.5,fontWeight:700},
+  doneBtn:{display:"flex",alignItems:"center",justifyContent:"center",gap:6,width:"100%",marginTop:8,border:"none",background:"#2F9E6E",color:"#fff",padding:"7px 10px",borderRadius:8,fontSize:12.5,fontWeight:600,cursor:"pointer",fontFamily:FONT},
+  reviewBtn:{display:"flex",alignItems:"center",justifyContent:"center",gap:6,width:"100%",marginTop:8,border:"1px solid #F0E2BE",background:"#FCF4E2",color:"#B8860B",padding:"7px 10px",borderRadius:8,fontSize:12.5,fontWeight:600,cursor:"pointer",fontFamily:FONT},
+  rejectBtn:{display:"inline-flex",alignItems:"center",gap:5,border:"1px solid #F0CFCA",background:"#FCEDEA",color:"#C0392B",padding:"7px 11px",borderRadius:8,fontSize:12.5,fontWeight:600,cursor:"pointer",fontFamily:FONT},
+  cancelBtn:{display:"flex",alignItems:"center",justifyContent:"center",gap:5,width:"100%",marginTop:8,border:"1px solid #E2E5EC",background:"#fff",color:"#737A8C",padding:"6px 10px",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:FONT},
   folderTag:{display:"inline-flex",alignItems:"center",gap:5,fontSize:10.5,fontWeight:700,padding:"3px 8px",borderRadius:6,border:"1px solid",marginBottom:8,cursor:"pointer",maxWidth:"100%",overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"},
-  projetoTag:{display:"inline-flex",alignItems:"center",gap:5,fontSize:10.5,fontWeight:800,padding:"3px 8px",borderRadius:6,border:"1px solid var(--c31)",background:"var(--c58)",color:"var(--c08)",marginBottom:8,marginRight:6,maxWidth:"100%",overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"},
-  folderTagEmpty:{display:"inline-flex",alignItems:"center",gap:5,fontSize:10.5,fontWeight:600,padding:"3px 8px",borderRadius:6,border:"1px dashed var(--c35)",background:"transparent",color:"var(--c23)",marginBottom:8,cursor:"pointer",fontFamily:FONT},
-  folderSelect:{border:"1px solid var(--c46)",background:"var(--surface)",borderRadius:10,padding:"8px 11px",fontSize:13,fontFamily:FONT,color:"var(--c09)",cursor:"pointer",maxWidth:210},
-  fileRow:{display:"flex",alignItems:"center",gap:10,width:"100%",border:"1px solid var(--c55)",background:"var(--surface)",borderRadius:9,padding:"8px 10px",cursor:"pointer",fontFamily:FONT},
+  projetoTag:{display:"inline-flex",alignItems:"center",gap:5,fontSize:10.5,fontWeight:800,padding:"3px 8px",borderRadius:6,border:"1px solid #C7C9F5",background:"#EEF0FF",color:"#3B3AC9",marginBottom:8,marginRight:6,maxWidth:"100%",overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"},
+  folderTagEmpty:{display:"inline-flex",alignItems:"center",gap:5,fontSize:10.5,fontWeight:600,padding:"3px 8px",borderRadius:6,border:"1px dashed #D3D7E0",background:"transparent",color:"#A0A5B2",marginBottom:8,cursor:"pointer",fontFamily:FONT},
+  folderSelect:{border:"1px solid #E2E5EC",background:"#fff",borderRadius:10,padding:"8px 11px",fontSize:13,fontFamily:FONT,color:"#4A4F5E",cursor:"pointer",maxWidth:210},
+  fileRow:{display:"flex",alignItems:"center",gap:10,width:"100%",border:"1px solid #EDEFF3",background:"#fff",borderRadius:9,padding:"8px 10px",cursor:"pointer",fontFamily:FONT},
   fileIcon:{width:28,height:28,borderRadius:7,display:"grid",placeItems:"center",flexShrink:0},
-  fileTag:{fontSize:10,fontWeight:700,color:"var(--c18)",background:"var(--c81)",padding:"2px 7px",borderRadius:20},
-  fileZone:{border:"1px solid var(--c46)",borderRadius:11,padding:11,background:"var(--c77)"},
-  fileZoneHead:{display:"flex",alignItems:"center",gap:6,fontSize:11,fontWeight:800,letterSpacing:".05em",textTransform:"uppercase",color:"var(--c12)",marginBottom:8},
-  pickZone:{border:"1px solid var(--c55)",background:"var(--c77)",borderRadius:9,padding:9},
-  fileHint:{fontSize:11,color:"var(--c19)",marginTop:5,lineHeight:1.45},
-  masterOnly:{fontSize:9.5,fontWeight:700,color:"var(--c08)",background:"var(--c57)",padding:"1px 6px",borderRadius:20,letterSpacing:0,textTransform:"none"},
-  filePicked:{display:"inline-flex",alignItems:"center",gap:5,fontSize:11.5,fontWeight:600,color:"var(--c07)",background:"var(--c53)",padding:"4px 9px",borderRadius:7},
+  fileTag:{fontSize:10,fontWeight:700,color:"#8A6510",background:"#FCF4E2",padding:"2px 7px",borderRadius:20},
+  fileZone:{border:"1px solid #E2E5EC",borderRadius:11,padding:11,background:"#FAFBFC"},
+  fileZoneHead:{display:"flex",alignItems:"center",gap:6,fontSize:11,fontWeight:800,letterSpacing:".05em",textTransform:"uppercase",color:"#5A6072",marginBottom:8},
+  pickZone:{border:"1px solid #EDEFF3",background:"#FAFBFC",borderRadius:9,padding:9},
+  fileHint:{fontSize:11,color:"#8A8F9E",marginTop:5,lineHeight:1.45},
+  masterOnly:{fontSize:9.5,fontWeight:700,color:"#3B3AC9",background:"#EEF0FB",padding:"1px 6px",borderRadius:20,letterSpacing:0,textTransform:"none"},
+  filePicked:{display:"inline-flex",alignItems:"center",gap:5,fontSize:11.5,fontWeight:600,color:"#2F9E6E",background:"#E8F6EF",padding:"4px 9px",borderRadius:7},
   colorDot:{width:20,height:20,borderRadius:"50%",border:"none",cursor:"pointer",padding:0},
   pill:{display:"inline-flex",alignItems:"center",gap:4,fontSize:11,fontWeight:600,padding:"3px 9px",borderRadius:20,border:"1px solid",cursor:"pointer",fontFamily:FONT},
-  todosTag:{display:"inline-flex",alignItems:"center",gap:4,fontSize:10.5,fontWeight:800,color:"var(--c20)",background:"var(--c73)",border:"1px solid var(--c50)",borderRadius:20,padding:"3px 9px"},
+  todosTag:{display:"inline-flex",alignItems:"center",gap:4,fontSize:10.5,fontWeight:800,color:"#8B3ABF",background:"#F7F0FC",border:"1px solid #E6D3F5",borderRadius:20,padding:"3px 9px"},
   assignBtn:{border:"none",background:"transparent",cursor:"pointer",padding:0},
-  avatarSm:{width:24,height:24,borderRadius:"50%",color:"var(--onaccent)",fontSize:9.5,fontWeight:700,display:"grid",placeItems:"center",flexShrink:0},
-  avatarEmpty:{width:24,height:24,borderRadius:"50%",border:"1.5px dashed var(--c29)",color:"var(--c23)",display:"grid",placeItems:"center"},
-  menu:{position:"absolute",top:"100%",right:0,marginTop:4,background:"var(--surface)",borderRadius:10,border:"1px solid var(--c46)",boxShadow:"0 8px 28px rgba(20,22,31,.14)",padding:5,zIndex:20,minWidth:170},
-  menuLabel:{fontSize:10.5,fontWeight:700,letterSpacing:".05em",textTransform:"uppercase",color:"var(--c23)",padding:"4px 9px 2px"},
-  menuItem:{display:"flex",alignItems:"center",gap:9,width:"100%",border:"none",background:"transparent",padding:"7px 9px",borderRadius:7,cursor:"pointer",fontSize:13,color:"var(--c05)",textAlign:"left",fontFamily:FONT},
-  hrChip:{border:"1px solid var(--c46)",background:"var(--surface)",borderRadius:7,padding:"4px 9px",fontSize:12,fontWeight:600,cursor:"pointer",color:"var(--c12)",fontFamily:FONT},
-  hrChipOn:{background:"var(--c08)",color:"var(--onaccent)",borderColor:"var(--c08)"},
-  addRow:{display:"flex",alignItems:"center",justifyContent:"center",gap:6,width:"100%",border:"1px dashed var(--c35)",background:"var(--surface)",color:"var(--c16)",padding:"9px 6px",cursor:"pointer",fontSize:13,fontWeight:600,borderRadius:9,marginTop:8,fontFamily:FONT},
-  reuniaoTag:{display:"flex",alignItems:"center",gap:6,marginTop:6,border:"1px solid var(--c46)",background:"var(--surface)",borderRadius:8,padding:"6px 9px",fontSize:12,fontWeight:600,color:"var(--c12)",cursor:"pointer"},
-  reuniaoTagOn:{borderColor:"var(--c38)",background:"var(--c73)",color:"var(--c20)"},
-  linhaTarefa:{border:"1px solid var(--c52)",borderRadius:9,padding:9,background:"var(--surface)"},
+  avatarSm:{width:24,height:24,borderRadius:"50%",color:"#fff",fontSize:9.5,fontWeight:700,display:"grid",placeItems:"center",flexShrink:0},
+  avatarEmpty:{width:24,height:24,borderRadius:"50%",border:"1.5px dashed #C2C6D0",color:"#A0A5B2",display:"grid",placeItems:"center"},
+  menu:{position:"absolute",top:"100%",right:0,marginTop:4,background:"#fff",borderRadius:10,border:"1px solid #E2E5EC",boxShadow:"0 8px 28px rgba(20,22,31,.14)",padding:5,zIndex:20,minWidth:170},
+  menuLabel:{fontSize:10.5,fontWeight:700,letterSpacing:".05em",textTransform:"uppercase",color:"#A0A5B2",padding:"4px 9px 2px"},
+  menuItem:{display:"flex",alignItems:"center",gap:9,width:"100%",border:"none",background:"transparent",padding:"7px 9px",borderRadius:7,cursor:"pointer",fontSize:13,color:"#20232E",textAlign:"left",fontFamily:FONT},
+  hrChip:{border:"1px solid #E2E5EC",background:"#fff",borderRadius:7,padding:"4px 9px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#5A6072",fontFamily:FONT},
+  hrChipOn:{background:"#3B3AC9",color:"#fff",borderColor:"#3B3AC9"},
+  addRow:{display:"flex",alignItems:"center",justifyContent:"center",gap:6,width:"100%",border:"1px dashed #D3D7E0",background:"#fff",color:"#737A8C",padding:"9px 6px",cursor:"pointer",fontSize:13,fontWeight:600,borderRadius:9,marginTop:8,fontFamily:FONT},
+  reuniaoTag:{display:"flex",alignItems:"center",gap:6,marginTop:6,border:"1px solid #E2E5EC",background:"#fff",borderRadius:8,padding:"6px 9px",fontSize:12,fontWeight:600,color:"#5A6072",cursor:"pointer"},
+  reuniaoTagOn:{borderColor:"#D9C2F0",background:"#F7F0FC",color:"#8B3ABF"},
+  linhaTarefa:{border:"1px solid #E7E9EF",borderRadius:9,padding:9,background:"#fff"},
   linhaTopo:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:5},
-  linhaNum:{fontSize:10,fontWeight:800,letterSpacing:".05em",textTransform:"uppercase",color:"var(--c08)"},
+  linhaNum:{fontSize:10,fontWeight:800,letterSpacing:".05em",textTransform:"uppercase",color:"#3B3AC9"},
   linhaX:{border:"none",background:"transparent",cursor:"pointer",padding:1},
-  addLinhaBtn:{display:"flex",alignItems:"center",justifyContent:"center",gap:6,width:"100%",border:"1px dashed var(--c32)",background:"var(--c74)",color:"var(--c08)",padding:"7px",borderRadius:9,fontSize:12.5,fontWeight:700,cursor:"pointer",fontFamily:FONT},
-  avisoTodos:{display:"flex",alignItems:"center",justifyContent:"center",gap:6,fontSize:12,fontWeight:700,color:"var(--c20)",background:"var(--c73)",border:"1px solid var(--c50)",borderRadius:8,padding:"8px"},
-  resumoLote:{fontSize:11.5,fontWeight:700,color:"var(--c08)",background:"var(--c57)",borderRadius:7,padding:"5px 9px",textAlign:"center"},
-  launchBox:{marginTop:8,display:"flex",flexDirection:"column",gap:7,background:"var(--surface)",border:"1px solid var(--c52)",borderRadius:11,padding:11},
-  launchLabel:{fontSize:10.5,fontWeight:700,letterSpacing:".05em",textTransform:"uppercase",color:"var(--c23)",marginBottom:3},
-  launchInput:{width:"100%",border:"1px solid var(--c35)",borderRadius:8,padding:"8px 9px",fontSize:13,fontFamily:FONT,color:"var(--c02)",background:"var(--surface)"},
-  launchEmpty:{marginTop:8,fontSize:12,color:"var(--c19)",textAlign:"center",lineHeight:1.5,padding:"8px 4px"},
-  linkBtn:{color:"var(--c08)",fontWeight:700,cursor:"pointer",textDecoration:"underline"},
-  primaryBtn:{display:"inline-flex",alignItems:"center",gap:6,background:"var(--c08)",color:"var(--onaccent)",border:"none",padding:"9px 15px",borderRadius:9,fontSize:13.5,fontWeight:600,cursor:"pointer",fontFamily:FONT,whiteSpace:"nowrap"},
-  ghostBtn:{border:"none",background:"transparent",color:"var(--c16)",cursor:"pointer",fontSize:13,fontFamily:FONT,padding:"6px 10px"},
-  acessoBtn:{flex:1,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6,border:"1px solid var(--c46)",background:"var(--surface)",color:"var(--c12)",borderRadius:9,padding:"9px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:FONT},
-  smallBtn:{display:"inline-flex",alignItems:"center",gap:5,border:"1px solid var(--c46)",background:"var(--surface)",color:"var(--c12)",borderRadius:8,padding:"6px 10px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:FONT},
+  addLinhaBtn:{display:"flex",alignItems:"center",justifyContent:"center",gap:6,width:"100%",border:"1px dashed #C7CBFF",background:"#F7F8FE",color:"#3B3AC9",padding:"7px",borderRadius:9,fontSize:12.5,fontWeight:700,cursor:"pointer",fontFamily:FONT},
+  avisoTodos:{display:"flex",alignItems:"center",justifyContent:"center",gap:6,fontSize:12,fontWeight:700,color:"#8B3ABF",background:"#F7F0FC",border:"1px solid #E6D3F5",borderRadius:8,padding:"8px"},
+  resumoLote:{fontSize:11.5,fontWeight:700,color:"#3B3AC9",background:"#EEF0FB",borderRadius:7,padding:"5px 9px",textAlign:"center"},
+  launchBox:{marginTop:8,display:"flex",flexDirection:"column",gap:7,background:"#fff",border:"1px solid #E7E9EF",borderRadius:11,padding:11},
+  launchLabel:{fontSize:10.5,fontWeight:700,letterSpacing:".05em",textTransform:"uppercase",color:"#A0A5B2",marginBottom:3},
+  launchInput:{width:"100%",border:"1px solid #D3D7E0",borderRadius:8,padding:"8px 9px",fontSize:13,fontFamily:FONT,color:"#14161F",background:"#fff"},
+  launchEmpty:{marginTop:8,fontSize:12,color:"#8A8F9E",textAlign:"center",lineHeight:1.5,padding:"8px 4px"},
+  linkBtn:{color:"#3B3AC9",fontWeight:700,cursor:"pointer",textDecoration:"underline"},
+  primaryBtn:{display:"inline-flex",alignItems:"center",gap:6,background:"#3B3AC9",color:"#fff",border:"none",padding:"9px 15px",borderRadius:9,fontSize:13.5,fontWeight:600,cursor:"pointer",fontFamily:FONT,whiteSpace:"nowrap"},
+  ghostBtn:{border:"none",background:"transparent",color:"#737A8C",cursor:"pointer",fontSize:13,fontFamily:FONT,padding:"6px 10px"},
+  acessoBtn:{flex:1,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6,border:"1px solid #E2E5EC",background:"#fff",color:"#5A6072",borderRadius:9,padding:"9px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:FONT},
+  smallBtn:{display:"inline-flex",alignItems:"center",gap:5,border:"1px solid #E2E5EC",background:"#fff",color:"#5A6072",borderRadius:8,padding:"6px 10px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:FONT},
   empty:{flex:1,display:"grid",placeItems:"center",gap:14},
   dash:{flex:1,overflowY:"auto",padding:22,display:"flex",flexDirection:"column",gap:16},
   semLinha:{display:"flex",alignItems:"center",gap:4},
   semNome:{width:160,flexShrink:0,display:"flex",alignItems:"center",gap:8,paddingRight:8},
-  semDiaHead:{flex:1,minWidth:52,textAlign:"center",color:"var(--c12)",padding:"4px 2px",borderRadius:8},
-  semHoje:{background:"var(--c60)",color:"var(--c15)"},
-  semTotalHead:{minWidth:110,textAlign:"center",fontSize:12,fontWeight:600,color:"var(--c12)",padding:"0 8px"},
-  semCel:{flex:1,minWidth:52,textAlign:"center",fontSize:12.5,fontWeight:600,color:"var(--c12)",background:"var(--c67)",borderRadius:8,padding:"9px 2px",margin:"0 2px"},
-  semCelCheia:{background:"var(--c44)",color:"var(--c03)"},
-  semTotal:{minWidth:110,textAlign:"center",fontSize:13.5,fontWeight:800,color:"var(--c05)",padding:"0 8px"},
-  semSub:{fontSize:11,fontWeight:500,color:"var(--c23)",marginTop:2},
-  semBarra:{height:26,borderRadius:8,background:"var(--c55)",overflow:"hidden"},
+  semDiaHead:{flex:1,minWidth:52,textAlign:"center",color:"#5A6072",padding:"4px 2px",borderRadius:8},
+  semHoje:{background:"#EFEAFB",color:"#6B3FBF"},
+  semTotalHead:{minWidth:110,textAlign:"center",fontSize:12,fontWeight:600,color:"#5A6072",padding:"0 8px"},
+  semCel:{flex:1,minWidth:52,textAlign:"center",fontSize:12.5,fontWeight:600,color:"#5A6072",background:"#F2F5F3",borderRadius:8,padding:"9px 2px",margin:"0 2px"},
+  semCelCheia:{background:"#DDF1E6",color:"#1F7A55"},
+  semTotal:{minWidth:110,textAlign:"center",fontSize:13.5,fontWeight:800,color:"#20232E",padding:"0 8px"},
+  semSub:{fontSize:11,fontWeight:500,color:"#A0A5B2",marginTop:2},
+  semBarra:{height:26,borderRadius:8,background:"#EDEFF3",overflow:"hidden"},
   semBarraFill:{height:"100%",borderRadius:8,transition:"width .2s"},
   kpis:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:14},
-  kpi:{background:"var(--surface)",border:"1px solid var(--c52)",borderRadius:14,padding:"16px 18px",display:"flex",gap:12,alignItems:"center"},
-  kpiBar:{width:4,alignSelf:"stretch",borderRadius:4}, kpiVal:{fontSize:26,fontWeight:800,letterSpacing:"-.03em",lineHeight:1}, kpiLabel:{fontSize:12,color:"var(--c19)",marginTop:4,fontWeight:500},
+  kpi:{background:"#fff",border:"1px solid #E7E9EF",borderRadius:14,padding:"16px 18px",display:"flex",gap:12,alignItems:"center"},
+  kpiBar:{width:4,alignSelf:"stretch",borderRadius:4}, kpiVal:{fontSize:26,fontWeight:800,letterSpacing:"-.03em",lineHeight:1}, kpiLabel:{fontSize:12,color:"#8A8F9E",marginTop:4,fontWeight:500},
   grid2:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(380px,1fr))",gap:16},
-  panel:{background:"var(--surface)",border:"1px solid var(--c52)",borderRadius:14,padding:18},
-  panelTitle:{fontWeight:700,fontSize:15,letterSpacing:"-.01em"}, panelSub:{fontSize:12,color:"var(--c19)",marginTop:2},
+  panel:{background:"#fff",border:"1px solid #E7E9EF",borderRadius:14,padding:18},
+  panelTitle:{fontWeight:700,fontSize:15,letterSpacing:"-.01em"}, panelSub:{fontSize:12,color:"#8A8F9E",marginTop:2},
   memberGrid:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:12},
-  statCard:{border:"1px solid var(--c55)",borderRadius:12,padding:14,background:"var(--c77)"},
+  statCard:{border:"1px solid #EDEFF3",borderRadius:12,padding:14,background:"#FAFBFC"},
   overlay:{position:"fixed",inset:0,background:"rgba(20,22,31,.45)",display:"grid",placeItems:"center",zIndex:50,padding:20},
-  modalPequeno:{background:"var(--surface)",borderRadius:16,padding:22,width:"min(94vw,420px)",boxShadow:"0 24px 60px rgba(20,22,31,.28)",display:"flex",flexDirection:"column"},
-  modal:{background:"var(--surface)",borderRadius:16,padding:24,width:520,maxWidth:"100%",boxShadow:"0 24px 60px rgba(20,22,31,.3)",maxHeight:"88vh",overflowY:"auto"},
+  modalPequeno:{background:"#fff",borderRadius:16,padding:22,width:"min(94vw,420px)",boxShadow:"0 24px 60px rgba(20,22,31,.28)",display:"flex",flexDirection:"column"},
+  modal:{background:"#fff",borderRadius:16,padding:24,width:520,maxWidth:"100%",boxShadow:"0 24px 60px rgba(20,22,31,.3)",maxHeight:"88vh",overflowY:"auto"},
   modalHead:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}, modalTitle:{margin:0,fontSize:18,fontWeight:800},
-  msgItem:{border:"1px solid var(--c55)",borderRadius:11,padding:"10px 12px",background:"var(--surface)"},
-  msgNova:{borderColor:"var(--c32)",background:"var(--c74)"},
-  msgNovaTag:{fontSize:10,fontWeight:800,color:"var(--c08)",background:"var(--c57)",padding:"1px 7px",borderRadius:20,textTransform:"uppercase",letterSpacing:".05em"},
-  msgPara:{display:"inline-flex",alignItems:"center",gap:4,fontSize:11.5,fontWeight:700,color:"var(--c08)"},
-  memberRow:{display:"flex",alignItems:"center",gap:12,padding:"9px 11px",borderRadius:11,border:"1px solid var(--c55)"},
-  hint:{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"var(--c19)",marginTop:16,marginBottom:0,lineHeight:1.4},
-  authWrap:{height:"100vh",display:"grid",placeItems:"center",background:"linear-gradient(135deg,var(--c56),var(--c48))",fontFamily:FONT,padding:20},
-  authCard:{background:"var(--surface)",borderRadius:18,padding:"32px 30px",width:370,maxWidth:"100%",boxShadow:"0 20px 60px rgba(20,22,31,.18)"},
+  msgItem:{border:"1px solid #EDEFF3",borderRadius:11,padding:"10px 12px",background:"#fff"},
+  msgNova:{borderColor:"#C7CBFF",background:"#F7F8FE"},
+  msgNovaTag:{fontSize:10,fontWeight:800,color:"#3B3AC9",background:"#EEF0FB",padding:"1px 7px",borderRadius:20,textTransform:"uppercase",letterSpacing:".05em"},
+  msgPara:{display:"inline-flex",alignItems:"center",gap:4,fontSize:11.5,fontWeight:700,color:"#3B3AC9"},
+  memberRow:{display:"flex",alignItems:"center",gap:12,padding:"9px 11px",borderRadius:11,border:"1px solid #EDEFF3"},
+  hint:{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"#8A8F9E",marginTop:16,marginBottom:0,lineHeight:1.4},
+  authWrap:{height:"100vh",display:"grid",placeItems:"center",background:"linear-gradient(135deg,#EEF0F4,#E4E6F5)",fontFamily:FONT,padding:20},
+  authCard:{background:"#fff",borderRadius:18,padding:"32px 30px",width:370,maxWidth:"100%",boxShadow:"0 20px 60px rgba(20,22,31,.18)"},
   authTitle:{margin:"0 0 18px",fontSize:19,fontWeight:800},
-  authLabel:{display:"block",fontSize:12,fontWeight:600,color:"var(--c12)",marginBottom:5,marginTop:12},
-  authInput:{width:"100%",border:"1px solid var(--c35)",borderRadius:9,padding:"10px 12px",fontSize:14,fontFamily:FONT,color:"var(--c02)",margin:0,background:"var(--surface)"},
-  authErr:{background:"var(--c79)",color:"var(--c27)",fontSize:12.5,fontWeight:500,padding:"8px 11px",borderRadius:8,marginTop:12},
-  authHint:{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"var(--c19)",marginTop:16,marginBottom:0,lineHeight:1.5},
+  authLabel:{display:"block",fontSize:12,fontWeight:600,color:"#5A6072",marginBottom:5,marginTop:12},
+  authInput:{width:"100%",border:"1px solid #D3D7E0",borderRadius:9,padding:"10px 12px",fontSize:14,fontFamily:FONT,color:"#14161F",margin:0,background:"#fff"},
+  authErr:{background:"#FCECEA",color:"#C0392B",fontSize:12.5,fontWeight:500,padding:"8px 11px",borderRadius:8,marginTop:12},
+  authHint:{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"#8A8F9E",marginTop:16,marginBottom:0,lineHeight:1.5},
 };
 
 // ---------- Tela de conexão + carregamento da nuvem ----------
@@ -2556,55 +2108,31 @@ function Root(){
   if(fase==="carregando") return (
     <div style={S.authWrap}><div style={{textAlign:"center"}}>
       <div className="spin" style={{margin:"0 auto 14px"}}/>
-      <div style={{color:"var(--c12)",fontFamily:FONT}}>Carregando os dados da equipe…</div>
+      <div style={{color:"#5A6072",fontFamily:FONT}}>Carregando os dados da equipe…</div>
     </div></div>);
 
   // login de conexão (mesmo do servidor)
   return (
     <div style={S.authWrap}>
-      <form onSubmit={entrar} style={{background:"var(--surface)",borderRadius:16,padding:26,width:"min(94vw,380px)",boxShadow:"0 20px 50px rgba(20,22,31,.22)",fontFamily:FONT}}>
+      <form onSubmit={entrar} style={{background:"#fff",borderRadius:16,padding:26,width:"min(94vw,380px)",boxShadow:"0 20px 50px rgba(20,22,31,.22)",fontFamily:FONT}}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
           <div style={S.brandMark}>◆</div>
-          <div><div style={{fontWeight:700,fontSize:15}}>Equipe</div><div style={{fontSize:11.5,color:"var(--c19)"}}>gestão de trabalho</div></div>
+          <div><div style={{fontWeight:700,fontSize:15}}>Equipe</div><div style={{fontSize:11.5,color:"#8A8F9E"}}>gestão de trabalho</div></div>
         </div>
-        <label style={{fontSize:12,fontWeight:700,color:"var(--c12)",display:"block",marginBottom:4}}>Usuário</label>
+        <label style={{fontSize:12,fontWeight:700,color:"#5A6072",display:"block",marginBottom:4}}>Usuário</label>
         <input ref={refU} style={S.authInput} autoFocus autoComplete="username" value={usuario} onChange={(e)=>setUsuario(e.target.value)} placeholder="seu login"/>
-        <label style={{fontSize:12,fontWeight:700,color:"var(--c12)",display:"block",margin:"12px 0 4px"}}>Senha</label>
+        <label style={{fontSize:12,fontWeight:700,color:"#5A6072",display:"block",margin:"12px 0 4px"}}>Senha</label>
         <input ref={refS} style={S.authInput} type="password" autoComplete="current-password" value={senha} onChange={(e)=>setSenha(e.target.value)} placeholder="sua senha"/>
-        {erro && <div style={{background:"var(--c80)",color:"var(--c27)",borderRadius:8,padding:"8px 11px",fontSize:13,marginTop:10}}>{erro}</div>}
-        {fase==="erro" && <button type="button" onClick={carregarTudo} style={{...S.authInput,cursor:"pointer",marginTop:10,fontWeight:700,color:"var(--c08)",background:"var(--c74)"}}>Tentar carregar de novo</button>}
-        <button type="submit" disabled={ocupado} style={{width:"100%",border:"none",background:"var(--c08)",color:"var(--onaccent)",borderRadius:9,padding:12,fontSize:14,fontWeight:700,cursor:"pointer",marginTop:14,fontFamily:FONT}}>
+        {erro && <div style={{background:"#FCEDEA",color:"#C0392B",borderRadius:8,padding:"8px 11px",fontSize:13,marginTop:10}}>{erro}</div>}
+        {fase==="erro" && <button type="button" onClick={carregarTudo} style={{...S.authInput,cursor:"pointer",marginTop:10,fontWeight:700,color:"#3B3AC9",background:"#F7F8FE"}}>Tentar carregar de novo</button>}
+        <button type="submit" disabled={ocupado} style={{width:"100%",border:"none",background:"#3B3AC9",color:"#fff",borderRadius:9,padding:12,fontSize:14,fontWeight:700,cursor:"pointer",marginTop:14,fontFamily:FONT}}>
           {ocupado?"Entrando…":"Entrar"}</button>
-        <div style={{fontSize:11,color:"var(--c23)",marginTop:12,textAlign:"center"}}>Primeiro acesso: admin / admin</div>
+        <div style={{fontSize:11,color:"#A0A5B2",marginTop:12,textAlign:"center"}}>Primeiro acesso: admin / admin</div>
       </form>
     </div>);
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<Root/>);
-</script>
-
-<div id="themeBar">
-  <label for="themeSel">Tema</label>
-  <select id="themeSel">
-    <option value="claro">Claro (original)</option>
-    <option value="escuro">Escuro</option>
-    <option value="oceano">Oceano</option>
-    <option value="esmeralda">Esmeralda</option>
-  </select>
-</div>
-<script>
-(function(){
-  var sel=document.getElementById('themeSel');
-  var cur='claro';try{cur=localStorage.getItem('ge_theme')||'claro';}catch(e){}
-  sel.value=cur;
-  function apply(v){
-    if(v==='claro')document.documentElement.removeAttribute('data-theme');
-    else document.documentElement.setAttribute('data-theme',v);
-    try{localStorage.setItem('ge_theme',v);}catch(e){}
-  }
-  apply(cur);
-  sel.addEventListener('change',function(){apply(sel.value);});
-})();
 </script>
 </body>
 </html>
