@@ -832,6 +832,8 @@ function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, ca
   const [editDesc,setEditDesc]=useState(false); const [rascunho,setRascunho]=useState("");
   const [novaNota,setNovaNota]=useState(""); const [editNota,setEditNota]=useState(null); const [notaTexto,setNotaTexto]=useState("");
   const [novaFazer,setNovaFazer]=useState(""); const [editFazer,setEditFazer]=useState(null); const [fazerTexto,setFazerTexto]=useState("");
+  const [editTrab,setEditTrab]=useState(false); const [trabTexto,setTrabTexto]=useState("");
+  const [editHoras,setEditHoras]=useState(false); const [horasTexto,setHorasTexto]=useState("");
   const pri=PRIORITIES[task.priority]; const col=COL[task.col];
   const done=task.col==="done"; const inReview=task.col==="review"; const fixing=inReview&&task.needsFix; const inProtocolado=task.col==="protocolado";
   const corTrab=corDoTrabalho(task.folderName);
@@ -849,10 +851,17 @@ function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, ca
       </div>)}
       {!ehReuniao && projetoNome && <div style={S.projetoTag} title={"Projeto: "+projetoNome}>
         <Ic n="folder" s={11} c="#3B3AC9"/> {projetoNome}</div>}
-      {task.folderName && <div style={{...S.folderTag,color:corTrab,background:corTrab+"14",borderColor:corTrab+"33"}}
+      {task.folderName && !editTrab && <div style={{...S.folderTag,color:corTrab,background:corTrab+"14",borderColor:corTrab+"33"}}
         title={canEdit&&isMaster?"Clique para renomear o trabalho":task.folderName}
-        onClick={()=>{ if(canEdit&&isMaster){ const v=prompt("Nome do trabalho:",task.folderName); if(v!==null)onUpdate({folderName:v.trim()}); } }}>
+        onClick={()=>{ if(canEdit&&isMaster){ setTrabTexto(task.folderName); setEditTrab(true); } }}>
         <Ic n="folder" s={11} c={corTrab}/> {task.folderName}</div>}
+      {editTrab && <div style={{display:"flex",gap:5,alignItems:"center",marginBottom:8}} onClick={(e)=>e.stopPropagation()}>
+        <input autoFocus value={trabTexto} onChange={(e)=>setTrabTexto(e.target.value)}
+          onKeyDown={(e)=>{ if(e.key==="Enter"){ onUpdate({folderName:trabTexto.trim()}); setEditTrab(false); } if(e.key==="Escape") setEditTrab(false); }}
+          style={{...S.folderTag,color:corTrab,border:`1px solid ${corTrab}55`,background:"#fff",cursor:"text",width:130}}/>
+        <button style={S.iconBtn} onClick={()=>{ onUpdate({folderName:trabTexto.trim()}); setEditTrab(false); }}><Ic n="check" s={13} c="#1F7A55"/></button>
+        <button style={S.iconBtn} onClick={()=>setEditTrab(false)}><Ic n="x" s={13} c="#8A8F9E"/></button>
+      </div>}
       <div style={{...S.cardTop,...(ehReuniao?{padding:"10px 11px 0"}:{})}}>
         {done ? <Ic n="lock" s={13} c="#8FBFA8" style={{flexShrink:0,marginTop:2}}/>
           : fixing ? <Ic n="undo" s={13} c="#B8860B" style={{flexShrink:0,marginTop:2}}/>
@@ -1017,7 +1026,14 @@ function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, ca
         <div style={{display:"flex",gap:5,padding:"2px 6px 6px",flexWrap:"wrap"}}>
           {[0,1,2,4,6,8].map((h)=>(<button key={h} style={{...S.hrChip,...(task.hours===h?S.hrChipOn:{})}} onClick={()=>{onUpdate({hours:h});setMenu(null);}}>{h}h</button>))}
         </div>
-        <button style={S.menuItem} onClick={()=>{const v=prompt("Horas de serviço:",task.hours||0);if(v!==null&&!isNaN(+v))onUpdate({hours:Math.max(0,+v)});setMenu(null);}}><Ic n="clock" s={13}/> Valor personalizado…</button>
+        {!editHoras && <button style={S.menuItem} onClick={()=>{ setHorasTexto(String(task.hours||0)); setEditHoras(true); }}><Ic n="clock" s={13}/> Valor personalizado…</button>}
+        {editHoras && <div style={{display:"flex",gap:5,alignItems:"center",padding:"4px 6px"}}>
+          <input autoFocus type="number" min="0" value={horasTexto} onChange={(e)=>setHorasTexto(e.target.value)}
+            onKeyDown={(e)=>{ if(e.key==="Enter" && !isNaN(+horasTexto)){ onUpdate({hours:Math.max(0,+horasTexto)}); setEditHoras(false); setMenu(null); } if(e.key==="Escape") setEditHoras(false); }}
+            style={{...S.authInput,padding:"5px 8px",width:70}}/>
+          <button style={S.iconBtn} onClick={()=>{ if(!isNaN(+horasTexto)){ onUpdate({hours:Math.max(0,+horasTexto)}); setEditHoras(false); setMenu(null); } }}><Ic n="check" s={13} c="#1F7A55"/></button>
+          <button style={S.iconBtn} onClick={()=>setEditHoras(false)}><Ic n="x" s={13} c="#8A8F9E"/></button>
+        </div>}
       </div>)}
       {menu==="asg" && (<div style={S.menu}>
         <button style={S.menuItem} onClick={()=>{onUpdate({assignee:null});setMenu(null);}}><span style={S.avatarEmpty}><Ic n="circle" s={11} c="#A0A5B2"/></span> Ninguém</button>
@@ -1652,6 +1668,7 @@ function UsersModal({ users, members, tasks=[], currentUser, onAdd, onReset, onP
 
   const [redefinirUser,setRedefinirUser]=useState(null);
   const [editarAlvo,setEditarAlvo]=useState(null);
+  const [removerAlvo,setRemoverAlvo]=useState(null);
   const escolherFoto=(memberId)=>{ alvoRef.current=memberId; setErr(""); if(arquivoRef.current){ arquivoRef.current.value=""; arquivoRef.current.click(); } };
   const aoEscolher=async(e)=>{ const f=e.target.files&&e.target.files[0]; if(!f)return;
     try{ const dados=await lerFoto3x4(f); onPhoto(alvoRef.current,dados); setErr(""); setOk("Foto atualizada."); }
@@ -1755,7 +1772,7 @@ function UsersModal({ users, members, tasks=[], currentUser, onAdd, onReset, onP
             <button style={{...S.projDel,position:"static",opacity:(isSelf||lastMaster)?0.25:0.6,cursor:(isSelf||lastMaster)?"not-allowed":"pointer"}}
               disabled={!!(isSelf||lastMaster)}
               title={isSelf?"Você não pode se excluir":lastMaster?"Deve existir ao menos um master":"Excluir da equipe"}
-              onClick={()=>{ if(!isSelf&&!lastMaster&&confirm(`Excluir "${m.name}" da equipe? O login é apagado e as tarefas dela ficam sem responsável.`)) onRemoverPessoa(m.id); }}>
+              onClick={()=>{ if(!isSelf&&!lastMaster) setRemoverAlvo(m); }}>
               <Ic n="trash" s={15} c="#C0397E"/></button>
           </div>); })}
       </div>
@@ -1775,6 +1792,12 @@ function UsersModal({ users, members, tasks=[], currentUser, onAdd, onReset, onP
         setEditarAlvo(null); setOk("Dados atualizados.");
       }}
       onFechar={()=>setEditarAlvo(null)}/>}
+    {removerAlvo && <ConfirmModal
+      titulo="Excluir da equipe"
+      mensagem={`Excluir "${removerAlvo.name}" da equipe? O login é apagado e as tarefas dela ficam sem responsável.`}
+      confirmarLabel="Excluir da equipe" perigo
+      onConfirmar={()=>{ onRemoverPessoa(removerAlvo.id); setRemoverAlvo(null); setOk(`"${removerAlvo.name}" foi removido da equipe.`); }}
+      onCancelar={()=>setRemoverAlvo(null)}/>}
   </div>);
 }
 
@@ -2133,6 +2156,34 @@ function Root(){
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<Root/>);
+</script>
+<script>
+(function(){
+  function isSkippable(el){
+    if(!el) return true;
+    var tag = el.tagName;
+    if(tag!=="INPUT" && tag!=="TEXTAREA") return true;
+    var type = (el.type||"text").toLowerCase();
+    var skipTypes = ["password","email","number","tel","url","search","date","time","datetime-local","month","week","color","file","checkbox","radio","range"];
+    if(skipTypes.indexOf(type)!==-1) return true;
+    var ac = (el.getAttribute("autocomplete")||"").toLowerCase();
+    if(ac.indexOf("username")!==-1 || ac.indexOf("password")!==-1) return true;
+    return false;
+  }
+  document.addEventListener("beforeinput", function(e){
+    var el = e.target;
+    if(isSkippable(el)) return;
+    if((e.inputType==="insertText" || e.inputType==="insertFromPaste") && e.data){
+      if(el.value===""  && el.selectionStart===0){
+        var upper = e.data.charAt(0).toUpperCase() + e.data.slice(1);
+        if(upper!==e.data){
+          e.preventDefault();
+          document.execCommand("insertText", false, upper);
+        }
+      }
+    }
+  }, true);
+})();
 </script>
 </body>
 </html>
