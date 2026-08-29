@@ -579,8 +579,9 @@ function App({ inicial, aoSair, usuarioConectado }){
     updateTask(id,{col:"done",needsFix:false,fixNote:"",workedMs:soma,runningSince:null,
       acceptedAt:t.acceptedAt??agora,completedAt:agora}); };
   const sendToReview=(id)=>setRevisaoDe(id);
-  const confirmarRevisao=(id,note)=>{ const t=state.tasks.find((x)=>x.id===id);
-    updateTask(id,{col:"review",needsFix:true,fixNote:(note||"").trim(),runningSince:Date.now(),completedAt:null,reworkCount:(t?.reworkCount||0)+1});
+  // Envio Em andamento -> Revisão (1ª revisão do trabalho): não conta como retrabalho.
+  const confirmarRevisao=(id,note)=>{
+    updateTask(id,{col:"review",needsFix:true,fixNote:(note||"").trim(),runningSince:Date.now(),completedAt:null});
     setRevisaoDe(null);
   };
   const backToDoing=(id)=>updateTask(id,{col:"doing",needsFix:false,fixNote:"",runningSince:Date.now(),completedAt:null});
@@ -1459,33 +1460,38 @@ function Dashboard({ tasks, members }){
 }
 function IndicadoresProcesso({ tasks, members }){
   const stats=useMemo(()=>{
-    const agora=Date.now();
     const fluxo=tasks.filter((t)=>t.tipo!=="reuniao");
     const total=fluxo.length;
     const pct=(n,d)=> d? Math.round((n/d)*100) : 0;
     const media=(arr)=> arr.length? arr.reduce((a,b)=>a+b,0)/arr.length : null;
 
-    const tarefasAFazer=fluxo.filter((t)=>t.col==="todo");
-    const emAberto=tarefasAFazer.length;
-    const temposEspera=tarefasAFazer.map((t)=>agora-t.createdAt);
-    const medEspera=media(temposEspera);
+    // Tempo para aceitar: da criação até o membro aceitar (Em aberto -> Em andamento).
+    // Tempo de execução: do aceite até chegar em Protocolado (ou Concluído, se não passou por lá).
+    // Histórico — considera TODAS as tarefas que já passaram por isso, não só as que estão
+    // na coluna agora, então não zera só porque o quadro está vazio no momento.
+    const comAceite=fluxo.filter((t)=>t.acceptedAt&&t.createdAt);
+    const temposAceite=comAceite.map((t)=>t.acceptedAt-t.createdAt);
+    const medAceite=media(temposAceite);
 
-    const tarefasAndamento=fluxo.filter((t)=>t.col==="doing");
-    const temposAndamento=tarefasAndamento.map((t)=>agora-(t.acceptedAt||t.createdAt));
-    const medAndamento=media(temposAndamento);
+    const comExecucao=fluxo.filter((t)=>t.acceptedAt&&(t.protocoladoAt||t.completedAt));
+    const temposExecucao=comExecucao.map((t)=>(t.protocoladoAt||t.completedAt)-t.acceptedAt);
+    const medExecucao=media(temposExecucao);
 
+    const emAberto=fluxo.filter((t)=>t.col==="todo").length;
     const temposConcluido=fluxo.filter((t)=>t.completedAt&&t.createdAt).map((t)=>t.completedAt-t.createdAt);
 
-    // Por membro: % a fazer, % em andamento, % retrabalho e tempo médio até protocolado —
+    // Por membro: tempo p/ aceitar, tempo de execução, % retrabalho e tempo médio até protocolado —
     // só entram na média da equipe os membros que já têm alguma tarefa no fluxo.
     const porMembro=members.map((m)=>{
       const doMembro=fluxo.filter((t)=>t.assignee===m.id);
       const n=doMembro.length;
-      const aFazer=doMembro.filter((t)=>t.col==="todo").length;
-      const andamento=doMembro.filter((t)=>t.col==="doing").length;
       const retrabalho=doMembro.filter((t)=>(t.reworkCount||0)>0).length;
+      const aceiteM=doMembro.filter((t)=>t.acceptedAt&&t.createdAt).map((t)=>t.acceptedAt-t.createdAt);
+      const execM=doMembro.filter((t)=>t.acceptedAt&&(t.protocoladoAt||t.completedAt)).map((t)=>(t.protocoladoAt||t.completedAt)-t.acceptedAt);
       const temposProt=doMembro.filter((t)=>t.protocoladoAt&&t.createdAt).map((t)=>t.protocoladoAt-t.createdAt);
-      return { member:m, n, pctAFazer:pct(aFazer,n), pctAndamento:pct(andamento,n), pctRetrabalho:pct(retrabalho,n),
+      return { member:m, n, pctRetrabalho:pct(retrabalho,n),
+        medAceite:media(aceiteM), nAceite:aceiteM.length,
+        medExecucao:media(execM), nExecucao:execM.length,
         medProtocolo:media(temposProt), nProtocolo:temposProt.length };
     }).filter((r)=>r.n>0);
 
@@ -1493,24 +1499,22 @@ function IndicadoresProcesso({ tasks, members }){
     const comProtocolo=porMembro.filter((r)=>r.medProtocolo!=null);
     const medProtocoloEquipe=comProtocolo.length? comProtocolo.reduce((a,r)=>a+r.medProtocolo,0)/comProtocolo.length : null;
 
-    return { total, emAberto, pct, medEspera, nEspera:tarefasAFazer.length,
-      medAndamento, nAndamento:tarefasAndamento.length,
-      pctAndamentoEquipe:mediaEquipe((r)=>r.pctAndamento), pctRetrabalhoEquipe:mediaEquipe((r)=>r.pctRetrabalho),
+    return { total, emAberto, pct,
+      medAceite, nAceite:comAceite.length, medExecucao, nExecucao:comExecucao.length,
+      pctRetrabalhoEquipe:mediaEquipe((r)=>r.pctRetrabalho),
       medProtocolo:medProtocoloEquipe, nProtocolo:comProtocolo.length,
       medConcluido:media(temposConcluido), nConcluido:temposConcluido.length, porMembro };
   },[tasks,members]);
-  const { total, emAberto, pct, medEspera, nEspera, medAndamento, nAndamento, pctAndamentoEquipe, pctRetrabalhoEquipe, medProtocolo, nProtocolo, medConcluido, nConcluido, porMembro } = stats;
+  const { total, emAberto, pct, medAceite, nAceite, medExecucao, nExecucao, pctRetrabalhoEquipe, medProtocolo, nProtocolo, medConcluido, nConcluido, porMembro } = stats;
   const cards=[
     { label:"Em aberto (A fazer)", icon:"clock", accent:COL.todo.tint,
-      value:`${pct(emAberto,total)}%`,
-      extra: nEspera? `Tempo médio de espera: ${durMs(medEspera)}` : null,
-      desc:`${emAberto} de ${total} tarefa${total===1?"":"s"} aguardando início.` },
+      value: medAceite!=null? durMs(medAceite) : "—",
+      desc: nAceite? `Tempo médio para aceitar (${nAceite} tarefa${nAceite===1?"":"s"}) · ${emAberto} de ${total} aguardando agora.` : `${emAberto} de ${total} tarefa${total===1?"":"s"} aguardando início.` },
     { label:"Em andamento", icon:"bar", accent:COL.doing.tint,
-      value:`${pctAndamentoEquipe}%`,
-      extra: nAndamento? `Tempo médio em execução: ${durMs(medAndamento)}` : null,
-      desc:`Média da equipe (${porMembro.length} membro${porMembro.length===1?"":"s"} com tarefas).` },
+      value: medExecucao!=null? durMs(medExecucao) : "—",
+      desc: nExecucao? `Tempo médio de execução (${nExecucao} tarefa${nExecucao===1?"":"s"}), do aceite até Protocolado/Concluído.` : "Nenhuma tarefa concluiu a execução ainda." },
     { label:"Taxa de retrabalho", icon:"undo", accent:COL.review.tint,
-      value:`${pctRetrabalhoEquipe}%`, desc:`Média da equipe (${porMembro.length} membro${porMembro.length===1?"":"s"} com tarefas).` },
+      value:`${pctRetrabalhoEquipe}%`, desc:`Só conta quando volta de Protocolado p/ Revisão · média entre ${porMembro.length} membro${porMembro.length===1?"":"s"}.` },
     { label:"Tempo médio até Protocolado", icon:"flag", accent:COL.protocolado.tint,
       value: medProtocolo!=null? durMs(medProtocolo) : "—",
       desc: nProtocolo? `Média entre ${nProtocolo} membro${nProtocolo===1?"":"s"} com tarefa protocolada.` : "Nenhuma tarefa protocolada ainda." },
@@ -1524,18 +1528,17 @@ function IndicadoresProcesso({ tasks, members }){
       {cards.map((c,i)=>(<div key={i} style={{...S.indCard,borderTopColor:c.accent}}>
         <div style={S.indHead}><span style={S.indLabel}>{c.label}</span><Ic n={c.icon} s={16} c={c.accent}/></div>
         <div style={S.indVal}>{c.value}</div>
-        {c.extra && <div style={S.indExtra}>{c.extra}</div>}
         <div style={S.indDesc}>{c.desc}</div>
       </div>))}
     </div>
   </Panel>
-  <Panel title="Indicadores por membro" sub="Em andamento, retrabalho e tempo até Protocolado — a média de todos forma o valor lá em cima">
+  <Panel title="Indicadores por membro" sub="Tempo p/ aceitar, execução, retrabalho e até Protocolado — a média de todos forma o valor lá em cima">
     {porMembro.length===0 ? <div style={S.indDesc}>Nenhum membro com tarefas no fluxo ainda.</div> :
     <div style={{display:"flex",flexDirection:"column",gap:8}}>
       <div style={S.indMemberHeadRow}>
         <span style={{flex:1}}>Membro</span>
-        <span style={S.indMemberCol}>A fazer</span>
-        <span style={S.indMemberCol}>Em andamento</span>
+        <span style={S.indMemberCol}>P/ aceitar</span>
+        <span style={S.indMemberCol}>Execução</span>
         <span style={S.indMemberCol}>Retrabalho</span>
         <span style={S.indMemberCol}>Até Protocolado</span>
       </div>
@@ -1545,8 +1548,8 @@ function IndicadoresProcesso({ tasks, members }){
           <span style={{fontSize:13,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.member.name}</span>
           <span style={{fontSize:11,color:"#ABB0BE"}}>({r.n} tarefa{r.n===1?"":"s"})</span>
         </div>
-        <span style={{...S.indMemberCol,fontWeight:700,color:COL.todo.tint}}>{r.pctAFazer}%</span>
-        <span style={{...S.indMemberCol,fontWeight:700,color:COL.doing.tint}}>{r.pctAndamento}%</span>
+        <span style={{...S.indMemberCol,fontWeight:700,color:COL.todo.tint}}>{r.medAceite!=null? durMs(r.medAceite) : "—"}</span>
+        <span style={{...S.indMemberCol,fontWeight:700,color:COL.doing.tint}}>{r.medExecucao!=null? durMs(r.medExecucao) : "—"}</span>
         <span style={{...S.indMemberCol,fontWeight:700,color:COL.review.tint}}>{r.pctRetrabalho}%</span>
         <span style={{...S.indMemberCol,fontWeight:700,color:COL.protocolado.tint}}>{r.medProtocolo!=null? durMs(r.medProtocolo) : "—"}</span>
       </div>))}
