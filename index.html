@@ -4,6 +4,14 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Equipe · Gestão de Trabalho</title>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#3B3AC9"/>
+<link rel="icon" href="/icons/icon-192.png"/>
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Equipe"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -1427,7 +1435,7 @@ function Dashboard({ tasks, members }){
       <Kpi label="Em revisão" value={tasks.filter((t)=>t.col==="review").length} accent={COL.review.tint}/>
       <Kpi label="Em aberto" value={tasks.filter((t)=>t.col!=="done").length} accent={COL.todo.tint}/>
     </div>
-    <IndicadoresProcesso tasks={tasks}/>
+    <IndicadoresProcesso tasks={tasks} members={members}/>
     <SemanaPanel tasks={tasks} members={members}/>
     <div style={S.grid2}>
       <Panel title="Evolução de conclusões por membro" sub="Acumulado — últimos 14 dias"><LineChart rows={evolution} series={memberSeries}/><Legend items={memberSeries}/></Panel>
@@ -1449,37 +1457,53 @@ function Dashboard({ tasks, members }){
     </Panel>
   </div>);
 }
-function IndicadoresProcesso({ tasks }){
+function IndicadoresProcesso({ tasks, members }){
   const stats=useMemo(()=>{
     const fluxo=tasks.filter((t)=>t.tipo!=="reuniao");
     const total=fluxo.length;
-    const pct=(n)=> total? Math.round((n/total)*100) : 0;
+    const pct=(n,d)=> d? Math.round((n/d)*100) : 0;
     const emAberto=fluxo.filter((t)=>t.col==="todo").length;
-    const emAndamento=fluxo.filter((t)=>t.col==="doing").length;
-    const retrabalho=fluxo.filter((t)=>(t.reworkCount||0)>0).length;
     const media=(arr)=> arr.length? arr.reduce((a,b)=>a+b,0)/arr.length : null;
-    const temposProtocolo=fluxo.filter((t)=>t.protocoladoAt&&t.createdAt).map((t)=>t.protocoladoAt-t.createdAt);
     const temposConcluido=fluxo.filter((t)=>t.completedAt&&t.createdAt).map((t)=>t.completedAt-t.createdAt);
-    return { total, emAberto, emAndamento, retrabalho, pct,
-      medProtocolo:media(temposProtocolo), nProtocolo:temposProtocolo.length,
-      medConcluido:media(temposConcluido), nConcluido:temposConcluido.length };
-  },[tasks]);
-  const { total, emAberto, emAndamento, retrabalho, pct, medProtocolo, nProtocolo, medConcluido, nConcluido } = stats;
+
+    // Por membro: % em andamento, % retrabalho e tempo médio até protocolado —
+    // só entram na média da equipe os membros que já têm alguma tarefa no fluxo.
+    const porMembro=members.map((m)=>{
+      const doMembro=fluxo.filter((t)=>t.assignee===m.id);
+      const n=doMembro.length;
+      const andamento=doMembro.filter((t)=>t.col==="doing").length;
+      const retrabalho=doMembro.filter((t)=>(t.reworkCount||0)>0).length;
+      const temposProt=doMembro.filter((t)=>t.protocoladoAt&&t.createdAt).map((t)=>t.protocoladoAt-t.createdAt);
+      return { member:m, n, pctAndamento:pct(andamento,n), pctRetrabalho:pct(retrabalho,n),
+        medProtocolo:media(temposProt), nProtocolo:temposProt.length };
+    }).filter((r)=>r.n>0);
+
+    const mediaEquipe=(sel)=> porMembro.length? Math.round(porMembro.reduce((a,r)=>a+sel(r),0)/porMembro.length) : 0;
+    const comProtocolo=porMembro.filter((r)=>r.medProtocolo!=null);
+    const medProtocoloEquipe=comProtocolo.length? comProtocolo.reduce((a,r)=>a+r.medProtocolo,0)/comProtocolo.length : null;
+
+    return { total, emAberto, pct,
+      pctAndamentoEquipe:mediaEquipe((r)=>r.pctAndamento), pctRetrabalhoEquipe:mediaEquipe((r)=>r.pctRetrabalho),
+      medProtocolo:medProtocoloEquipe, nProtocolo:comProtocolo.length,
+      medConcluido:media(temposConcluido), nConcluido:temposConcluido.length, porMembro };
+  },[tasks,members]);
+  const { total, emAberto, pct, pctAndamentoEquipe, pctRetrabalhoEquipe, medProtocolo, nProtocolo, medConcluido, nConcluido, porMembro } = stats;
   const cards=[
     { label:"Em aberto (A fazer)", icon:"clock", accent:COL.todo.tint,
-      value:`${pct(emAberto)}%`, desc:`${emAberto} de ${total} tarefa${total===1?"":"s"} aguardando início.` },
+      value:`${pct(emAberto,total)}%`, desc:`${emAberto} de ${total} tarefa${total===1?"":"s"} aguardando início.` },
     { label:"Em andamento", icon:"bar", accent:COL.doing.tint,
-      value:`${pct(emAndamento)}%`, desc:`${emAndamento} de ${total} tarefa${total===1?"":"s"} sendo executadas agora.` },
+      value:`${pctAndamentoEquipe}%`, desc:`Média da equipe (${porMembro.length} membro${porMembro.length===1?"":"s"} com tarefas).` },
     { label:"Taxa de retrabalho", icon:"undo", accent:COL.review.tint,
-      value:`${pct(retrabalho)}%`, desc:`${retrabalho} de ${total} tarefa${total===1?"":"s"} voltaram para revisão.` },
+      value:`${pctRetrabalhoEquipe}%`, desc:`Média da equipe (${porMembro.length} membro${porMembro.length===1?"":"s"} com tarefas).` },
     { label:"Tempo médio até Protocolado", icon:"flag", accent:COL.protocolado.tint,
       value: medProtocolo!=null? durMs(medProtocolo) : "—",
-      desc: nProtocolo? `Média com base em ${nProtocolo} tarefa${nProtocolo===1?"":"s"} protocolada${nProtocolo===1?"":"s"}.` : "Nenhuma tarefa protocolada ainda." },
+      desc: nProtocolo? `Média entre ${nProtocolo} membro${nProtocolo===1?"":"s"} com tarefa protocolada.` : "Nenhuma tarefa protocolada ainda." },
     { label:"Tempo médio até Concluído", icon:"checkc", accent:COL.done.tint,
       value: medConcluido!=null? durMs(medConcluido) : "—",
       desc: nConcluido? `Média com base em ${nConcluido} tarefa${nConcluido===1?"":"s"} concluída${nConcluido===1?"":"s"}.` : "Nenhuma tarefa concluída ainda." },
   ];
-  return (<Panel title="Indicadores do processo" sub="Taxas por etapa, retrabalho e tempos médios do fluxo">
+  return (<React.Fragment>
+  <Panel title="Indicadores do processo" sub="Taxas por etapa, retrabalho e tempos médios do fluxo">
     <div style={S.indGrid}>
       {cards.map((c,i)=>(<div key={i} style={{...S.indCard,borderTopColor:c.accent}}>
         <div style={S.indHead}><span style={S.indLabel}>{c.label}</span><Ic n={c.icon} s={16} c={c.accent}/></div>
@@ -1487,7 +1511,29 @@ function IndicadoresProcesso({ tasks }){
         <div style={S.indDesc}>{c.desc}</div>
       </div>))}
     </div>
-  </Panel>);
+  </Panel>
+  <Panel title="Indicadores por membro" sub="Em andamento, retrabalho e tempo até Protocolado — a média de todos forma o valor lá em cima">
+    {porMembro.length===0 ? <div style={S.indDesc}>Nenhum membro com tarefas no fluxo ainda.</div> :
+    <div style={{display:"flex",flexDirection:"column",gap:8}}>
+      <div style={S.indMemberHeadRow}>
+        <span style={{flex:1}}>Membro</span>
+        <span style={S.indMemberCol}>Em andamento</span>
+        <span style={S.indMemberCol}>Retrabalho</span>
+        <span style={S.indMemberCol}>Até Protocolado</span>
+      </div>
+      {porMembro.map((r)=>(<div key={r.member.id} style={S.indMemberRow}>
+        <div style={{display:"flex",alignItems:"center",gap:9,flex:1,minWidth:0}}>
+          <Avatar m={r.member} size={26}/>
+          <span style={{fontSize:13,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.member.name}</span>
+          <span style={{fontSize:11,color:"#ABB0BE"}}>({r.n} tarefa{r.n===1?"":"s"})</span>
+        </div>
+        <span style={{...S.indMemberCol,fontWeight:700,color:COL.doing.tint}}>{r.pctAndamento}%</span>
+        <span style={{...S.indMemberCol,fontWeight:700,color:COL.review.tint}}>{r.pctRetrabalho}%</span>
+        <span style={{...S.indMemberCol,fontWeight:700,color:COL.protocolado.tint}}>{r.medProtocolo!=null? durMs(r.medProtocolo) : "—"}</span>
+      </div>))}
+    </div>}
+  </Panel>
+  </React.Fragment>);
 }
 const Kpi=({label,value,accent})=>(<div style={S.kpi}><div style={{...S.kpiBar,background:accent}}/><div><div style={S.kpiVal}>{value}</div><div style={S.kpiLabel}>{label}</div></div></div>);
 const Panel=({title,sub,children})=>(<div style={S.panel}><div style={{marginBottom:10}}><div style={S.panelTitle}>{title}</div>{sub&&<div style={S.panelSub}>{sub}</div>}</div>{children}</div>);
@@ -2092,6 +2138,9 @@ const S = {
   indLabel:{fontSize:11.5,fontWeight:700,color:"#5A6072",textTransform:"uppercase",letterSpacing:".03em"},
   indVal:{fontSize:28,fontWeight:800,letterSpacing:"-.03em",lineHeight:1.1},
   indDesc:{fontSize:12,color:"#8A8F9E",lineHeight:1.4},
+  indMemberHeadRow:{display:"flex",alignItems:"center",padding:"0 11px",fontSize:10.5,fontWeight:700,color:"#ABB0BE",textTransform:"uppercase",letterSpacing:".04em"},
+  indMemberRow:{display:"flex",alignItems:"center",gap:8,padding:"9px 11px",borderRadius:11,border:"1px solid #EDEFF3",background:"#FAFBFD"},
+  indMemberCol:{width:120,textAlign:"right",fontSize:13},
   memberGrid:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:12},
   statCard:{border:"1px solid #EDEFF3",borderRadius:12,padding:14,background:"#FAFBFC"},
   overlay:{position:"fixed",inset:0,background:"rgba(20,22,31,.45)",display:"grid",placeItems:"center",zIndex:50,padding:20},
@@ -2232,6 +2281,13 @@ ReactDOM.createRoot(document.getElementById("root")).render(<Root/>);
     }
   }, true);
 })();
+</script>
+<script>
+if("serviceWorker" in navigator){
+  window.addEventListener("load", function(){
+    navigator.serviceWorker.register("/sw.js").catch(function(){});
+  });
+}
 </script>
 </body>
 </html>
