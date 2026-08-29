@@ -553,7 +553,7 @@ function App({ inicial, aoSair, usuarioConectado }){
           priority:it.priority||"media", hours:Math.max(0,+it.hours||0), assignee:it.reuniao?null:(assignee||null),
           createdAt:agora, acceptedAt:null, workedMs:0, runningSince:null,
           desc:((desc&&desc.trim())||item.desc||"").trim(),
-          needsFix:false, fixNote:"", completedAt:null };
+          needsFix:false, fixNote:"", completedAt:null, reworkCount:0, protocoladoAt:null };
       }).filter(Boolean);
       s.tasks=[...s.tasks,...novas];
       return s;
@@ -571,17 +571,18 @@ function App({ inicial, aoSair, usuarioConectado }){
     updateTask(id,{col:"done",needsFix:false,fixNote:"",workedMs:soma,runningSince:null,
       acceptedAt:t.acceptedAt??agora,completedAt:agora}); };
   const sendToReview=(id)=>setRevisaoDe(id);
-  const confirmarRevisao=(id,note)=>{
-    updateTask(id,{col:"review",needsFix:true,fixNote:(note||"").trim(),runningSince:Date.now(),completedAt:null});
+  const confirmarRevisao=(id,note)=>{ const t=state.tasks.find((x)=>x.id===id);
+    updateTask(id,{col:"review",needsFix:true,fixNote:(note||"").trim(),runningSince:Date.now(),completedAt:null,reworkCount:(t?.reworkCount||0)+1});
     setRevisaoDe(null);
   };
   const backToDoing=(id)=>updateTask(id,{col:"doing",needsFix:false,fixNote:"",runningSince:Date.now(),completedAt:null});
   // Correção pronta na Revisão Interna vai para Protocolado (não direto ao Concluído).
   const toProtocolado=(id)=>{ const t=state.tasks.find((x)=>x.id===id); const agora=Date.now();
     const soma=(t.workedMs||0)+(t.runningSince?agora-t.runningSince:0);
-    updateTask(id,{col:"protocolado",needsFix:false,fixNote:"",workedMs:soma,runningSince:null,completedAt:null}); };
+    updateTask(id,{col:"protocolado",needsFix:false,fixNote:"",workedMs:soma,runningSince:null,completedAt:null,protocoladoAt:t.protocoladoAt??agora}); };
   // De Protocolado: pode voltar para a Revisão Interna...
-  const backToReview=(id)=>updateTask(id,{col:"review",needsFix:true,runningSince:Date.now(),completedAt:null});
+  const backToReview=(id)=>{ const t=state.tasks.find((x)=>x.id===id);
+    updateTask(id,{col:"review",needsFix:true,runningSince:Date.now(),completedAt:null,reworkCount:(t?.reworkCount||0)+1}); };
   // Em andamento -> Revisão Interna (envio normal, sem marcar "conserto")
   const doingToReview=(id)=>updateTask(id,{col:"review",needsFix:false,fixNote:"",runningSince:Date.now(),completedAt:null});
   // Protocolado -> Em andamento
@@ -1426,6 +1427,7 @@ function Dashboard({ tasks, members }){
       <Kpi label="Em revisão" value={tasks.filter((t)=>t.col==="review").length} accent={COL.review.tint}/>
       <Kpi label="Em aberto" value={tasks.filter((t)=>t.col!=="done").length} accent={COL.todo.tint}/>
     </div>
+    <IndicadoresProcesso tasks={tasks}/>
     <SemanaPanel tasks={tasks} members={members}/>
     <div style={S.grid2}>
       <Panel title="Evolução de conclusões por membro" sub="Acumulado — últimos 14 dias"><LineChart rows={evolution} series={memberSeries}/><Legend items={memberSeries}/></Panel>
@@ -1446,6 +1448,46 @@ function Dashboard({ tasks, members }){
       </div>
     </Panel>
   </div>);
+}
+function IndicadoresProcesso({ tasks }){
+  const stats=useMemo(()=>{
+    const fluxo=tasks.filter((t)=>t.tipo!=="reuniao");
+    const total=fluxo.length;
+    const pct=(n)=> total? Math.round((n/total)*100) : 0;
+    const emAberto=fluxo.filter((t)=>t.col==="todo").length;
+    const emAndamento=fluxo.filter((t)=>t.col==="doing").length;
+    const retrabalho=fluxo.filter((t)=>(t.reworkCount||0)>0).length;
+    const media=(arr)=> arr.length? arr.reduce((a,b)=>a+b,0)/arr.length : null;
+    const temposProtocolo=fluxo.filter((t)=>t.protocoladoAt&&t.createdAt).map((t)=>t.protocoladoAt-t.createdAt);
+    const temposConcluido=fluxo.filter((t)=>t.completedAt&&t.createdAt).map((t)=>t.completedAt-t.createdAt);
+    return { total, emAberto, emAndamento, retrabalho, pct,
+      medProtocolo:media(temposProtocolo), nProtocolo:temposProtocolo.length,
+      medConcluido:media(temposConcluido), nConcluido:temposConcluido.length };
+  },[tasks]);
+  const { total, emAberto, emAndamento, retrabalho, pct, medProtocolo, nProtocolo, medConcluido, nConcluido } = stats;
+  const cards=[
+    { label:"Em aberto (A fazer)", icon:"clock", accent:COL.todo.tint,
+      value:`${pct(emAberto)}%`, desc:`${emAberto} de ${total} tarefa${total===1?"":"s"} aguardando início.` },
+    { label:"Em andamento", icon:"bar", accent:COL.doing.tint,
+      value:`${pct(emAndamento)}%`, desc:`${emAndamento} de ${total} tarefa${total===1?"":"s"} sendo executadas agora.` },
+    { label:"Taxa de retrabalho", icon:"undo", accent:COL.review.tint,
+      value:`${pct(retrabalho)}%`, desc:`${retrabalho} de ${total} tarefa${total===1?"":"s"} voltaram para revisão.` },
+    { label:"Tempo médio até Protocolado", icon:"flag", accent:COL.protocolado.tint,
+      value: medProtocolo!=null? durMs(medProtocolo) : "—",
+      desc: nProtocolo? `Média com base em ${nProtocolo} tarefa${nProtocolo===1?"":"s"} protocolada${nProtocolo===1?"":"s"}.` : "Nenhuma tarefa protocolada ainda." },
+    { label:"Tempo médio até Concluído", icon:"checkc", accent:COL.done.tint,
+      value: medConcluido!=null? durMs(medConcluido) : "—",
+      desc: nConcluido? `Média com base em ${nConcluido} tarefa${nConcluido===1?"":"s"} concluída${nConcluido===1?"":"s"}.` : "Nenhuma tarefa concluída ainda." },
+  ];
+  return (<Panel title="Indicadores do processo" sub="Taxas por etapa, retrabalho e tempos médios do fluxo">
+    <div style={S.indGrid}>
+      {cards.map((c,i)=>(<div key={i} style={{...S.indCard,borderTopColor:c.accent}}>
+        <div style={S.indHead}><span style={S.indLabel}>{c.label}</span><Ic n={c.icon} s={16} c={c.accent}/></div>
+        <div style={S.indVal}>{c.value}</div>
+        <div style={S.indDesc}>{c.desc}</div>
+      </div>))}
+    </div>
+  </Panel>);
 }
 const Kpi=({label,value,accent})=>(<div style={S.kpi}><div style={{...S.kpiBar,background:accent}}/><div><div style={S.kpiVal}>{value}</div><div style={S.kpiLabel}>{label}</div></div></div>);
 const Panel=({title,sub,children})=>(<div style={S.panel}><div style={{marginBottom:10}}><div style={S.panelTitle}>{title}</div>{sub&&<div style={S.panelSub}>{sub}</div>}</div>{children}</div>);
@@ -2044,6 +2086,12 @@ const S = {
   grid2:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(380px,1fr))",gap:16},
   panel:{background:"#fff",border:"1px solid #E7E9EF",borderRadius:14,padding:18},
   panelTitle:{fontWeight:700,fontSize:15,letterSpacing:"-.01em"}, panelSub:{fontSize:12,color:"#8A8F9E",marginTop:2},
+  indGrid:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:14,marginTop:4},
+  indCard:{background:"#F9FAFC",border:"1px solid #E7E9EF",borderTop:"3px solid",borderRadius:12,padding:"14px 16px",display:"flex",flexDirection:"column",gap:6},
+  indHead:{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8},
+  indLabel:{fontSize:11.5,fontWeight:700,color:"#5A6072",textTransform:"uppercase",letterSpacing:".03em"},
+  indVal:{fontSize:28,fontWeight:800,letterSpacing:"-.03em",lineHeight:1.1},
+  indDesc:{fontSize:12,color:"#8A8F9E",lineHeight:1.4},
   memberGrid:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:12},
   statCard:{border:"1px solid #EDEFF3",borderRadius:12,padding:14,background:"#FAFBFC"},
   overlay:{position:"fixed",inset:0,background:"rgba(20,22,31,.45)",display:"grid",placeItems:"center",zIndex:50,padding:20},
