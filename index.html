@@ -1459,22 +1459,33 @@ function Dashboard({ tasks, members }){
 }
 function IndicadoresProcesso({ tasks, members }){
   const stats=useMemo(()=>{
+    const agora=Date.now();
     const fluxo=tasks.filter((t)=>t.tipo!=="reuniao");
     const total=fluxo.length;
     const pct=(n,d)=> d? Math.round((n/d)*100) : 0;
-    const emAberto=fluxo.filter((t)=>t.col==="todo").length;
     const media=(arr)=> arr.length? arr.reduce((a,b)=>a+b,0)/arr.length : null;
+
+    const tarefasAFazer=fluxo.filter((t)=>t.col==="todo");
+    const emAberto=tarefasAFazer.length;
+    const temposEspera=tarefasAFazer.map((t)=>agora-t.createdAt);
+    const medEspera=media(temposEspera);
+
+    const tarefasAndamento=fluxo.filter((t)=>t.col==="doing");
+    const temposAndamento=tarefasAndamento.map((t)=>agora-(t.acceptedAt||t.createdAt));
+    const medAndamento=media(temposAndamento);
+
     const temposConcluido=fluxo.filter((t)=>t.completedAt&&t.createdAt).map((t)=>t.completedAt-t.createdAt);
 
-    // Por membro: % em andamento, % retrabalho e tempo médio até protocolado —
+    // Por membro: % a fazer, % em andamento, % retrabalho e tempo médio até protocolado —
     // só entram na média da equipe os membros que já têm alguma tarefa no fluxo.
     const porMembro=members.map((m)=>{
       const doMembro=fluxo.filter((t)=>t.assignee===m.id);
       const n=doMembro.length;
+      const aFazer=doMembro.filter((t)=>t.col==="todo").length;
       const andamento=doMembro.filter((t)=>t.col==="doing").length;
       const retrabalho=doMembro.filter((t)=>(t.reworkCount||0)>0).length;
       const temposProt=doMembro.filter((t)=>t.protocoladoAt&&t.createdAt).map((t)=>t.protocoladoAt-t.createdAt);
-      return { member:m, n, pctAndamento:pct(andamento,n), pctRetrabalho:pct(retrabalho,n),
+      return { member:m, n, pctAFazer:pct(aFazer,n), pctAndamento:pct(andamento,n), pctRetrabalho:pct(retrabalho,n),
         medProtocolo:media(temposProt), nProtocolo:temposProt.length };
     }).filter((r)=>r.n>0);
 
@@ -1482,17 +1493,22 @@ function IndicadoresProcesso({ tasks, members }){
     const comProtocolo=porMembro.filter((r)=>r.medProtocolo!=null);
     const medProtocoloEquipe=comProtocolo.length? comProtocolo.reduce((a,r)=>a+r.medProtocolo,0)/comProtocolo.length : null;
 
-    return { total, emAberto, pct,
+    return { total, emAberto, pct, medEspera, nEspera:tarefasAFazer.length,
+      medAndamento, nAndamento:tarefasAndamento.length,
       pctAndamentoEquipe:mediaEquipe((r)=>r.pctAndamento), pctRetrabalhoEquipe:mediaEquipe((r)=>r.pctRetrabalho),
       medProtocolo:medProtocoloEquipe, nProtocolo:comProtocolo.length,
       medConcluido:media(temposConcluido), nConcluido:temposConcluido.length, porMembro };
   },[tasks,members]);
-  const { total, emAberto, pct, pctAndamentoEquipe, pctRetrabalhoEquipe, medProtocolo, nProtocolo, medConcluido, nConcluido, porMembro } = stats;
+  const { total, emAberto, pct, medEspera, nEspera, medAndamento, nAndamento, pctAndamentoEquipe, pctRetrabalhoEquipe, medProtocolo, nProtocolo, medConcluido, nConcluido, porMembro } = stats;
   const cards=[
     { label:"Em aberto (A fazer)", icon:"clock", accent:COL.todo.tint,
-      value:`${pct(emAberto,total)}%`, desc:`${emAberto} de ${total} tarefa${total===1?"":"s"} aguardando início.` },
+      value:`${pct(emAberto,total)}%`,
+      extra: nEspera? `Tempo médio de espera: ${durMs(medEspera)}` : null,
+      desc:`${emAberto} de ${total} tarefa${total===1?"":"s"} aguardando início.` },
     { label:"Em andamento", icon:"bar", accent:COL.doing.tint,
-      value:`${pctAndamentoEquipe}%`, desc:`Média da equipe (${porMembro.length} membro${porMembro.length===1?"":"s"} com tarefas).` },
+      value:`${pctAndamentoEquipe}%`,
+      extra: nAndamento? `Tempo médio em execução: ${durMs(medAndamento)}` : null,
+      desc:`Média da equipe (${porMembro.length} membro${porMembro.length===1?"":"s"} com tarefas).` },
     { label:"Taxa de retrabalho", icon:"undo", accent:COL.review.tint,
       value:`${pctRetrabalhoEquipe}%`, desc:`Média da equipe (${porMembro.length} membro${porMembro.length===1?"":"s"} com tarefas).` },
     { label:"Tempo médio até Protocolado", icon:"flag", accent:COL.protocolado.tint,
@@ -1508,6 +1524,7 @@ function IndicadoresProcesso({ tasks, members }){
       {cards.map((c,i)=>(<div key={i} style={{...S.indCard,borderTopColor:c.accent}}>
         <div style={S.indHead}><span style={S.indLabel}>{c.label}</span><Ic n={c.icon} s={16} c={c.accent}/></div>
         <div style={S.indVal}>{c.value}</div>
+        {c.extra && <div style={S.indExtra}>{c.extra}</div>}
         <div style={S.indDesc}>{c.desc}</div>
       </div>))}
     </div>
@@ -1517,6 +1534,7 @@ function IndicadoresProcesso({ tasks, members }){
     <div style={{display:"flex",flexDirection:"column",gap:8}}>
       <div style={S.indMemberHeadRow}>
         <span style={{flex:1}}>Membro</span>
+        <span style={S.indMemberCol}>A fazer</span>
         <span style={S.indMemberCol}>Em andamento</span>
         <span style={S.indMemberCol}>Retrabalho</span>
         <span style={S.indMemberCol}>Até Protocolado</span>
@@ -1527,6 +1545,7 @@ function IndicadoresProcesso({ tasks, members }){
           <span style={{fontSize:13,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.member.name}</span>
           <span style={{fontSize:11,color:"#ABB0BE"}}>({r.n} tarefa{r.n===1?"":"s"})</span>
         </div>
+        <span style={{...S.indMemberCol,fontWeight:700,color:COL.todo.tint}}>{r.pctAFazer}%</span>
         <span style={{...S.indMemberCol,fontWeight:700,color:COL.doing.tint}}>{r.pctAndamento}%</span>
         <span style={{...S.indMemberCol,fontWeight:700,color:COL.review.tint}}>{r.pctRetrabalho}%</span>
         <span style={{...S.indMemberCol,fontWeight:700,color:COL.protocolado.tint}}>{r.medProtocolo!=null? durMs(r.medProtocolo) : "—"}</span>
@@ -2137,6 +2156,7 @@ const S = {
   indHead:{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8},
   indLabel:{fontSize:11.5,fontWeight:700,color:"#5A6072",textTransform:"uppercase",letterSpacing:".03em"},
   indVal:{fontSize:28,fontWeight:800,letterSpacing:"-.03em",lineHeight:1.1},
+  indExtra:{fontSize:12.5,fontWeight:700,color:"#3B3AC9"},
   indDesc:{fontSize:12,color:"#8A8F9E",lineHeight:1.4},
   indMemberHeadRow:{display:"flex",alignItems:"center",padding:"0 11px",fontSize:10.5,fontWeight:700,color:"#ABB0BE",textTransform:"uppercase",letterSpacing:".04em"},
   indMemberRow:{display:"flex",alignItems:"center",gap:8,padding:"9px 11px",borderRadius:11,border:"1px solid #EDEFF3",background:"#FAFBFD"},
