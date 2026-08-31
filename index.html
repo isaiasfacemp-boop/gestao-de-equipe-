@@ -704,7 +704,7 @@ function App({ inicial, aoSair, usuarioConectado }){
               <div style={{fontSize:13,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{currentUser.username}</div>
               <span style={{...S.roleBadge,color:ROLES[currentUser.role].color,background:ROLES[currentUser.role].color+"14"}}>{ROLES[currentUser.role].label}</span>
             </div>
-            <button style={S.iconBtn} title="Trocar de usuário" onClick={()=>setShowSwitch(true)}><Ic n="users" s={16}/></button>
+            {isPrivileged && <button style={S.iconBtn} title="Trocar de usuário" onClick={()=>setShowSwitch(true)}><Ic n="users" s={16}/></button>}
             <button style={S.iconBtn} title="Sair" onClick={()=>{ logout(); if(aoSair) aoSair(); }}><Ic n="logout" s={16}/></button>
           </div>
         </div>
