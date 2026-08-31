@@ -869,6 +869,24 @@ function DropMenu({ pos, children }){
   return ReactDOM.createPortal(<div data-dropmenu="1" style={style} onClick={(e)=>e.stopPropagation()}>{children}</div>, document.body);
 }
 
+// Repassar tarefa: janela central (igual à de trocar de usuário), sem rolagem escondendo opções.
+function RepassarModal({ members, task, onEscolher, onClose }){
+  const opcoes = members.filter((m)=>m.id!==task.assignee);
+  return ReactDOM.createPortal(<div data-dropmenu="1" style={S.overlay} onClick={onClose}>
+    <div style={{...S.modal,maxWidth:360}} onClick={(e)=>e.stopPropagation()}>
+      <div style={S.modalHead}><h2 style={S.modalTitle}>Repassar tarefa</h2><button style={S.iconBtn} onClick={onClose}><Ic n="x" s={18}/></button></div>
+      <div style={{fontSize:12.5,color:"#8A8F9E",marginBottom:12}}>Escolha quem vai continuar "{task.title}".</div>
+      <div style={{display:"flex",flexDirection:"column",gap:6,maxHeight:400,overflowY:"auto"}}>
+        {opcoes.map((m)=>(<button key={m.id} onClick={()=>onEscolher(m.id)}
+          style={{display:"flex",alignItems:"center",gap:10,padding:"9px 10px",borderRadius:11,border:"1px solid #E7E9EF",background:"#fff",cursor:"pointer",textAlign:"left",width:"100%"}}>
+          <Avatar m={m} size={30}/><div style={{fontSize:13.5,fontWeight:600}}>{m.name}</div>
+        </button>))}
+        {opcoes.length===0 && <div style={{fontSize:11.5,color:"#A0A5B2",padding:"4px 6px"}}>Nenhum colega disponível.</div>}
+      </div>
+    </div>
+  </div>, document.body);
+}
+
 // ---------- Task card ----------
 function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, canEdit, canDrag, canAct, isPrivileged, isMaster, mine,
                 onDragStart, onDragEnd, onUpdate, onRemove, onAccept, onComplete, onSendToReview, onBackToDoing, onToProtocolado, onBackToReview, onDoingToReview, onProtocoladoToDoing, onRepassar }){
@@ -1023,7 +1041,7 @@ function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, ca
         {ehReuniao ? (<span style={S.todosTag} title="Reunião para toda a equipe"><Ic n="users" s={11} c="#8B3ABF"/> Todos</span>)
           : (<div style={{display:"flex",gap:6,alignItems:"center"}}>
           {!done && (mine || (canEdit&&isPrivileged)) && <button style={S.iconBtn} title="Repassar para colega"
-            onClick={(e)=>{ setMenuPos(e.currentTarget.getBoundingClientRect()); setMenu(menu==="rep"?null:"rep"); }}><Ic n="users" s={14} c="#5A6072"/></button>}
+            onClick={()=>setMenu(menu==="rep"?null:"rep")}><Ic n="users" s={14} c="#5A6072"/></button>}
           <button disabled={!canEdit||!isPrivileged} style={S.assignBtn} onClick={(e)=>{ if(!canEdit||!isPrivileged)return; setMenuPos(e.currentTarget.getBoundingClientRect()); setMenu(menu==="asg"?null:"asg"); }} title={member?.name??"Sem responsável"}>
             {member ? <Avatar m={member} size={24}/> : <span style={S.avatarEmpty}><Ic n="circle" s={11} c="#A0A5B2"/></span>}
           </button>
@@ -1087,11 +1105,8 @@ function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, ca
         <button style={S.menuItem} onClick={()=>{onUpdate({assignee:null,workedMs:tempoReal(task),runningSince:null});setMenu(null);}}><span style={S.avatarEmpty}><Ic n="circle" s={11} c="#A0A5B2"/></span> Ninguém</button>
         {members.filter((m)=>m.id!==task.assignee).map((m)=>(<button key={m.id} style={S.menuItem} onClick={()=>{onRepassar(m.id);setMenu(null);}}><Avatar m={m} size={24}/> {m.name}</button>))}
       </DropMenu>)}
-      {menu==="rep" && (<DropMenu pos={menuPos}>
-        <div style={S.menuLabel}>Repassar para</div>
-        {members.filter((m)=>m.id!==task.assignee).map((m)=>(<button key={m.id} style={S.menuItem} onClick={()=>{onRepassar(m.id);setMenu(null);}}><Avatar m={m} size={24}/> {m.name}</button>))}
-        {members.filter((m)=>m.id!==task.assignee).length===0 && <div style={{fontSize:11.5,color:"#A0A5B2",padding:"4px 6px"}}>Nenhum colega disponível.</div>}
-      </DropMenu>)}
+      {menu==="rep" && <RepassarModal members={members} task={task} onClose={()=>setMenu(null)}
+        onEscolher={(mid)=>{ onRepassar(mid); setMenu(null); }}/>}
     </div>
   );
 }
