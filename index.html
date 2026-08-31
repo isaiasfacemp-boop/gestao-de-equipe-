@@ -361,6 +361,7 @@ function App({ inicial, aoSair, usuarioConectado }){
   const [folderFilter,setFolderFilter]=useState("");
   const [donePeriodo,setDonePeriodo]=useState("todos"); const [doneMembro,setDoneMembro]=useState("");
   const [showUsers,setShowUsers]=useState(false);
+  const [showSwitch,setShowSwitch]=useState(false);
   const [showMsgs,setShowMsgs]=useState(false);
   const [projAberto,setProjAberto]=useState(true);
   const [showNewProj,setShowNewProj]=useState(false);
@@ -688,10 +689,13 @@ function App({ inicial, aoSair, usuarioConectado }){
               <div style={{fontSize:13,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{currentUser.username}</div>
               <span style={{...S.roleBadge,color:ROLES[currentUser.role].color,background:ROLES[currentUser.role].color+"14"}}>{ROLES[currentUser.role].label}</span>
             </div>
+            <button style={S.iconBtn} title="Trocar de usuário" onClick={()=>setShowSwitch(true)}><Ic n="users" s={16}/></button>
             <button style={S.iconBtn} title="Sair" onClick={()=>{ logout(); if(aoSair) aoSair(); }}><Ic n="logout" s={16}/></button>
           </div>
         </div>
       </aside>
+      {showSwitch && <SwitchUserModal users={state.users} members={state.members} currentUser={currentUser}
+        onEscolher={(id)=>{ login(id); setShowSwitch(false); }} onClose={()=>setShowSwitch(false)}/>}
 
       <main style={S.main}>
         <header style={S.topbar}>
@@ -1762,6 +1766,30 @@ function MensagensModal({ mensagens, membros, isMaster, meuMembroId, onEnviar, o
         })}
         {lista.length===0 && <p style={{color:"#8A8F9E",fontSize:14,textAlign:"center",padding:20}}>
           {isMaster?"Nenhuma mensagem trocada ainda.":(aba==="recebidas"?"Nenhuma mensagem para você.":"Você ainda não enviou mensagens.")}</p>}
+      </div>
+    </div>
+  </div>);
+}
+
+function SwitchUserModal({ users, members, currentUser, onEscolher, onClose }){
+  const membroDe=(u)=>members.find((m)=>m.id===u.memberId);
+  return (<div style={S.overlay} onClick={onClose}>
+    <div style={{...S.modal,maxWidth:360}} onClick={(e)=>e.stopPropagation()}>
+      <div style={S.modalHead}><h2 style={S.modalTitle}>Trocar de usuário</h2><button style={S.iconBtn} onClick={onClose}><Ic n="x" s={18}/></button></div>
+      <div style={{fontSize:12.5,color:"#8A8F9E",marginBottom:12}}>Escolha quem vai usar o sistema agora.</div>
+      <div style={{display:"flex",flexDirection:"column",gap:6,maxHeight:360,overflowY:"auto"}}>
+        {users.map((u)=>{ const m=membroDe(u); const atual=u.id===currentUser.id;
+          return (<button key={u.id} onClick={()=>!atual&&onEscolher(u.id)} disabled={atual}
+            style={{display:"flex",alignItems:"center",gap:10,padding:"9px 10px",borderRadius:11,
+              border:atual?"1px solid #C7CBFF":"1px solid #E7E9EF",background:atual?"#F7F8FE":"#fff",
+              cursor:atual?"default":"pointer",textAlign:"left",width:"100%"}}>
+            {m ? <Avatar m={m} size={30}/> : <span style={{...S.avatarSm,width:30,height:30,background:ROLES[u.role].color}}>{initials(u.username)}</span>}
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:13.5,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{m?m.name:u.username}</div>
+              <span style={{...S.roleBadge,color:ROLES[u.role].color,background:ROLES[u.role].color+"14"}}>{ROLES[u.role].label}</span>
+            </div>
+            {atual && <span style={{fontSize:10.5,color:"#8A8F9E",fontWeight:700}}>agora</span>}
+          </button>); })}
       </div>
     </div>
   </div>);
