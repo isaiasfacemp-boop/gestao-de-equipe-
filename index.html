@@ -1040,7 +1040,7 @@ function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, ca
         </div>
         {ehReuniao ? (<span style={S.todosTag} title="Reunião para toda a equipe"><Ic n="users" s={11} c="#8B3ABF"/> Todos</span>)
           : (<div style={{display:"flex",gap:6,alignItems:"center"}}>
-          {!done && (mine || (canEdit&&isPrivileged)) && <button style={S.iconBtn} title="Repassar para colega"
+          {!done && <button style={S.iconBtn} title="Repassar para colega"
             onClick={()=>setMenu(menu==="rep"?null:"rep")}><Ic n="users" s={14} c="#5A6072"/></button>}
           <button disabled={!canEdit||!isPrivileged} style={S.assignBtn} onClick={(e)=>{ if(!canEdit||!isPrivileged)return; setMenuPos(e.currentTarget.getBoundingClientRect()); setMenu(menu==="asg"?null:"asg"); }} title={member?.name??"Sem responsável"}>
             {member ? <Avatar m={member} size={24}/> : <span style={S.avatarEmpty}><Ic n="circle" s={11} c="#A0A5B2"/></span>}
