@@ -597,6 +597,21 @@ function App({ inicial, aoSair, usuarioConectado }){
   const doingToReview=(id)=>updateTask(id,{col:"review",needsFix:false,fixNote:"",runningSince:Date.now(),completedAt:null});
   // Protocolado -> Em andamento
   const protocoladoToDoing=(id)=>updateTask(id,{col:"doing",needsFix:false,fixNote:"",runningSince:Date.now(),completedAt:null});
+  // Repassar a tarefa para um colega: congela o tempo trabalhado até aqui (fica no histórico
+  // da pessoa que saiu) e zera o cronômetro para quem está entrando — sem misturar os tempos.
+  const repassarTarefa=(id,novoMembroId)=>{
+    const t=state.tasks.find((x)=>x.id===id); if(!t || t.assignee===novoMembroId) return;
+    const agora=Date.now(); const rodando=!!t.runningSince;
+    const meuTempo=(t.workedMs||0)+(rodando?agora-t.runningSince:0);
+    const deNome=(memberById(t.assignee)||{}).name; const paraNome=(memberById(novoMembroId)||{}).name||"—";
+    const nota={ id:uid(), data:agora, texto:`Repassada${deNome?` por ${deNome}`:""} para ${paraNome}${meuTempo>0?` · tempo até aqui: ${durMs(meuTempo)}`:""}` };
+    updateTask(id,{
+      assignee:novoMembroId,
+      workLog:[...(t.workLog||[]),{memberId:t.assignee,ms:meuTempo,ate:agora}],
+      workedMs:0, runningSince:rodando?agora:null,
+      diario:[...(t.diario||[]),nota],
+    });
+  };
 
   const emAbertoProj=(pid)=>state.tasks.filter((t)=>t.project===pid && t.col!=="done" && (isPrivileged || t.tipo==="reuniao" || t.assignee===myMemberId)).length;
   const concluidoProj=(pid)=>state.tasks.filter((t)=>t.project===pid && t.col==="done" && (isPrivileged || t.tipo==="reuniao" || t.assignee===myMemberId)).length;
@@ -748,7 +763,8 @@ function App({ inicial, aoSair, usuarioConectado }){
                       onAccept={()=>acceptTask(t.id)} onComplete={()=>completeTask(t.id)}
                       onSendToReview={()=>sendToReview(t.id)} onBackToDoing={()=>backToDoing(t.id)}
                       onToProtocolado={()=>toProtocolado(t.id)} onBackToReview={()=>backToReview(t.id)}
-                      onDoingToReview={()=>doingToReview(t.id)} onProtocoladoToDoing={()=>protocoladoToDoing(t.id)}/>))}
+                      onDoingToReview={()=>doingToReview(t.id)} onProtocoladoToDoing={()=>protocoladoToDoing(t.id)}
+                      onRepassar={(mid)=>repassarTarefa(t.id,mid)}/>))}
                     {items.length===0 && <p style={S.colEmpty}>Nenhuma tarefa</p>}
                   </div>)}
                   {col.id==="todo" && isPrivileged && <LaunchTask catalog={catalog} members={state.members} onLaunch={launchMany} onOpenCatalog={()=>setShowCatalog(true)} isMaster={isMaster}/>}
@@ -841,7 +857,7 @@ function ChangePasswordCard({ onSave, onCancel, forced, titulo, sub, salvarLabel
 
 // ---------- Task card ----------
 function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, canEdit, canDrag, canAct, isPrivileged, isMaster, mine,
-                onDragStart, onDragEnd, onUpdate, onRemove, onAccept, onComplete, onSendToReview, onBackToDoing, onToProtocolado, onBackToReview, onDoingToReview, onProtocoladoToDoing }){
+                onDragStart, onDragEnd, onUpdate, onRemove, onAccept, onComplete, onSendToReview, onBackToDoing, onToProtocolado, onBackToReview, onDoingToReview, onProtocoladoToDoing, onRepassar }){
   const [menu,setMenu]=useState(null); const ref=useRef();
   const [editDesc,setEditDesc]=useState(false); const [rascunho,setRascunho]=useState("");
   const [novaNota,setNovaNota]=useState(""); const [editNota,setEditNota]=useState(null); const [notaTexto,setNotaTexto]=useState("");
@@ -991,9 +1007,13 @@ function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, ca
             onClick={()=>canEdit&&setMenu(menu==="hrs"?null:"hrs")}><Ic n="clock" s={11} c="#5A6072"/> prev. {task.hours||0}h</button>
         </div>
         {ehReuniao ? (<span style={S.todosTag} title="Reunião para toda a equipe"><Ic n="users" s={11} c="#8B3ABF"/> Todos</span>)
-          : (<button disabled={!canEdit||!isPrivileged} style={S.assignBtn} onClick={()=>canEdit&&isPrivileged&&setMenu(menu==="asg"?null:"asg")} title={member?.name??"Sem responsável"}>
+          : (<div style={{display:"flex",gap:6,alignItems:"center"}}>
+          {!done && (mine || (canEdit&&isPrivileged)) && <button style={S.iconBtn} title="Repassar para colega"
+            onClick={()=>setMenu(menu==="rep"?null:"rep")}><Ic n="users" s={14} c="#5A6072"/></button>}
+          <button disabled={!canEdit||!isPrivileged} style={S.assignBtn} onClick={()=>canEdit&&isPrivileged&&setMenu(menu==="asg"?null:"asg")} title={member?.name??"Sem responsável"}>
             {member ? <Avatar m={member} size={24}/> : <span style={S.avatarEmpty}><Ic n="circle" s={11} c="#A0A5B2"/></span>}
-          </button>)}
+          </button>
+          </div>)}
       </div>
 
       {/* reunião: confirmação de leitura */}
@@ -1050,8 +1070,13 @@ function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, ca
         </div>}
       </div>)}
       {menu==="asg" && (<div style={S.menu}>
-        <button style={S.menuItem} onClick={()=>{onUpdate({assignee:null});setMenu(null);}}><span style={S.avatarEmpty}><Ic n="circle" s={11} c="#A0A5B2"/></span> Ninguém</button>
-        {members.map((m)=>(<button key={m.id} style={S.menuItem} onClick={()=>{onUpdate({assignee:m.id});setMenu(null);}}><Avatar m={m} size={24}/> {m.name}</button>))}
+        <button style={S.menuItem} onClick={()=>{onUpdate({assignee:null,workedMs:tempoReal(task),runningSince:null});setMenu(null);}}><span style={S.avatarEmpty}><Ic n="circle" s={11} c="#A0A5B2"/></span> Ninguém</button>
+        {members.filter((m)=>m.id!==task.assignee).map((m)=>(<button key={m.id} style={S.menuItem} onClick={()=>{onRepassar(m.id);setMenu(null);}}><Avatar m={m} size={24}/> {m.name}</button>))}
+      </div>)}
+      {menu==="rep" && (<div style={S.menu}>
+        <div style={S.menuLabel}>Repassar para</div>
+        {members.filter((m)=>m.id!==task.assignee).map((m)=>(<button key={m.id} style={S.menuItem} onClick={()=>{onRepassar(m.id);setMenu(null);}}><Avatar m={m} size={24}/> {m.name}</button>))}
+        {members.filter((m)=>m.id!==task.assignee).length===0 && <div style={{fontSize:11.5,color:"#A0A5B2",padding:"4px 6px"}}>Nenhum colega disponível.</div>}
       </div>)}
     </div>
   );
