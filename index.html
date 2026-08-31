@@ -855,10 +855,24 @@ function ChangePasswordCard({ onSave, onCancel, forced, titulo, sub, salvarLabel
   </form>);
 }
 
+// Menu flutuante: renderiza fora do card (via portal) para nunca ficar cortado
+// nem forçar a barra de rolagem da coluna — abre pra cima se não couber embaixo.
+function DropMenu({ pos, children }){
+  if(!pos) return null;
+  const vw=window.innerWidth, vh=window.innerHeight;
+  const espacoAbaixo=vh-pos.bottom, espacoAcima=pos.top;
+  const abrirPraCima = espacoAbaixo<220 && espacoAcima>espacoAbaixo;
+  const maxH=Math.max(140,Math.min(320,(abrirPraCima?espacoAcima:espacoAbaixo)-16));
+  const style={ position:"fixed", ...(abrirPraCima?{bottom:vh-pos.top+4}:{top:pos.bottom+4}),
+    right:Math.max(8,vw-pos.right), background:"#fff", borderRadius:10, border:"1px solid #E2E5EC",
+    boxShadow:"0 8px 28px rgba(20,22,31,.14)", padding:5, zIndex:200, minWidth:170, maxHeight:maxH, overflowY:"auto" };
+  return ReactDOM.createPortal(<div data-dropmenu="1" style={style} onClick={(e)=>e.stopPropagation()}>{children}</div>, document.body);
+}
+
 // ---------- Task card ----------
 function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, canEdit, canDrag, canAct, isPrivileged, isMaster, mine,
                 onDragStart, onDragEnd, onUpdate, onRemove, onAccept, onComplete, onSendToReview, onBackToDoing, onToProtocolado, onBackToReview, onDoingToReview, onProtocoladoToDoing, onRepassar }){
-  const [menu,setMenu]=useState(null); const ref=useRef();
+  const [menu,setMenu]=useState(null); const [menuPos,setMenuPos]=useState(null); const ref=useRef();
   const [editDesc,setEditDesc]=useState(false); const [rascunho,setRascunho]=useState("");
   const [novaNota,setNovaNota]=useState(""); const [editNota,setEditNota]=useState(null); const [notaTexto,setNotaTexto]=useState("");
   const [novaFazer,setNovaFazer]=useState(""); const [editFazer,setEditFazer]=useState(null); const [fazerTexto,setFazerTexto]=useState("");
@@ -871,7 +885,7 @@ function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, ca
   const confirmados=task.confirmados||[];
   const jaConfirmei=!!meuMembroId && confirmados.includes(meuMembroId);
   const quemConfirmou=members.filter((m)=>confirmados.includes(m.id));
-  useEffect(()=>{ const h=(e)=>{if(ref.current&&!ref.current.contains(e.target))setMenu(null);}; document.addEventListener("mousedown",h); return ()=>document.removeEventListener("mousedown",h); },[]);
+  useEffect(()=>{ const h=(e)=>{if(ref.current&&!ref.current.contains(e.target)&&!(e.target.closest&&e.target.closest('[data-dropmenu="1"]')))setMenu(null);}; document.addEventListener("mousedown",h); return ()=>document.removeEventListener("mousedown",h); },[]);
   return (
     <div className="card" draggable={canDrag} onDragStart={onDragStart} onDragEnd={onDragEnd}
       style={{...S.card, borderLeft:`3px solid ${ehReuniao?"#8B3ABF":col.tint}`, ...(done?S.cardDone:{}), ...(fixing?S.cardPending:{}), ...(ehReuniao?S.cardReuniao:{})}} ref={ref}>
@@ -1002,15 +1016,15 @@ function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, ca
       <div style={{...S.cardFoot,...(ehReuniao?{padding:"0 11px 10px"}:{})}}>
         <div style={{display:"flex",gap:6,alignItems:"center"}}>
           <button disabled={!canEdit||!isPrivileged} style={{...S.pill,color:pri.color,borderColor:pri.color+"44",background:pri.color+"12",...((!canEdit||!isPrivileged)?{opacity:.75}:{})}}
-            onClick={()=>canEdit&&isPrivileged&&setMenu(menu==="pri"?null:"pri")}><Ic n="flag" s={11} c={pri.color}/> {pri.label}</button>
+            onClick={(e)=>{ if(!canEdit||!isPrivileged)return; setMenuPos(e.currentTarget.getBoundingClientRect()); setMenu(menu==="pri"?null:"pri"); }}><Ic n="flag" s={11} c={pri.color}/> {pri.label}</button>
           <button disabled={!canEdit} style={{...S.pill,color:"#5A6072",borderColor:"#DDE0E7",background:"#F5F6F9",...(!canEdit?{opacity:.75}:{})}}
-            onClick={()=>canEdit&&setMenu(menu==="hrs"?null:"hrs")}><Ic n="clock" s={11} c="#5A6072"/> prev. {task.hours||0}h</button>
+            onClick={(e)=>{ if(!canEdit)return; setMenuPos(e.currentTarget.getBoundingClientRect()); setMenu(menu==="hrs"?null:"hrs"); }}><Ic n="clock" s={11} c="#5A6072"/> prev. {task.hours||0}h</button>
         </div>
         {ehReuniao ? (<span style={S.todosTag} title="Reunião para toda a equipe"><Ic n="users" s={11} c="#8B3ABF"/> Todos</span>)
           : (<div style={{display:"flex",gap:6,alignItems:"center"}}>
           {!done && (mine || (canEdit&&isPrivileged)) && <button style={S.iconBtn} title="Repassar para colega"
-            onClick={()=>setMenu(menu==="rep"?null:"rep")}><Ic n="users" s={14} c="#5A6072"/></button>}
-          <button disabled={!canEdit||!isPrivileged} style={S.assignBtn} onClick={()=>canEdit&&isPrivileged&&setMenu(menu==="asg"?null:"asg")} title={member?.name??"Sem responsável"}>
+            onClick={(e)=>{ setMenuPos(e.currentTarget.getBoundingClientRect()); setMenu(menu==="rep"?null:"rep"); }}><Ic n="users" s={14} c="#5A6072"/></button>}
+          <button disabled={!canEdit||!isPrivileged} style={S.assignBtn} onClick={(e)=>{ if(!canEdit||!isPrivileged)return; setMenuPos(e.currentTarget.getBoundingClientRect()); setMenu(menu==="asg"?null:"asg"); }} title={member?.name??"Sem responsável"}>
             {member ? <Avatar m={member} size={24}/> : <span style={S.avatarEmpty}><Ic n="circle" s={11} c="#A0A5B2"/></span>}
           </button>
           </div>)}
@@ -1053,9 +1067,9 @@ function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, ca
       {!ehReuniao && done && isMaster && (
         <button style={S.reviewBtn} onClick={onSendToReview}><Ic n="undo" s={13} c="#B8860B"/> Enviar para Revisão Interna</button>)}
 
-      {menu==="pri" && (<div style={S.menu}>{Object.entries(PRIORITIES).map(([k,v])=>(
-        <button key={k} style={S.menuItem} onClick={()=>{onUpdate({priority:k});setMenu(null);}}><span style={{...S.dot,background:v.color}}/> {v.label}</button>))}</div>)}
-      {menu==="hrs" && (<div style={S.menu}>
+      {menu==="pri" && (<DropMenu pos={menuPos}>{Object.entries(PRIORITIES).map(([k,v])=>(
+        <button key={k} style={S.menuItem} onClick={()=>{onUpdate({priority:k});setMenu(null);}}><span style={{...S.dot,background:v.color}}/> {v.label}</button>))}</DropMenu>)}
+      {menu==="hrs" && (<DropMenu pos={menuPos}>
         <div style={S.menuLabel}>Tempo de serviço</div>
         <div style={{display:"flex",gap:5,padding:"2px 6px 6px",flexWrap:"wrap"}}>
           {[0,1,2,4,6,8].map((h)=>(<button key={h} style={{...S.hrChip,...(task.hours===h?S.hrChipOn:{})}} onClick={()=>{onUpdate({hours:h});setMenu(null);}}>{h}h</button>))}
@@ -1068,16 +1082,16 @@ function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, ca
           <button style={S.iconBtn} onClick={()=>{ if(!isNaN(+horasTexto)){ onUpdate({hours:Math.max(0,+horasTexto)}); setEditHoras(false); setMenu(null); } }}><Ic n="check" s={13} c="#1F7A55"/></button>
           <button style={S.iconBtn} onClick={()=>setEditHoras(false)}><Ic n="x" s={13} c="#8A8F9E"/></button>
         </div>}
-      </div>)}
-      {menu==="asg" && (<div style={S.menu}>
+      </DropMenu>)}
+      {menu==="asg" && (<DropMenu pos={menuPos}>
         <button style={S.menuItem} onClick={()=>{onUpdate({assignee:null,workedMs:tempoReal(task),runningSince:null});setMenu(null);}}><span style={S.avatarEmpty}><Ic n="circle" s={11} c="#A0A5B2"/></span> Ninguém</button>
         {members.filter((m)=>m.id!==task.assignee).map((m)=>(<button key={m.id} style={S.menuItem} onClick={()=>{onRepassar(m.id);setMenu(null);}}><Avatar m={m} size={24}/> {m.name}</button>))}
-      </div>)}
-      {menu==="rep" && (<div style={S.menu}>
+      </DropMenu>)}
+      {menu==="rep" && (<DropMenu pos={menuPos}>
         <div style={S.menuLabel}>Repassar para</div>
         {members.filter((m)=>m.id!==task.assignee).map((m)=>(<button key={m.id} style={S.menuItem} onClick={()=>{onRepassar(m.id);setMenu(null);}}><Avatar m={m} size={24}/> {m.name}</button>))}
         {members.filter((m)=>m.id!==task.assignee).length===0 && <div style={{fontSize:11.5,color:"#A0A5B2",padding:"4px 6px"}}>Nenhum colega disponível.</div>}
-      </div>)}
+      </DropMenu>)}
     </div>
   );
 }
