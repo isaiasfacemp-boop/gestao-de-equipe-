@@ -253,6 +253,19 @@ function lerFoto3x4(file){
   });
 }
 
+// ---------- Anexo PDF (Protocolado: o que precisa ser refeito) ----------
+const PDF_MAX_BYTES = 8*1024*1024; // 8MB
+function lerPdf(file){
+  return new Promise((res,rej)=>{
+    if(!file || !/^application\/pdf$/.test(file.type)) return rej(new Error("Escolha um arquivo PDF."));
+    if(file.size>PDF_MAX_BYTES) return rej(new Error("O PDF precisa ter até 8MB."));
+    const r=new FileReader();
+    r.onload=()=>res({ name:file.name, data:r.result, size:file.size, uploadedAt:Date.now() });
+    r.onerror=()=>rej(new Error("Não foi possível ler o arquivo."));
+    r.readAsDataURL(file);
+  });
+}
+
 // ---------- Storage ----------
 // ---------- Conexão com o servidor (Netlify Function + Neon) ----------
 // Guarda o token da sessão do servidor (obtido no login de conexão).
@@ -896,6 +909,7 @@ function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, ca
   const [novaFazer,setNovaFazer]=useState(""); const [editFazer,setEditFazer]=useState(null); const [fazerTexto,setFazerTexto]=useState("");
   const [editTrab,setEditTrab]=useState(false); const [trabTexto,setTrabTexto]=useState("");
   const [editHoras,setEditHoras]=useState(false); const [horasTexto,setHorasTexto]=useState("");
+  const [enviandoPdf,setEnviandoPdf]=useState(false); const pdfRef=useRef();
   const pri=PRIORITIES[task.priority]; const col=COL[task.col];
   const done=task.col==="done"; const inReview=task.col==="review"; const fixing=inReview&&task.needsFix; const inProtocolado=task.col==="protocolado";
   const corTrab=corDoTrabalho(task.folderName);
@@ -1029,6 +1043,25 @@ function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, ca
         </div>)}
       {fixing && <div style={S.fixBox}><span style={S.fixLabel}><Ic n="undo" s={11} c="#B8860B"/> O que consertar</span>
         {task.fixNote || "O master devolveu esta tarefa para ajuste."}</div>}
+      {!ehReuniao && (inProtocolado || task.protocoladoPdf) && (()=>{
+        const pdf=task.protocoladoPdf;
+        const anexar=async(file)=>{
+          try{ setEnviandoPdf(true); const lido=await lerPdf(file); onUpdate({protocoladoPdf:lido}); }
+          catch(e){ alert(e.message||"Não foi possível anexar o PDF."); }
+          finally{ setEnviandoPdf(false); if(pdfRef.current) pdfRef.current.value=""; }
+        };
+        return (<div style={S.pdfBox}>
+          <span style={S.fixLabel}><Ic n="folder" s={11} c="#8B3ABF"/> Arquivo do que precisa refazer</span>
+          <input ref={pdfRef} type="file" accept="application/pdf" style={{display:"none"}}
+            onChange={(e)=>{ const f=e.target.files&&e.target.files[0]; if(f) anexar(f); }}/>
+          {pdf ? (<div style={S.pdfLinha}>
+            <a href={pdf.data} download={pdf.name} style={S.pdfNome} title={pdf.name}><Ic n="flag" s={11} c="#8B3ABF"/> {pdf.name}</a>
+            {isPrivileged && <button style={S.diarioMini} title="Remover anexo" onClick={()=>onUpdate({protocoladoPdf:null})}><Ic n="trash" s={11} c="#C0397E"/></button>}
+          </div>) : (<div style={{fontSize:11.5,color:"#A0A5B2"}}>Nenhum arquivo anexado ainda.</div>)}
+          {isPrivileged && <button style={S.pdfBtn} disabled={enviandoPdf} onClick={()=>pdfRef.current&&pdfRef.current.click()}>
+            <Ic n="plus" s={12} c="#8B3ABF"/> {enviandoPdf?"Enviando…":pdf?"Trocar PDF":"Anexar PDF"}</button>}
+        </div>);
+      })()}
       {done && <div style={S.doneBar}><Ic n="checkc" s={11} c="#2F9E6E"/> Concluída {task.completedAt?`em ${dm(task.completedAt)}`:""}</div>}
 
       <div style={{...S.cardFoot,...(ehReuniao?{padding:"0 11px 10px"}:{})}}>
@@ -2158,6 +2191,10 @@ const S = {
   descAdd:{display:"flex",alignItems:"center",gap:5,width:"100%",marginTop:8,border:"1px dashed #E2E5EC",background:"transparent",color:"#8A8F9E",padding:"6px 9px",borderRadius:8,fontSize:11.5,fontWeight:600,cursor:"pointer",fontFamily:FONT},
   fixBox:{fontSize:12,color:"#8A6510",background:"#FCF4E2",border:"1px solid #F0E2BE",borderRadius:8,padding:"7px 9px",marginTop:8,lineHeight:1.45,overflowWrap:"anywhere",wordBreak:"break-word",whiteSpace:"pre-wrap"},
   fixLabel:{display:"flex",alignItems:"center",gap:4,fontSize:9.5,fontWeight:800,letterSpacing:".06em",textTransform:"uppercase",color:"#B8860B",marginBottom:2},
+  pdfBox:{fontSize:12,color:"#5B3A85",background:"#F5EEFB",border:"1px solid #E4D4F3",borderRadius:8,padding:"8px 9px",marginTop:8},
+  pdfLinha:{display:"flex",alignItems:"center",justifyContent:"space-between",gap:6,marginTop:2},
+  pdfNome:{display:"flex",alignItems:"center",gap:5,fontSize:12,fontWeight:600,color:"#6B2FA6",textDecoration:"none",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"},
+  pdfBtn:{marginTop:7,border:"1px solid #E4D4F3",background:"#fff",color:"#6B2FA6",fontSize:11.5,fontWeight:700,borderRadius:8,padding:"6px 10px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:5},
   tempoBox:{marginTop:8,background:"#F8F9FB",border:"1px solid #EDEFF3",borderRadius:9,padding:"7px 9px",display:"flex",flexDirection:"column",gap:3},
   tempoLinha:{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8},
   tempoRot:{fontSize:10,fontWeight:700,letterSpacing:".04em",textTransform:"uppercase",color:"#A0A5B2"},
