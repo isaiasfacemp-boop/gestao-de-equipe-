@@ -1510,7 +1510,7 @@ function Dashboard({ tasks, members }){
   const stats=useMemo(()=> members.map((m)=>{ const mine=tasks.filter((t)=>t.assignee===m.id);
     return { id:m.id, name:m.name.split(" ")[0], full:m.name, color:m.color, photo:m.photo,
       value:mine.filter((t)=>t.col==="done").length, done:mine.filter((t)=>t.col==="done").length,
-      active:mine.filter((t)=>t.col!=="done").length, hours:mine.reduce((a,t)=>a+horasReais(t),0),
+      active:mine.filter((t)=>t.col!=="done").length, hours:mine.reduce((a,t)=>a+tempoReal(t)/3600000,0),
       values:{ todo:mine.filter((t)=>t.col==="todo").length, doing:mine.filter((t)=>t.col==="doing").length, review:mine.filter((t)=>t.col==="review").length, done:mine.filter((t)=>t.col==="done").length } };
   }),[tasks,members]);
   const evolution=useMemo(()=>{ const days=14; const rows=[];
