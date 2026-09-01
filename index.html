@@ -1532,7 +1532,7 @@ function Dashboard({ tasks, members }){
     <div style={S.grid2}>
       <Panel title="Evolução de conclusões por membro" sub="Acumulado — últimos 14 dias"><LineChart rows={evolution} series={memberSeries}/><Legend items={memberSeries}/></Panel>
       <Panel title="Tarefas concluídas por membro"><BarsV data={stats}/></Panel>
-      <Panel title="Tempo de serviço por membro" sub="Horas registradas nas tarefas"><BarsH data={stats.map((s)=>({name:s.name,value:Math.round(s.hours*100)/100,color:s.color}))} unit="h"/></Panel>
+      <Panel title="Tempo de serviço por membro" sub="Dias trabalhados nas tarefas (considerando 8h = 1 dia)"><BarsH data={stats.map((s)=>({name:s.name,value:Math.round((s.hours/CAPACIDADE_DIA)*100)/100,color:s.color}))} unit="d"/></Panel>
       <Panel title="Carga de trabalho atual" sub="Distribuição por etapa"><StackedBars data={stats} segs={segs}/><Legend items={segs}/></Panel>
     </div>
     <Panel title="Resumo por integrante">
