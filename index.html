@@ -34,6 +34,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.10/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 <div id="root"></div>
@@ -1521,7 +1523,57 @@ function Dashboard({ tasks, members }){
   const totalDone=stats.reduce((a,s)=>a+s.done,0); const totalHours=stats.reduce((a,s)=>a+s.hours,0);
   const memberSeries=members.map((m)=>({key:m.name.split(" ")[0],color:m.color,label:m.name.split(" ")[0]}));
   const segs=COLUMNS.map((c)=>({key:c.id,color:c.tint,label:c.name}));
+  const [gerandoPdf,setGerandoPdf]=useState(false);
+  const gerarRelatorioPdf=()=>{
+    try{
+      setGerandoPdf(true);
+      const { jsPDF }=window.jspdf;
+      const doc=new jsPDF();
+      const agora=new Date();
+      doc.setFontSize(16); doc.text("Relatório da equipe", 14, 18);
+      doc.setFontSize(10); doc.setTextColor(130);
+      doc.text(`Gerado em ${agora.toLocaleDateString("pt-BR")} às ${agora.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}`, 14, 24);
+      doc.setTextColor(0);
+
+      doc.autoTable({
+        startY:30,
+        head:[["Resumo geral",""]],
+        body:[
+          ["Tarefas concluídas", String(totalDone)],
+          ["Horas de serviço (tempo real)", hms(totalHours)],
+          ["Em revisão", String(tasks.filter((t)=>t.col==="review").length)],
+          ["Em aberto (a fazer + em andamento + revisão)", String(tasks.filter((t)=>t.col!=="done").length)],
+        ],
+        theme:"grid", styles:{fontSize:10}, headStyles:{fillColor:[59,58,201]},
+      });
+
+      const fluxo=tasks.filter((t)=>t.tipo!=="reuniao");
+      const porMembro=members.map((m)=>{
+        const doMembro=fluxo.filter((t)=>t.assignee===m.id);
+        const n=doMembro.length;
+        const concluidas=doMembro.filter((t)=>t.col==="done").length;
+        const ativas=doMembro.filter((t)=>t.col!=="done").length;
+        const retrabalho=doMembro.filter((t)=>(t.reworkCount||0)>0).length;
+        const pctRetrabalho=n? Math.round((retrabalho/n)*100) : 0;
+        const horas=doMembro.reduce((a,t)=>a+tempoReal(t)/3600000,0);
+        return [m.name, String(concluidas), String(ativas), `${pctRetrabalho}%`, hms(horas)];
+      });
+      doc.autoTable({
+        startY:doc.lastAutoTable.finalY+10,
+        head:[["Membro","Concluídas","Ativas","Retrabalho","Horas de serviço"]],
+        body:porMembro,
+        theme:"grid", styles:{fontSize:9}, headStyles:{fillColor:[59,58,201]},
+      });
+
+      doc.save(`relatorio-equipe-${agora.toISOString().slice(0,10)}.pdf`);
+    }catch(e){ alert("Não foi possível gerar o PDF."); }
+    finally{ setGerandoPdf(false); }
+  };
   return (<div style={S.dash}>
+    <div style={{display:"flex",justifyContent:"flex-end"}}>
+      <button style={S.pdfReportBtn} disabled={gerandoPdf} onClick={gerarRelatorioPdf}>
+        <Ic n="flag" s={13} c="#3B3AC9"/> {gerandoPdf?"Gerando…":"Baixar relatório PDF"}</button>
+    </div>
     <div style={S.kpis}>
       <Kpi label="Tarefas concluídas" value={totalDone} accent={COL.done.tint}/>
       <Kpi label="Horas de serviço" value={hms(totalHours)} accent="#3B3AC9"/>
@@ -2281,6 +2333,7 @@ const S = {
   equipeCard:{background:"#FAFBFD",border:"1px solid #EDEFF3",borderRadius:10,padding:"9px 10px"},
   equipeCardHead:{display:"flex",alignItems:"center",gap:7,marginBottom:7},
   equipeCardNome:{fontSize:12.5,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"},
+  pdfReportBtn:{border:"1px solid #C7CBFF",background:"#F7F8FE",color:"#3B3AC9",fontSize:12.5,fontWeight:700,borderRadius:9,padding:"8px 13px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6},
   indGrid:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:14,marginTop:4},
   indCard:{background:"#F9FAFC",border:"1px solid #E7E9EF",borderTop:"3px solid",borderRadius:12,padding:"14px 16px",display:"flex",flexDirection:"column",gap:6},
   indHead:{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8},
