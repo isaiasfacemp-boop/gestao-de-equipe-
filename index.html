@@ -678,24 +678,6 @@ function App({ inicial, aoSair, usuarioConectado }){
             <div style={S.projRecolhido} onClick={()=>setProjAberto(true)}>
               {state.projects.length} projeto{state.projects.length===1?"":"s"} · toque para mostrar
             </div>)}
-
-          <div style={{...S.sideLabel,marginTop:22}}><span>Equipe · {state.members.filter((m)=>m.naEquipe!==false).length}</span></div>
-          <div style={S.equipeTabela}>
-            <div style={S.etCabecalho}>
-              <span style={S.etColNome}></span>
-              <span style={{...S.etColNum,background:"#D8442F"}} title="Para fazer">Fazer</span>
-              <span style={{...S.etColNum,background:"#2F9E6E"}} title="Concluído">Feito</span>
-            </div>
-            {state.members.filter((m)=>m.naEquipe!==false).map((m)=>{ const fazer=emAbertoMembro(m.id); const feito=concluidoMembro(m.id);
-              return (<div key={m.id} style={S.etLinha} title={m.name}>
-                <span style={S.etColNome}>
-                  <Avatar m={m} size={22}/>
-                  <span style={S.etNome}>{m.name}{m.id===myMemberId && <span style={{fontSize:9.5,color:"#8A8F9E",marginLeft:4}}>você</span>}</span>
-                </span>
-                <span style={{...S.etCel,...(fazer>0?{color:"#D8442F",fontWeight:800}:{color:"#C2C6D0"})}}>{fazer}</span>
-                <span style={{...S.etCel,...(feito>0?{color:"#2F9E6E",fontWeight:800}:{color:"#C2C6D0"})}}>{feito}</span>
-              </div>); })}
-          </div>
         </div>
 
         <div style={S.sideFooter}>
@@ -738,6 +720,25 @@ function App({ inicial, aoSair, usuarioConectado }){
             {isPrivileged && <button style={S.primaryBtn} onClick={addProject}><Ic n="plus" s={16} c="#fff"/> Criar projeto</button>}</div>
         ) : (state.view!=="dash" || !isPrivileged) ? (
           <React.Fragment>
+            {(()=>{ const membrosEquipe=state.members.filter((m)=>m.naEquipe!==false); return membrosEquipe.length>0 && (
+              <div style={{padding:"14px 26px 0"}}>
+                <div style={S.panel}>
+                  <div style={{marginBottom:10}}><div style={S.panelTitle}>Equipe · {membrosEquipe.length}</div></div>
+                  <div style={S.equipeGrid}>
+                    {membrosEquipe.map((m)=>{ const fazer=emAbertoMembro(m.id); const feito=concluidoMembro(m.id);
+                      return (<div key={m.id} style={S.equipeCard} title={m.name}>
+                        <div style={S.equipeCardHead}>
+                          <Avatar m={m} size={20}/>
+                          <span style={S.equipeCardNome}>{m.name}{m.id===myMemberId && <span style={{fontSize:9.5,color:"#8A8F9E",marginLeft:4}}>você</span>}</span>
+                        </div>
+                        <div style={{display:"flex",gap:10,fontSize:11}}>
+                          <span style={{color:fazer>0?"#D8442F":"#C2C6D0",fontWeight:700}}>Fazer {fazer}</span>
+                          <span style={{color:feito>0?"#2F9E6E":"#C2C6D0",fontWeight:700}}>Feito {feito}</span>
+                        </div>
+                      </div>); })}
+                  </div>
+                </div>
+              </div>); })()}
             <div style={{padding:"14px 26px 0",display:"flex",alignItems:"center",flexWrap:"wrap",gap:10}}>
               <div style={S.searchWrap}><Ic n="search" s={15} c="#8A8F9E"/>
                 <input style={S.search} placeholder="Buscar tarefa…" value={query} onChange={(e)=>setQuery(e.target.value)}/></div>
@@ -2276,6 +2277,10 @@ const S = {
   grid2:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(380px,1fr))",gap:16},
   panel:{background:"#fff",border:"1px solid #E7E9EF",borderRadius:14,padding:18},
   panelTitle:{fontWeight:700,fontSize:15,letterSpacing:"-.01em"}, panelSub:{fontSize:12,color:"#8A8F9E",marginTop:2},
+  equipeGrid:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:9},
+  equipeCard:{background:"#FAFBFD",border:"1px solid #EDEFF3",borderRadius:10,padding:"9px 10px"},
+  equipeCardHead:{display:"flex",alignItems:"center",gap:7,marginBottom:7},
+  equipeCardNome:{fontSize:12.5,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"},
   indGrid:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:14,marginTop:4},
   indCard:{background:"#F9FAFC",border:"1px solid #E7E9EF",borderTop:"3px solid",borderRadius:12,padding:"14px 16px",display:"flex",flexDirection:"column",gap:6},
   indHead:{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8},
