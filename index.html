@@ -268,6 +268,126 @@ function lerPdf(file){
   });
 }
 
+// ---------- Relatório PDF da equipe ----------
+function gerarRelatorioEquipePdf(tasks, members, projects){
+  const { jsPDF }=window.jspdf;
+  const doc=new jsPDF({ orientation:"landscape" });
+  const largura=doc.internal.pageSize.getWidth();
+  const agora=new Date();
+  const media=(arr)=> arr.length? arr.reduce((a,b)=>a+b,0)/arr.length : null;
+
+  // Cabeçalho colorido
+  doc.setFillColor(59,58,201); doc.rect(0,0,largura,24,"F");
+  doc.setTextColor(255); doc.setFontSize(18); doc.text("Relatório da equipe", 14, 15);
+  doc.setFontSize(9.5);
+  doc.text(`Gerado em ${agora.toLocaleDateString("pt-BR")} às ${agora.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}`, 14, 21);
+  doc.setTextColor(0);
+
+  const fluxo=tasks.filter((t)=>t.tipo!=="reuniao");
+  const total=fluxo.length;
+  const totalDone=tasks.filter((t)=>t.col==="done").length;
+  const totalHours=tasks.reduce((a,t)=>a+tempoReal(t)/3600000,0);
+
+  const colWidth=(largura-28-6)/2;
+  // Resumo geral
+  doc.autoTable({
+    startY:32,
+    head:[["Resumo geral",""]],
+    body:[
+      ["Tarefas concluídas", String(totalDone)],
+      ["Horas de serviço (tempo real)", hms(totalHours)],
+      ["Em revisão", String(tasks.filter((t)=>t.col==="review").length)],
+      ["Em aberto (a fazer + em andamento + revisão)", String(tasks.filter((t)=>t.col!=="done").length)],
+      ["Membros na equipe", String(members.length)],
+      ["Projetos", String((projects||[]).length)],
+    ],
+    theme:"grid", styles:{fontSize:9.5}, headStyles:{fillColor:[59,58,201]},
+    tableWidth:colWidth, margin:{left:14},
+  });
+  const finalYResumo=doc.lastAutoTable.finalY;
+
+  // Indicadores do processo (equipe toda) — mesmas contas do Painel
+  const emAberto=fluxo.filter((t)=>t.col==="todo").length;
+  const pctAberto=total? Math.round((emAberto/total)*100) : 0;
+  const comAceite=fluxo.filter((t)=>t.acceptedAt&&t.createdAt);
+  const medAceite=media(comAceite.map((t)=>t.acceptedAt-t.createdAt));
+  const comExecucao=fluxo.filter((t)=>t.acceptedAt&&(t.protocoladoAt||t.completedAt));
+  const medExecucao=media(comExecucao.map((t)=>(t.protocoladoAt||t.completedAt)-t.acceptedAt));
+  const retrabalho=fluxo.filter((t)=>(t.reworkCount||0)>0).length;
+  const pctRetrabalho=total? Math.round((retrabalho/total)*100) : 0;
+  const comProtocolo=fluxo.filter((t)=>t.protocoladoAt&&t.createdAt);
+  const medProtocolo=media(comProtocolo.map((t)=>t.protocoladoAt-t.createdAt));
+  const comConcluido=fluxo.filter((t)=>t.completedAt&&t.createdAt);
+  const medConcluido=media(comConcluido.map((t)=>t.completedAt-t.createdAt));
+
+  doc.autoTable({
+    startY:32,
+    head:[["Indicadores do processo",""]],
+    body:[
+      ["Em aberto (a fazer)", `${pctAberto}% (${emAberto} de ${total})`],
+      ["Tempo médio para aceitar", medAceite!=null? durMs(medAceite) : "—"],
+      ["Tempo médio de execução", medExecucao!=null? durMs(medExecucao) : "—"],
+      ["Taxa de retrabalho", `${pctRetrabalho}% (${retrabalho} de ${total})`],
+      ["Tempo médio até Protocolado", medProtocolo!=null? durMs(medProtocolo) : "—"],
+      ["Tempo médio até Concluído", medConcluido!=null? durMs(medConcluido) : "—"],
+    ],
+    theme:"grid", styles:{fontSize:9.5}, headStyles:{fillColor:[139,58,191]},
+    tableWidth:colWidth, margin:{left:14+colWidth+6},
+  });
+
+  // Indicadores por membro
+  const porMembro=members.map((m)=>{
+    const doMembro=fluxo.filter((t)=>t.assignee===m.id);
+    const n=doMembro.length;
+    const concluidas=doMembro.filter((t)=>t.col==="done").length;
+    const ativas=doMembro.filter((t)=>t.col!=="done").length;
+    const retrabM=doMembro.filter((t)=>(t.reworkCount||0)>0).length;
+    const pctRetrM=n? Math.round((retrabM/n)*100) : 0;
+    const aceiteM=media(doMembro.filter((t)=>t.acceptedAt&&t.createdAt).map((t)=>t.acceptedAt-t.createdAt));
+    const execM=media(doMembro.filter((t)=>t.acceptedAt&&(t.protocoladoAt||t.completedAt)).map((t)=>(t.protocoladoAt||t.completedAt)-t.acceptedAt));
+    const protM=media(doMembro.filter((t)=>t.protocoladoAt&&t.createdAt).map((t)=>t.protocoladoAt-t.createdAt));
+    const horas=doMembro.reduce((a,t)=>a+tempoReal(t)/3600000,0);
+    return [m.name, String(n), String(concluidas), String(ativas),
+      aceiteM!=null? durMs(aceiteM) : "—", execM!=null? durMs(execM) : "—",
+      `${pctRetrM}%`, protM!=null? durMs(protM) : "—", hms(horas)];
+  });
+  doc.autoTable({
+    startY:Math.max(finalYResumo,doc.lastAutoTable.finalY)+10,
+    head:[["Membro","Tarefas","Concluídas","Ativas","P/ aceitar","Execução","Retrabalho","Até Protocolado","Horas"]],
+    body:porMembro,
+    theme:"grid", styles:{fontSize:9}, headStyles:{fillColor:[59,58,201]}, margin:{left:14,right:14},
+  });
+
+  // Por projeto
+  if(projects && projects.length){
+    const porProjeto=projects.map((p)=>{
+      const doProj=fluxo.filter((t)=>t.project===p.id);
+      const abertas=doProj.filter((t)=>t.col!=="done").length;
+      const concluidas=doProj.filter((t)=>t.col==="done").length;
+      return [p.name, String(abertas), String(concluidas), String(doProj.length)];
+    }).filter((r)=>Number(r[3])>0);
+    if(porProjeto.length){
+      doc.autoTable({
+        startY:doc.lastAutoTable.finalY+10,
+        head:[["Projeto","Em aberto","Concluídas","Total"]],
+        body:porProjeto,
+        theme:"grid", styles:{fontSize:9}, headStyles:{fillColor:[47,158,110]}, margin:{left:14,right:14},
+      });
+    }
+  }
+
+  // Rodapé com paginação
+  const totalPaginas=doc.internal.getNumberOfPages();
+  for(let i=1;i<=totalPaginas;i++){
+    doc.setPage(i);
+    doc.setFontSize(8); doc.setTextColor(150);
+    doc.text(`Página ${i} de ${totalPaginas}`, largura-14, doc.internal.pageSize.getHeight()-8, {align:"right"});
+    doc.setTextColor(0);
+  }
+
+  doc.save(`relatorio-equipe-${agora.toISOString().slice(0,10)}.pdf`);
+}
+
 // ---------- Storage ----------
 // ---------- Conexão com o servidor (Netlify Function + Neon) ----------
 // Guarda o token da sessão do servidor (obtido no login de conexão).
@@ -378,6 +498,7 @@ function App({ inicial, aoSair, usuarioConectado }){
   const [showUsers,setShowUsers]=useState(false);
   const [showSwitch,setShowSwitch]=useState(false);
   const [showMsgs,setShowMsgs]=useState(false);
+  const [gerandoPdf,setGerandoPdf]=useState(false);
   const [projAberto,setProjAberto]=useState(true);
   const [showNewProj,setShowNewProj]=useState(false);
   const [confirmarExcluir,setConfirmarExcluir]=useState(null);
@@ -689,6 +810,8 @@ function App({ inicial, aoSair, usuarioConectado }){
             <button style={{...S.abaLat,...(state.view==="dash"?S.abaLatOn:{})}} onClick={()=>patch((s)=>({...s,view:"dash"}))}>
               <Ic n="bar" s={14} c={state.view==="dash"?"#3B3AC9":"#5A6072"}/> Painel</button>
           </div>)}
+          {isPrivileged && (<button style={S.sideBtn} disabled={gerandoPdf} onClick={()=>{ setGerandoPdf(true); try{ gerarRelatorioEquipePdf(state.tasks, state.members, state.projects); }catch(e){ alert("Não foi possível gerar o PDF."); } finally{ setGerandoPdf(false); } }}>
+            <Ic n="flag" s={15} c="#4A4F5E"/> {gerandoPdf?"Gerando…":"Relatório PDF"}</button>)}
           <button style={{...S.sideBtn,...(naoLidas>0?{borderColor:"#C7CBFF",background:"#F7F8FE"}:{})}} onClick={()=>{ setShowMsgs(true); if(myMemberId&&naoLidas>0) marcarLidas(myMemberId); }}>
             <Ic n="mail" s={15} c="#4A4F5E"/> {isMaster?"Mensagens":"Minhas mensagens"}
             {naoLidas>0 && <span style={S.badgeMsg}>{naoLidas}</span>}
@@ -1523,57 +1646,7 @@ function Dashboard({ tasks, members }){
   const totalDone=stats.reduce((a,s)=>a+s.done,0); const totalHours=stats.reduce((a,s)=>a+s.hours,0);
   const memberSeries=members.map((m)=>({key:m.name.split(" ")[0],color:m.color,label:m.name.split(" ")[0]}));
   const segs=COLUMNS.map((c)=>({key:c.id,color:c.tint,label:c.name}));
-  const [gerandoPdf,setGerandoPdf]=useState(false);
-  const gerarRelatorioPdf=()=>{
-    try{
-      setGerandoPdf(true);
-      const { jsPDF }=window.jspdf;
-      const doc=new jsPDF();
-      const agora=new Date();
-      doc.setFontSize(16); doc.text("Relatório da equipe", 14, 18);
-      doc.setFontSize(10); doc.setTextColor(130);
-      doc.text(`Gerado em ${agora.toLocaleDateString("pt-BR")} às ${agora.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}`, 14, 24);
-      doc.setTextColor(0);
-
-      doc.autoTable({
-        startY:30,
-        head:[["Resumo geral",""]],
-        body:[
-          ["Tarefas concluídas", String(totalDone)],
-          ["Horas de serviço (tempo real)", hms(totalHours)],
-          ["Em revisão", String(tasks.filter((t)=>t.col==="review").length)],
-          ["Em aberto (a fazer + em andamento + revisão)", String(tasks.filter((t)=>t.col!=="done").length)],
-        ],
-        theme:"grid", styles:{fontSize:10}, headStyles:{fillColor:[59,58,201]},
-      });
-
-      const fluxo=tasks.filter((t)=>t.tipo!=="reuniao");
-      const porMembro=members.map((m)=>{
-        const doMembro=fluxo.filter((t)=>t.assignee===m.id);
-        const n=doMembro.length;
-        const concluidas=doMembro.filter((t)=>t.col==="done").length;
-        const ativas=doMembro.filter((t)=>t.col!=="done").length;
-        const retrabalho=doMembro.filter((t)=>(t.reworkCount||0)>0).length;
-        const pctRetrabalho=n? Math.round((retrabalho/n)*100) : 0;
-        const horas=doMembro.reduce((a,t)=>a+tempoReal(t)/3600000,0);
-        return [m.name, String(concluidas), String(ativas), `${pctRetrabalho}%`, hms(horas)];
-      });
-      doc.autoTable({
-        startY:doc.lastAutoTable.finalY+10,
-        head:[["Membro","Concluídas","Ativas","Retrabalho","Horas de serviço"]],
-        body:porMembro,
-        theme:"grid", styles:{fontSize:9}, headStyles:{fillColor:[59,58,201]},
-      });
-
-      doc.save(`relatorio-equipe-${agora.toISOString().slice(0,10)}.pdf`);
-    }catch(e){ alert("Não foi possível gerar o PDF."); }
-    finally{ setGerandoPdf(false); }
-  };
   return (<div style={S.dash}>
-    <div style={{display:"flex",justifyContent:"flex-end"}}>
-      <button style={S.pdfReportBtn} disabled={gerandoPdf} onClick={gerarRelatorioPdf}>
-        <Ic n="flag" s={13} c="#3B3AC9"/> {gerandoPdf?"Gerando…":"Baixar relatório PDF"}</button>
-    </div>
     <div style={S.kpis}>
       <Kpi label="Tarefas concluídas" value={totalDone} accent={COL.done.tint}/>
       <Kpi label="Horas de serviço" value={hms(totalHours)} accent="#3B3AC9"/>
@@ -2333,7 +2406,6 @@ const S = {
   equipeCard:{background:"#FAFBFD",border:"1px solid #EDEFF3",borderRadius:10,padding:"9px 10px"},
   equipeCardHead:{display:"flex",alignItems:"center",gap:7,marginBottom:7},
   equipeCardNome:{fontSize:12.5,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"},
-  pdfReportBtn:{border:"1px solid #C7CBFF",background:"#F7F8FE",color:"#3B3AC9",fontSize:12.5,fontWeight:700,borderRadius:9,padding:"8px 13px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6},
   indGrid:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:14,marginTop:4},
   indCard:{background:"#F9FAFC",border:"1px solid #E7E9EF",borderTop:"3px solid",borderRadius:12,padding:"14px 16px",display:"flex",flexDirection:"column",gap:6},
   indHead:{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8},
