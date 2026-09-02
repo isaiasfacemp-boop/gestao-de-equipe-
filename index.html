@@ -1625,25 +1625,28 @@ function IndicadoresProcesso({ tasks, members }){
   </Panel>
   <Panel title="Indicadores por membro" sub="Tempo p/ aceitar, execução, retrabalho e até Protocolado — a média de todos forma o valor lá em cima">
     {porMembro.length===0 ? <div style={S.indDesc}>Nenhum membro com tarefas no fluxo ainda.</div> :
-    <div style={{display:"flex",flexDirection:"column",gap:8}}>
-      <div style={S.indMemberHeadRow}>
-        <span style={{flex:1}}>Membro</span>
-        <span style={S.indMemberCol}>P/ aceitar</span>
-        <span style={S.indMemberCol}>Execução</span>
-        <span style={S.indMemberCol}>Retrabalho</span>
-        <span style={S.indMemberCol}>Até Protocolado</span>
-      </div>
-      {porMembro.map((r)=>(<div key={r.member.id} style={S.indMemberRow}>
-        <div style={{display:"flex",alignItems:"center",gap:9,flex:1,minWidth:0}}>
-          <Avatar m={r.member} size={26}/>
-          <span style={{fontSize:13,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.member.name}</span>
-          <span style={{fontSize:11,color:"#ABB0BE"}}>({r.n} tarefa{r.n===1?"":"s"})</span>
-        </div>
-        <span style={{...S.indMemberCol,fontWeight:700,color:COL.todo.tint}}>{r.medAceite!=null? durMs(r.medAceite) : "—"}</span>
-        <span style={{...S.indMemberCol,fontWeight:700,color:COL.doing.tint}}>{r.medExecucao!=null? durMs(r.medExecucao) : "—"}</span>
-        <span style={{...S.indMemberCol,fontWeight:700,color:COL.review.tint}}>{r.pctRetrabalho}%</span>
-        <span style={{...S.indMemberCol,fontWeight:700,color:COL.protocolado.tint}}>{r.medProtocolo!=null? durMs(r.medProtocolo) : "—"}</span>
-      </div>))}
+    <div style={S.indCardGrid}>
+      {porMembro.map((r)=>{
+        const corRetr = r.pctRetrabalho>=75?COL.todo.tint : r.pctRetrabalho>=40?COL.review.tint : COL.done.tint;
+        return (<div key={r.member.id} style={S.indMemberCard}>
+          <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:11}}>
+            <Avatar m={r.member} size={28}/>
+            <div style={{minWidth:0}}>
+              <div style={{fontSize:13.5,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.member.name}</div>
+              <div style={{fontSize:10.5,color:"#ABB0BE"}}>{r.n} tarefa{r.n===1?"":"s"}</div>
+            </div>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:7}}>
+            <div style={S.indMemberStatRow}><span style={S.indMemberStatLabel}><Ic n="clock" s={12} c="#ABB0BE"/> P/ aceitar</span><span style={S.indMemberStatVal}>{r.medAceite!=null? durMs(r.medAceite) : "—"}</span></div>
+            <div style={S.indMemberStatRow}><span style={S.indMemberStatLabel}><Ic n="bar" s={12} c="#ABB0BE"/> Execução</span><span style={S.indMemberStatVal}>{r.medExecucao!=null? durMs(r.medExecucao) : "—"}</span></div>
+            <div style={S.indMemberStatRow}><span style={S.indMemberStatLabel}><Ic n="flag" s={12} c="#ABB0BE"/> Protocolado</span><span style={S.indMemberStatVal}>{r.medProtocolo!=null? durMs(r.medProtocolo) : "—"}</span></div>
+            <div style={{marginTop:2}}>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:10.5,color:"#ABB0BE",marginBottom:3}}><span>Retrabalho</span><span>{r.pctRetrabalho}%</span></div>
+              <div style={{height:6,borderRadius:3,background:"#EEF0F4"}}><div style={{height:"100%",width:`${r.pctRetrabalho}%`,borderRadius:3,background:corRetr}}/></div>
+            </div>
+          </div>
+        </div>);
+      })}
     </div>}
   </Panel>
   </React.Fragment>);
@@ -2280,9 +2283,11 @@ const S = {
   indVal:{fontSize:28,fontWeight:800,letterSpacing:"-.03em",lineHeight:1.1},
   indExtra:{fontSize:12.5,fontWeight:700,color:"#3B3AC9"},
   indDesc:{fontSize:12,color:"#8A8F9E",lineHeight:1.4},
-  indMemberHeadRow:{display:"flex",alignItems:"center",padding:"0 11px",fontSize:10.5,fontWeight:700,color:"#ABB0BE",textTransform:"uppercase",letterSpacing:".04em"},
-  indMemberRow:{display:"flex",alignItems:"center",gap:8,padding:"9px 11px",borderRadius:11,border:"1px solid #EDEFF3",background:"#FAFBFD"},
-  indMemberCol:{width:120,textAlign:"right",fontSize:13},
+  indCardGrid:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:12},
+  indMemberCard:{background:"#FAFBFD",border:"1px solid #EDEFF3",borderRadius:12,padding:"14px 15px"},
+  indMemberStatRow:{display:"flex",alignItems:"center",justifyContent:"space-between",fontSize:12},
+  indMemberStatLabel:{display:"flex",alignItems:"center",gap:5,color:"#8A8F9E"},
+  indMemberStatVal:{fontWeight:700},
   memberGrid:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:12},
   statCard:{border:"1px solid #EDEFF3",borderRadius:12,padding:14,background:"#FAFBFC"},
   overlay:{position:"fixed",inset:0,background:"rgba(20,22,31,.45)",display:"grid",placeItems:"center",zIndex:50,padding:20},
