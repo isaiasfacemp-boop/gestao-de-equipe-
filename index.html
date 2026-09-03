@@ -454,7 +454,14 @@
   function uiConfirm(message,title){ return uiModal({title:title||'Confirmar',message:message,okText:'OK',cancelText:'Cancelar'}); }
   function uiPrompt(message,defaultValue,title){ return uiModal({title:title||'',message:message,input:true,defaultValue:defaultValue,okText:'Salvar',cancelText:'Cancelar'}); }
   function uiAlert(message,title){ return uiModal({title:title||'Aviso',message:message,okText:'OK',showCancel:false}); }
-  async function removerServico(i){ if(await uiConfirm('Remover este serviço do catálogo?','Remover serviço')){ const nm=(services[i].nome||'').trim().toLowerCase(); if(nm) catRemovidos[nm]=true; services.splice(i,1); drawSvcRows(); buildEscopo(); render(); agendarCatalogo(); } }
+  const SENHA_EXCLUSAO_SERVICO='jg2excluir';
+  async function removerServico(i){
+    if(!(await uiConfirm('Remover este serviço do catálogo?','Remover serviço'))) return;
+    const senha=await uiPrompt('Digite a senha para confirmar a exclusão:','','Confirmação necessária');
+    if(senha===null) return;
+    if(senha!==SENHA_EXCLUSAO_SERVICO){ await uiAlert('Senha incorreta. O serviço não foi excluído.','Não autorizado'); return; }
+    const nm=(services[i].nome||'').trim().toLowerCase(); if(nm) catRemovidos[nm]=true; services.splice(i,1); drawSvcRows(); buildEscopo(); render(); agendarCatalogo();
+  }
   const brl=n=>"R$ "+(Number(n)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
   const parseN=v=>{v=(""+v).replace(/[^\d,.-]/g,'').replace(/\.(?=\d{3})/g,'').replace(',','.');return parseFloat(v)||0;};
   function maskMoneyInput(el, onChange){
