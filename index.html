@@ -704,8 +704,9 @@ function App({ inicial, aoSair, usuarioConectado }){
     const u=state.users.find((x)=>x.username.toLowerCase()===alvo);
     if(u){ setTimeout(()=>login(u.id),0); return <div style={S.authWrap}><div className="spin"/></div>; }
     return <div style={S.authWrap}><div style={{textAlign:"center",maxWidth:320,fontFamily:FONT}}>
-      <div style={{color:"#D8442F",fontWeight:700,marginBottom:6}}>Usuário "{usuarioConectado}" não está vinculado a nenhum perfil</div>
-      <div style={{color:"#5A6072",fontSize:13}}>Confira se digitou o login certinho, ou peça ao master para cadastrar/vincular esse usuário.</div>
+      <div style={{color:"#D8442F",fontWeight:700,marginBottom:6}}>Usuário ou senha inválidos</div>
+      <div style={{color:"#5A6072",fontSize:13,marginBottom:16}}>Confira os dados e tente novamente.</div>
+      <button style={{...S.primaryBtn,justifyContent:"center"}} onClick={()=>{ if(aoSair) aoSair(); }}>Tentar novamente</button>
     </div></div>;
   }
   if(currentUser.mustChange) return <div style={S.authWrap}><ChangePasswordCard forced onSave={changePassword}/></div>;
