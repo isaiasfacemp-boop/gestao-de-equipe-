@@ -516,9 +516,9 @@ function prepararDados(saved, usuarioConectado){
   saved.users.forEach((u)=>{ if(!u.memberId){
     const m={ id:uid(), name:u.username, color:AVATAR_COLORS[saved.members.length%AVATAR_COLORS.length] };
     saved.members.push(m); u.memberId=m.id; } });
-  // aponta a sessão para o usuário conectado (casa pelo login); senão, primeiro master
+  // aponta a sessão para o usuário conectado (casa pelo login, exatamente) — sem cair no master por engano
   const alvo=(usuarioConectado||"").toLowerCase();
-  let u=saved.users.find((x)=>x.username.toLowerCase()===alvo) || saved.users.find((x)=>x.role==="master") || saved.users[0];
+  const u=saved.users.find((x)=>x.username.toLowerCase()===alvo);
   saved.session={ currentUserId: u ? u.id : null };
   return saved;
 }
@@ -698,13 +698,15 @@ function App({ inicial, aoSair, usuarioConectado }){
   };
 
   // Login unificado: quem entrou pela tela de conexão vira o usuário do app.
-  // Casa pelo login (username). Se não houver correspondente, usa o primeiro master.
+  // Casa pelo login (username), exatamente — nunca cai no master por engano/erro de digitação.
   if(!currentUser){
     const alvo=(usuarioConectado||"").toLowerCase();
-    let u=state.users.find((x)=>x.username.toLowerCase()===alvo);
-    if(!u) u=state.users.find((x)=>x.role==="master") || state.users[0];
+    const u=state.users.find((x)=>x.username.toLowerCase()===alvo);
     if(u){ setTimeout(()=>login(u.id),0); return <div style={S.authWrap}><div className="spin"/></div>; }
-    return <div style={S.authWrap}><div style={{color:"#5A6072",fontFamily:FONT}}>Nenhum usuário no sistema.</div></div>;
+    return <div style={S.authWrap}><div style={{textAlign:"center",maxWidth:320,fontFamily:FONT}}>
+      <div style={{color:"#D8442F",fontWeight:700,marginBottom:6}}>Usuário "{usuarioConectado}" não está vinculado a nenhum perfil</div>
+      <div style={{color:"#5A6072",fontSize:13}}>Confira se digitou o login certinho, ou peça ao master para cadastrar/vincular esse usuário.</div>
+    </div></div>;
   }
   if(currentUser.mustChange) return <div style={S.authWrap}><ChangePasswordCard forced onSave={changePassword}/></div>;
 
@@ -2366,24 +2368,51 @@ function MensagensModal({ mensagens, membros, isMaster, meuMembroId, onEnviar, o
 
 function SwitchUserModal({ users, members, currentUser, onEscolher, onClose }){
   const membroDe=(u)=>members.find((m)=>m.id===u.memberId);
+  const [alvo,setAlvo]=useState(null); const [senha,setSenha]=useState(""); const [err,setErr]=useState("");
+
+  const confirmar=()=>{
+    if(!alvo) return;
+    if(!senha){ setErr("Digite a senha."); return; }
+    if(hashPw(senha)!==alvo.passHash){ setErr("Senha incorreta."); return; }
+    onEscolher(alvo.id);
+  };
+
   return (<div style={S.overlay}>
     <div style={{...S.modal,maxWidth:360}} onClick={(e)=>e.stopPropagation()}>
       <div style={S.modalHead}><h2 style={S.modalTitle}>Trocar de usuário</h2><button style={S.iconBtn} onClick={onClose}><Ic n="x" s={18}/></button></div>
-      <div style={{fontSize:12.5,color:"#8A8F9E",marginBottom:12}}>Escolha quem vai usar o sistema agora.</div>
-      <div style={{display:"flex",flexDirection:"column",gap:6,maxHeight:360,overflowY:"auto"}}>
-        {users.map((u)=>{ const m=membroDe(u); const atual=u.id===currentUser.id;
-          return (<button key={u.id} onClick={()=>!atual&&onEscolher(u.id)} disabled={atual}
-            style={{display:"flex",alignItems:"center",gap:10,padding:"9px 10px",borderRadius:11,
-              border:atual?"1px solid #C7CBFF":"1px solid #E7E9EF",background:atual?"#F7F8FE":"#fff",
-              cursor:atual?"default":"pointer",textAlign:"left",width:"100%"}}>
-            {m ? <Avatar m={m} size={30}/> : <span style={{...S.avatarSm,width:30,height:30,background:ROLES[u.role].color}}>{initials(u.username)}</span>}
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:13.5,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{m?m.name:u.username}</div>
-              <span style={{...S.roleBadge,color:ROLES[u.role].color,background:ROLES[u.role].color+"14"}}>{ROLES[u.role].label}</span>
-            </div>
-            {atual && <span style={{fontSize:10.5,color:"#8A8F9E",fontWeight:700}}>agora</span>}
-          </button>); })}
-      </div>
+      {!alvo ? (<React.Fragment>
+        <div style={{fontSize:12.5,color:"#8A8F9E",marginBottom:12}}>Escolha quem vai usar o sistema agora — vai pedir a senha da pessoa.</div>
+        <div style={{display:"flex",flexDirection:"column",gap:6,maxHeight:360,overflowY:"auto"}}>
+          {users.map((u)=>{ const m=membroDe(u); const atual=u.id===currentUser.id;
+            return (<button key={u.id} onClick={()=>{ if(!atual){ setAlvo(u); setSenha(""); setErr(""); } }} disabled={atual}
+              style={{display:"flex",alignItems:"center",gap:10,padding:"9px 10px",borderRadius:11,
+                border:atual?"1px solid #C7CBFF":"1px solid #E7E9EF",background:atual?"#F7F8FE":"#fff",
+                cursor:atual?"default":"pointer",textAlign:"left",width:"100%"}}>
+              {m ? <Avatar m={m} size={30}/> : <span style={{...S.avatarSm,width:30,height:30,background:ROLES[u.role].color}}>{initials(u.username)}</span>}
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:13.5,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{m?m.name:u.username}</div>
+                <span style={{...S.roleBadge,color:ROLES[u.role].color,background:ROLES[u.role].color+"14"}}>{ROLES[u.role].label}</span>
+              </div>
+              {atual && <span style={{fontSize:10.5,color:"#8A8F9E",fontWeight:700}}>agora</span>}
+            </button>); })}
+        </div>
+      </React.Fragment>) : (<React.Fragment>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
+          {(()=>{ const m=membroDe(alvo); return m ? <Avatar m={m} size={34}/> : <span style={{...S.avatarSm,width:34,height:34,background:ROLES[alvo.role].color}}>{initials(alvo.username)}</span>; })()}
+          <div>
+            <div style={{fontWeight:700,fontSize:14}}>{membroDe(alvo)?.name || alvo.username}</div>
+            <div style={{fontSize:11.5,color:"#8A8F9E"}}>Digite a senha dessa pessoa para entrar como ela.</div>
+          </div>
+        </div>
+        <input autoFocus type="password" style={{...S.authInput,margin:0}} value={senha}
+          onChange={(e)=>{setSenha(e.target.value);setErr("");}}
+          onKeyDown={(e)=>{ if(e.key==="Enter") confirmar(); }} placeholder="Senha"/>
+        {err && <div style={{...S.authErr,marginTop:10}}>{err}</div>}
+        <div style={{display:"flex",gap:8,marginTop:14}}>
+          <button style={{...S.primaryBtn,flex:1,justifyContent:"center"}} onClick={confirmar}>Entrar</button>
+          <button style={S.ghostBtn} onClick={()=>{setAlvo(null);setSenha("");setErr("");}}>Voltar</button>
+        </div>
+      </React.Fragment>)}
     </div>
   </div>);
 }
