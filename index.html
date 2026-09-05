@@ -118,6 +118,30 @@ const durMs = (ms)=>{ if(!ms||ms<0) return "0m"; const min=Math.floor(ms/60000);
   return H?`${H}h ${M}m`:`${M}m`; };
 const tempoReal = (t)=>{ const rodando=t.runningSince?Date.now()-t.runningSince:0; return (t.workedMs||0)+rodando; };
 const horasReais = (t)=>{ const ms=tempoReal(t); return ms>0 ? ms/3600000 : (t.hours||0); };
+
+// ---------- Tempo útil (só conta dentro do expediente) ----------
+// Expediente: seg a sex, 8h-12h e 13h30-17h30. Fora disso (noite, almoço, fim de semana) não soma.
+const JANELAS_EXPEDIENTE = [[8,0,12,0],[13,30,17,30]];
+const msUteis = (inicioTs, fimTs)=>{
+  if(!inicioTs || !fimTs || fimTs<=inicioTs) return 0;
+  let total=0;
+  const cursor=new Date(inicioTs); cursor.setHours(0,0,0,0);
+  const fimDia=new Date(fimTs); fimDia.setHours(0,0,0,0);
+  while(cursor.getTime()<=fimDia.getTime()){
+    const diaSemana=cursor.getDay();
+    if(diaSemana>=1 && diaSemana<=5){
+      for(const [h1,m1,h2,m2] of JANELAS_EXPEDIENTE){
+        const janIni=new Date(cursor); janIni.setHours(h1,m1,0,0);
+        const janFim=new Date(cursor); janFim.setHours(h2,m2,0,0);
+        const ini=Math.max(janIni.getTime(), inicioTs);
+        const fim=Math.min(janFim.getTime(), fimTs);
+        if(fim>ini) total+=(fim-ini);
+      }
+    }
+    cursor.setDate(cursor.getDate()+1);
+  }
+  return total;
+};
 const quandoTexto = (iso)=>{ if(!iso) return "";
   const d=new Date(iso); if(isNaN(d)) return "";
   const hoje=new Date(); const amanha=new Date(); amanha.setDate(amanha.getDate()+1);
@@ -310,15 +334,15 @@ function gerarRelatorioEquipePdf(tasks, members, projects){
   const emAberto=fluxo.filter((t)=>t.col==="todo").length;
   const pctAberto=total? Math.round((emAberto/total)*100) : 0;
   const comAceite=fluxo.filter((t)=>t.acceptedAt&&t.createdAt);
-  const medAceite=media(comAceite.map((t)=>t.acceptedAt-t.createdAt));
+  const medAceite=media(comAceite.map((t)=>msUteis(t.createdAt,t.acceptedAt)));
   const comExecucao=fluxo.filter((t)=>t.acceptedAt&&(t.protocoladoAt||t.completedAt));
-  const medExecucao=media(comExecucao.map((t)=>(t.protocoladoAt||t.completedAt)-t.acceptedAt));
+  const medExecucao=media(comExecucao.map((t)=>msUteis(t.acceptedAt,t.protocoladoAt||t.completedAt)));
   const retrabalho=fluxo.filter((t)=>(t.reworkCount||0)>0).length;
   const pctRetrabalho=total? Math.round((retrabalho/total)*100) : 0;
   const comProtocolo=fluxo.filter((t)=>t.protocoladoAt&&t.createdAt);
-  const medProtocolo=media(comProtocolo.map((t)=>t.protocoladoAt-t.createdAt));
+  const medProtocolo=media(comProtocolo.map((t)=>msUteis(t.createdAt,t.protocoladoAt)));
   const comConcluido=fluxo.filter((t)=>t.completedAt&&t.createdAt);
-  const medConcluido=media(comConcluido.map((t)=>t.completedAt-t.createdAt));
+  const medConcluido=media(comConcluido.map((t)=>msUteis(t.createdAt,t.completedAt)));
 
   doc.autoTable({
     startY:32,
@@ -343,9 +367,9 @@ function gerarRelatorioEquipePdf(tasks, members, projects){
     const ativas=doMembro.filter((t)=>t.col!=="done").length;
     const retrabM=doMembro.filter((t)=>(t.reworkCount||0)>0).length;
     const pctRetrM=n? Math.round((retrabM/n)*100) : 0;
-    const aceiteM=media(doMembro.filter((t)=>t.acceptedAt&&t.createdAt).map((t)=>t.acceptedAt-t.createdAt));
-    const execM=media(doMembro.filter((t)=>t.acceptedAt&&(t.protocoladoAt||t.completedAt)).map((t)=>(t.protocoladoAt||t.completedAt)-t.acceptedAt));
-    const protM=media(doMembro.filter((t)=>t.protocoladoAt&&t.createdAt).map((t)=>t.protocoladoAt-t.createdAt));
+    const aceiteM=media(doMembro.filter((t)=>t.acceptedAt&&t.createdAt).map((t)=>msUteis(t.createdAt,t.acceptedAt)));
+    const execM=media(doMembro.filter((t)=>t.acceptedAt&&(t.protocoladoAt||t.completedAt)).map((t)=>msUteis(t.acceptedAt,t.protocoladoAt||t.completedAt)));
+    const protM=media(doMembro.filter((t)=>t.protocoladoAt&&t.createdAt).map((t)=>msUteis(t.createdAt,t.protocoladoAt)));
     const horas=doMembro.reduce((a,t)=>a+tempoReal(t)/3600000,0);
     return [m.name, String(n), String(concluidas), String(ativas),
       aceiteM!=null? durMs(aceiteM) : "—", execM!=null? durMs(execM) : "—",
@@ -506,6 +530,10 @@ function App({ inicial, aoSair, usuarioConectado }){
   const [revisaoDe,setRevisaoDe]=useState(null);
   const [drag,setDrag]=useState(null);
   const [dragOver,setDragOver]=useState(null);
+  // Tarefas com uma edição aberta agora mesmo (título, notas, prazo, menu de prioridade/responsável) —
+  // enquanto isso, a sincronização com a nuvem não mexe nelas, só nas outras.
+  const editandoIdsRef=useRef(new Set());
+  const marcarEdicao=(id,ativo)=>{ if(ativo) editandoIdsRef.current.add(id); else editandoIdsRef.current.delete(id); };
   // Salva o estado na nuvem com um pequeno atraso (debounce), para não gravar a cada tecla.
   const salvarRef=useRef(null); const primeiraRef=useRef(true);
   const salvandoRef=useRef(false);        // há um salvamento em andamento (rede)
@@ -536,8 +564,14 @@ function App({ inicial, aoSair, usuarioConectado }){
         if(nuvem){
           setState((atual)=>{
             const ses=atual.session;
-            if(JSON.stringify({...nuvem,session:null})===JSON.stringify({...atual,session:null})) return atual;
-            return {...nuvem, session:ses};
+            // Tarefas que o usuário está editando agora ficam como estão localmente —
+            // as outras tarefas atualizam normalmente com o que vem da nuvem.
+            const idsTravados=editandoIdsRef.current;
+            const tasksMescladas = idsTravados.size===0 ? nuvem.tasks
+              : (nuvem.tasks||[]).map((t)=> idsTravados.has(t.id) ? ((atual.tasks||[]).find((x)=>x.id===t.id) || t) : t);
+            const nuvemMesclada = {...nuvem, tasks:tasksMescladas};
+            if(JSON.stringify({...nuvemMesclada,session:null})===JSON.stringify({...atual,session:null})) return atual;
+            return {...nuvemMesclada, session:ses};
           });
         }
       }catch(e){}
@@ -617,7 +651,10 @@ function App({ inicial, aoSair, usuarioConectado }){
 
   // visibilidade: master/gerente veem tudo; membro vê só as próprias
   const allProjTasks=emReunioes ? state.tasks.filter((t)=>t.tipo==="reuniao") : state.tasks.filter((t)=>t.project===state.activeProject);
-  const visibleTasks=isPrivileged?allProjTasks:allProjTasks.filter((t)=>t.tipo==="reuniao" || (t.assignee&&t.assignee===myMemberId));
+  const podeVerReuniao=(t)=> !t.convidados || t.convidados.length===0 || (myMemberId && t.convidados.includes(myMemberId));
+  const visibleTasks=isPrivileged?allProjTasks:allProjTasks.filter((t)=> t.tipo==="reuniao"
+    ? podeVerReuniao(t)
+    : (t.assignee&&t.assignee===myMemberId));
   let filtered=visibleTasks;
   if(emReunioes && reuniaoMembro) filtered=filtered.filter((t)=>{ const conf=t.confirmados||[]; return t.col==="done" ? conf.includes(reuniaoMembro) : !conf.includes(reuniaoMembro); });
   if(folderFilter) filtered=filtered.filter((t)=>t.folderName===folderFilter);
@@ -695,6 +732,7 @@ function App({ inicial, aoSair, usuarioConectado }){
         const item=(s.taskCatalog||[]).find((c)=>c.id===it.catalogId); if(!item) return null;
         return { id:uid(), project:s.activeProject, col:"todo", title:item.title,
           tipo:it.reuniao?"reuniao":"tarefa", quando:it.quando||"", confirmados:[],
+          convidados:it.reuniao?(it.convidados&&it.convidados.length?it.convidados:[]):[],
           priority:it.priority||"media", hours:Math.max(0,+it.hours||0), assignee:it.reuniao?null:(assignee||null),
           createdAt:agora, acceptedAt:null, workedMs:0, runningSince:null,
           desc:((desc&&desc.trim())||item.desc||"").trim(),
@@ -709,8 +747,41 @@ function App({ inicial, aoSair, usuarioConectado }){
   const moveTask=(id,col)=>{ if(col==="done")return; updateTask(id,{col,completedAt:null}); };
 
   // fluxo: A fazer -> (aceitar) Em andamento -> (concluir) Concluído -> (master) Revisão -> (concluir) Concluído
-  const acceptTask=(id)=>{ const t=state.tasks.find((x)=>x.id===id); const agora=Date.now();
-    updateTask(id,{col:"doing",acceptedAt:t.acceptedAt??agora,runningSince:agora,completedAt:null}); };
+  // Ao aceitar uma tarefa nova, qualquer outra tarefa do mesmo membro que esteja com o relógio rodando
+  // é pausada automaticamente (o tempo já rodado fica guardado) — só volta a rodar quando o membro
+  // abrir ela de novo, ficando "em pausa" até a mais recente ser concluída.
+  const acceptTask=(id)=>{ const agora=Date.now();
+    patch((s)=>{
+      const alvo=s.tasks.find((x)=>x.id===id); if(!alvo) return s;
+      const memberId=alvo.assignee;
+      s.tasks=s.tasks.map((t)=>{
+        if(t.id===id) return {...t, col:"doing", acceptedAt:t.acceptedAt??agora, runningSince:agora, completedAt:null};
+        if(memberId && t.assignee===memberId && t.runningSince){
+          const soma=(t.workedMs||0)+(agora-t.runningSince);
+          return {...t, workedMs:soma, runningSince:null};
+        }
+        return t;
+      });
+      return s;
+    });
+  };
+  // Retomar uma tarefa "Em andamento" que ficou pausada (porque outra foi aceita depois).
+  // Também pausa qualquer outra tarefa do mesmo membro que esteja rodando no momento.
+  const resumeTask=(id)=>{ const agora=Date.now();
+    patch((s)=>{
+      const alvo=s.tasks.find((x)=>x.id===id); if(!alvo) return s;
+      const memberId=alvo.assignee;
+      s.tasks=s.tasks.map((t)=>{
+        if(t.id===id) return {...t, runningSince:agora};
+        if(memberId && t.assignee===memberId && t.runningSince){
+          const soma=(t.workedMs||0)+(agora-t.runningSince);
+          return {...t, workedMs:soma, runningSince:null};
+        }
+        return t;
+      });
+      return s;
+    });
+  };
   const completeTask=(id)=>{ const t=state.tasks.find((x)=>x.id===id); const agora=Date.now();
     const soma=(t.workedMs||0)+(t.runningSince?agora-t.runningSince:0);
     updateTask(id,{col:"done",needsFix:false,fixNote:"",workedMs:soma,runningSince:null,
@@ -749,8 +820,8 @@ function App({ inicial, aoSair, usuarioConectado }){
     });
   };
 
-  const emAbertoProj=(pid)=>state.tasks.filter((t)=>t.project===pid && t.col!=="done" && (isPrivileged || t.tipo==="reuniao" || t.assignee===myMemberId)).length;
-  const concluidoProj=(pid)=>state.tasks.filter((t)=>t.project===pid && t.col==="done" && (isPrivileged || t.tipo==="reuniao" || t.assignee===myMemberId)).length;
+  const emAbertoProj=(pid)=>state.tasks.filter((t)=>t.project===pid && t.col!=="done" && (isPrivileged || (t.tipo==="reuniao"?podeVerReuniao(t):t.assignee===myMemberId))).length;
+  const concluidoProj=(pid)=>state.tasks.filter((t)=>t.project===pid && t.col==="done" && (isPrivileged || (t.tipo==="reuniao"?podeVerReuniao(t):t.assignee===myMemberId))).length;
   const emAbertoMembro=(mid)=>state.tasks.filter((t)=>t.assignee===mid && t.col!=="done").length;
   const concluidoMembro=(mid)=>state.tasks.filter((t)=>t.assignee===mid && t.col==="done").length;
 
@@ -899,11 +970,11 @@ function App({ inicial, aoSair, usuarioConectado }){
                       canEdit={canEdit(t)} canDrag={canDrag(t)} canAct={canAct(t)} isPrivileged={isPrivileged} isMaster={isMaster} mine={isMine(t)}
                       onDragStart={()=>setDrag(t.id)} onDragEnd={()=>{setDrag(null);setDragOver(null);}}
                       onUpdate={(f)=>updateTask(t.id,f)} onRemove={()=>removeTask(t.id)}
-                      onAccept={()=>acceptTask(t.id)} onComplete={()=>completeTask(t.id)}
+                      onAccept={()=>acceptTask(t.id)} onComplete={()=>completeTask(t.id)} onResume={()=>resumeTask(t.id)}
                       onSendToReview={()=>sendToReview(t.id)} onBackToDoing={()=>backToDoing(t.id)}
                       onToProtocolado={()=>toProtocolado(t.id)} onBackToReview={()=>backToReview(t.id)}
                       onDoingToReview={()=>doingToReview(t.id)} onProtocoladoToDoing={()=>protocoladoToDoing(t.id)}
-                      onRepassar={(mid)=>repassarTarefa(t.id,mid)}/>))}
+                      onRepassar={(mid)=>repassarTarefa(t.id,mid)} onEditLock={marcarEdicao}/>))}
                     {items.length===0 && <p style={S.colEmpty}>Nenhuma tarefa</p>}
                   </div>)}
                   {col.id==="todo" && isPrivileged && <LaunchTask catalog={catalog} members={state.members} onLaunch={launchMany} onOpenCatalog={()=>setShowCatalog(true)} isMaster={isMaster}/>}
@@ -1028,13 +1099,19 @@ function RepassarModal({ members, task, onEscolher, onClose }){
 
 // ---------- Task card ----------
 function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, canEdit, canDrag, canAct, isPrivileged, isMaster, mine,
-                onDragStart, onDragEnd, onUpdate, onRemove, onAccept, onComplete, onSendToReview, onBackToDoing, onToProtocolado, onBackToReview, onDoingToReview, onProtocoladoToDoing, onRepassar }){
+                onDragStart, onDragEnd, onUpdate, onRemove, onAccept, onComplete, onResume, onSendToReview, onBackToDoing, onToProtocolado, onBackToReview, onDoingToReview, onProtocoladoToDoing, onRepassar, onEditLock }){
   const [menu,setMenu]=useState(null); const [menuPos,setMenuPos]=useState(null); const ref=useRef();
   const [editDesc,setEditDesc]=useState(false); const [rascunho,setRascunho]=useState("");
   const [novaNota,setNovaNota]=useState(""); const [editNota,setEditNota]=useState(null); const [notaTexto,setNotaTexto]=useState("");
   const [novaFazer,setNovaFazer]=useState(""); const [editFazer,setEditFazer]=useState(null); const [fazerTexto,setFazerTexto]=useState("");
   const [editTrab,setEditTrab]=useState(false); const [trabTexto,setTrabTexto]=useState("");
+  const [editTitulo,setEditTitulo]=useState(false); const [tituloTexto,setTituloTexto]=useState("");
   const [editHoras,setEditHoras]=useState(false); const [horasTexto,setHorasTexto]=useState("");
+  useEffect(()=>{
+    const emEdicao = editTitulo || editTrab || editNota!==null || editHoras || !!menu;
+    if(onEditLock) onEditLock(task.id, emEdicao);
+    return ()=>{ if(onEditLock) onEditLock(task.id, false); };
+  }, [editTitulo, editTrab, editNota, editHoras, menu, task.id]);
   const [enviandoPdf,setEnviandoPdf]=useState(false); const pdfRef=useRef();
   const pri=PRIORITIES[task.priority]; const col=COL[task.col];
   const done=task.col==="done"; const inReview=task.col==="review"; const fixing=inReview&&task.needsFix; const inProtocolado=task.col==="protocolado";
@@ -1069,7 +1146,15 @@ function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, ca
           : fixing ? <Ic n="undo" s={13} c="#B8860B" style={{flexShrink:0,marginTop:2}}/>
           : canDrag ? <Ic n="grip" s={14} c="#C2C6D0" style={{cursor:"grab",flexShrink:0,marginTop:2}}/>
           : <Ic n="circle" s={12} c="#C2C6D0" style={{flexShrink:0,marginTop:3}}/>}
-        <p style={{...S.cardTitle,...(ehReuniao?S.cardTituloReuniao:{})}}>{task.title}</p>
+        {editTitulo ? (<div style={{display:"flex",alignItems:"center",gap:5,flex:1}}>
+          <input autoFocus value={tituloTexto} onChange={(e)=>setTituloTexto(e.target.value)}
+            onKeyDown={(e)=>{ if(e.key==="Enter"&&tituloTexto.trim()){ onUpdate({title:tituloTexto.trim()}); setEditTitulo(false); } if(e.key==="Escape") setEditTitulo(false); }}
+            onBlur={()=>{ if(tituloTexto.trim()) onUpdate({title:tituloTexto.trim()}); setEditTitulo(false); }}
+            style={{...S.cardTitle,border:"1px solid #C7CBFF",borderRadius:6,padding:"2px 6px",flex:1}}/>
+        </div>) : (
+          <p style={{...S.cardTitle,...(ehReuniao?S.cardTituloReuniao:{}),...(canEdit&&isPrivileged?{cursor:"text"}:{})}}
+            title={canEdit&&isPrivileged?"Clique para editar a tarefa":undefined}
+            onClick={()=>{ if(canEdit&&isPrivileged){ setTituloTexto(task.title); setEditTitulo(true); } }}>{task.title}</p>)}
         {canEdit && isPrivileged && <button className="card-del" style={S.cardDel} onClick={onRemove}><Ic n="x" s={13}/></button>}
       </div>
 
@@ -1156,12 +1241,12 @@ function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, ca
             <span style={S.tempoRot}>Enviada</span><span style={S.tempoVal}>{hhmm(task.createdAt)} · {ddmm(new Date(task.createdAt))}</span></div>}
           {task.acceptedAt ? (<div style={S.tempoLinha}>
             <span style={S.tempoRot}>Resposta</span>
-            <span style={{...S.tempoVal,color:"#2F6BD8"}}>{durMs(task.acceptedAt-(task.createdAt||task.acceptedAt))}</span></div>)
+            <span style={{...S.tempoVal,color:"#2F6BD8"}}>{durMs(msUteis(task.createdAt||task.acceptedAt, task.acceptedAt))}</span></div>)
            : (task.col==="todo" && task.createdAt && <div style={S.tempoLinha}>
             <span style={S.tempoRot}>Aguardando</span>
-            <span style={{...S.tempoVal,color:"#D8442F"}}>{durMs(Date.now()-task.createdAt)}</span></div>)}
+            <span style={{...S.tempoVal,color:"#D8442F"}}>{durMs(msUteis(task.createdAt, Date.now()))}</span></div>)}
           {(task.workedMs>0 || task.runningSince) && <div style={S.tempoLinha}>
-            <span style={S.tempoRot}>{task.runningSince?"Contando":"Tempo real"}</span>
+            <span style={S.tempoRot}>{task.runningSince?"Contando":(task.col==="doing"?"Pausada":"Tempo real")}</span>
             <span style={{...S.tempoVal,color:task.runningSince?"#2F9E6E":"#20232E",fontWeight:800}}>
               {task.runningSince && <span style={S.pulsando}>●</span>} {durMs(tempoReal(task))}</span></div>}
           {task.hours>0 && <div style={S.tempoLinha}>
@@ -1229,6 +1314,8 @@ function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, ca
       {/* fluxo da tarefa */}
       {!ehReuniao && task.col==="todo" && canAct && (
         <button style={{...S.doneBtn,background:COL.doing.tint}} onClick={onAccept}><Ic n="check" s={13} c="#fff"/> Aceitar tarefa</button>)}
+      {!ehReuniao && task.col==="doing" && canAct && !task.runningSince && (
+        <button style={{...S.doneBtn,background:"#2F9E6E"}} onClick={onResume}><Ic n="bar" s={13} c="#fff"/> Continuar tarefa</button>)}
       {!ehReuniao && task.col==="doing" && canAct && (
         <button style={{...S.doneBtn,background:COL.review.tint}} onClick={onDoingToReview}><Ic n="checkc" s={13} c="#fff"/> Ir para Revisão Interna</button>)}
       {!ehReuniao && inReview && canAct && (
@@ -1368,7 +1455,7 @@ function ConcluidoCalendario({ tarefas, membros, membroFiltro, onMembroFiltro, i
 function LaunchTask({ catalog, members, onLaunch, onOpenCatalog, isMaster }){
   const [open,setOpen]=useState(false);
   const HORAS_POR_DIA=8;
-  const linhaVazia=()=>({ key:uid(), catalogId:"", tempo:"", unidade:"h", priority:"media", reuniao:false, quando:"" });
+  const linhaVazia=()=>({ key:uid(), catalogId:"", tempo:"", unidade:"h", priority:"media", reuniao:false, quando:"", convidados:[] });
   const [linhas,setLinhas]=useState([linhaVazia()]);
   const [assignee,setAssignee]=useState(""); const [desc,setDesc]=useState("");
   const [err,setErr]=useState("");
@@ -1393,7 +1480,7 @@ function LaunchTask({ catalog, members, onLaunch, onOpenCatalog, isMaster }){
   const submit=()=>{
     if(validas.length===0){ setErr("Escolha ao menos uma tarefa cadastrada."); return; }
     if(precisaResp && !assignee){ setErr("Escolha o responsável das tarefas."); return; }
-    onLaunch({ itens:validas.map((l)=>({catalogId:l.catalogId,hours:horasDaLinha(l),priority:l.priority,reuniao:l.reuniao,quando:l.quando})),
+    onLaunch({ itens:validas.map((l)=>({catalogId:l.catalogId,hours:horasDaLinha(l),priority:l.priority,reuniao:l.reuniao,quando:l.quando,convidados:l.reuniao?(l.convidados||[]):[]})),
                assignee, desc });
     limpar(); setOpen(false);
   };
@@ -1419,7 +1506,20 @@ function LaunchTask({ catalog, members, onLaunch, onOpenCatalog, isMaster }){
           <Ic n="calendar" s={12} c={l.reuniao?"#8B3ABF":"#8A8F9E"}/> É uma reunião
         </label>
         {l.reuniao && (<div style={{marginTop:6}}><div style={S.launchLabel}>Quando</div>
-          <input style={S.launchInput} type="datetime-local" value={l.quando} onChange={(e)=>mudar(l.key,"quando",e.target.value)}/></div>)}
+          <input style={S.launchInput} type="datetime-local" value={l.quando} onChange={(e)=>mudar(l.key,"quando",e.target.value)}/>
+          <div style={{...S.launchLabel,marginTop:7}}>Convidados</div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+            <button type="button" style={{...S.convidadoChip,...((!l.convidados||l.convidados.length===0)?S.convidadoChipOn:{})}}
+              onClick={()=>mudar(l.key,"convidados",[])}>Todos</button>
+            {members.map((m)=>{ const marcado=(l.convidados||[]).includes(m.id);
+              return (<button key={m.id} type="button" style={{...S.convidadoChip,...(marcado?S.convidadoChipOn:{})}}
+                onClick={()=>{ const atuais=l.convidados||[];
+                  mudar(l.key,"convidados", marcado?atuais.filter((id)=>id!==m.id):[...atuais,m.id]); }}>
+                {m.name.split(" ")[0]}</button>); })}
+          </div>
+          {l.convidados&&l.convidados.length>0 && <div style={{fontSize:10.5,color:"#8A8F9E",marginTop:3}}>
+            {l.convidados.length} convidado{l.convidados.length===1?"":"s"} selecionado{l.convidados.length===1?"":"s"}</div>}
+        </div>)}
         <div style={{display:"flex",gap:6,marginTop:6}}>
           <div style={{flex:1.1}}><div style={S.launchLabel}>Tempo previsto</div>
             <div style={{display:"flex",gap:5}}>
@@ -1454,8 +1554,8 @@ function LaunchTask({ catalog, members, onLaunch, onOpenCatalog, isMaster }){
         <option value="">Escolher…</option>
         {members.map((m)=>(<option key={m.id} value={m.id}>{m.name}</option>))}
       </select>
-      {validas.some((l)=>l.reuniao) && <div style={S.fileHint}>As reuniões marcadas vão para toda a equipe, sem responsável.</div>}
-    </div>) : (validas.length>0 && <div style={S.avisoTodos}><Ic n="users" s={13} c="#8B3ABF"/> Reunião: vai para toda a equipe</div>)}
+      {validas.some((l)=>l.reuniao) && <div style={S.fileHint}>As reuniões marcadas não têm responsável — vão para os convidados escolhidos (ou toda a equipe, se marcar "Todos").</div>}
+    </div>) : (validas.length>0 && <div style={S.avisoTodos}><Ic n="users" s={13} c="#8B3ABF"/> Reunião sem responsável — confira os convidados de cada uma acima</div>)}
 
     <div><div style={S.launchLabel}>Observação (vale para todas)</div>
       <textarea style={{...S.launchInput,minHeight:54,resize:"vertical"}} value={desc} onChange={(e)=>setDesc(e.target.value)}
@@ -1687,15 +1787,15 @@ function IndicadoresProcesso({ tasks, members }){
     // Histórico — considera TODAS as tarefas que já passaram por isso, não só as que estão
     // na coluna agora, então não zera só porque o quadro está vazio no momento.
     const comAceite=fluxo.filter((t)=>t.acceptedAt&&t.createdAt);
-    const temposAceite=comAceite.map((t)=>t.acceptedAt-t.createdAt);
+    const temposAceite=comAceite.map((t)=>msUteis(t.createdAt,t.acceptedAt));
     const medAceite=media(temposAceite);
 
     const comExecucao=fluxo.filter((t)=>t.acceptedAt&&(t.protocoladoAt||t.completedAt));
-    const temposExecucao=comExecucao.map((t)=>(t.protocoladoAt||t.completedAt)-t.acceptedAt);
+    const temposExecucao=comExecucao.map((t)=>msUteis(t.acceptedAt,t.protocoladoAt||t.completedAt));
     const medExecucao=media(temposExecucao);
 
     const emAberto=fluxo.filter((t)=>t.col==="todo").length;
-    const temposConcluido=fluxo.filter((t)=>t.completedAt&&t.createdAt).map((t)=>t.completedAt-t.createdAt);
+    const temposConcluido=fluxo.filter((t)=>t.completedAt&&t.createdAt).map((t)=>msUteis(t.createdAt,t.completedAt));
 
     // Por membro: tempo p/ aceitar, tempo de execução, % retrabalho e tempo médio até protocolado —
     // só entram na média da equipe os membros que já têm alguma tarefa no fluxo.
@@ -1703,9 +1803,9 @@ function IndicadoresProcesso({ tasks, members }){
       const doMembro=fluxo.filter((t)=>t.assignee===m.id);
       const n=doMembro.length;
       const retrabalho=doMembro.filter((t)=>(t.reworkCount||0)>0).length;
-      const aceiteM=doMembro.filter((t)=>t.acceptedAt&&t.createdAt).map((t)=>t.acceptedAt-t.createdAt);
-      const execM=doMembro.filter((t)=>t.acceptedAt&&(t.protocoladoAt||t.completedAt)).map((t)=>(t.protocoladoAt||t.completedAt)-t.acceptedAt);
-      const temposProt=doMembro.filter((t)=>t.protocoladoAt&&t.createdAt).map((t)=>t.protocoladoAt-t.createdAt);
+      const aceiteM=doMembro.filter((t)=>t.acceptedAt&&t.createdAt).map((t)=>msUteis(t.createdAt,t.acceptedAt));
+      const execM=doMembro.filter((t)=>t.acceptedAt&&(t.protocoladoAt||t.completedAt)).map((t)=>msUteis(t.acceptedAt,t.protocoladoAt||t.completedAt));
+      const temposProt=doMembro.filter((t)=>t.protocoladoAt&&t.createdAt).map((t)=>msUteis(t.createdAt,t.protocoladoAt));
       return { member:m, n, pctRetrabalho:pct(retrabalho,n),
         medAceite:media(aceiteM), nAceite:aceiteM.length,
         medExecucao:media(execM), nExecucao:execM.length,
@@ -2367,6 +2467,8 @@ const S = {
   addRow:{display:"flex",alignItems:"center",justifyContent:"center",gap:6,width:"100%",border:"1px dashed #D3D7E0",background:"#fff",color:"#737A8C",padding:"9px 6px",cursor:"pointer",fontSize:13,fontWeight:600,borderRadius:9,marginTop:8,fontFamily:FONT},
   reuniaoTag:{display:"flex",alignItems:"center",gap:6,marginTop:6,border:"1px solid #E2E5EC",background:"#fff",borderRadius:8,padding:"6px 9px",fontSize:12,fontWeight:600,color:"#5A6072",cursor:"pointer"},
   reuniaoTagOn:{borderColor:"#D9C2F0",background:"#F7F0FC",color:"#8B3ABF"},
+  convidadoChip:{border:"1px solid #E2E5EC",background:"#fff",borderRadius:20,padding:"4px 10px",fontSize:11.5,fontWeight:600,color:"#5A6072",cursor:"pointer"},
+  convidadoChipOn:{borderColor:"#D9C2F0",background:"#8B3ABF",color:"#fff"},
   linhaTarefa:{border:"1px solid #E7E9EF",borderRadius:9,padding:9,background:"#fff"},
   linhaTopo:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:5},
   linhaNum:{fontSize:10,fontWeight:800,letterSpacing:".05em",textTransform:"uppercase",color:"#3B3AC9"},
