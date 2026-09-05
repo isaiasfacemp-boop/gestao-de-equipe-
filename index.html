@@ -523,6 +523,29 @@ function prepararDados(saved, usuarioConectado){
   return saved;
 }
 
+const TITULO_BASE = document.title;
+function atualizarFavicon(comPonto){
+  try{
+    const link=document.querySelector('link[rel="icon"]');
+    if(!link) return;
+    if(!link.dataset.hrefOriginal) link.dataset.hrefOriginal=link.getAttribute("href")||"";
+    const original=link.dataset.hrefOriginal;
+    if(!comPonto){ if(original) link.setAttribute("href",original); return; }
+    const desenharPonto=(ctx)=>{ ctx.beginPath(); ctx.arc(50,14,13,0,Math.PI*2); ctx.fillStyle="#D8442F"; ctx.fill();
+      ctx.lineWidth=3; ctx.strokeStyle="#fff"; ctx.stroke(); };
+    const c=document.createElement("canvas"); c.width=64; c.height=64; const ctx=c.getContext("2d");
+    const img=new Image(); img.crossOrigin="anonymous";
+    img.onload=()=>{ ctx.drawImage(img,0,0,64,64); desenharPonto(ctx); link.setAttribute("href",c.toDataURL("image/png")); };
+    img.onerror=()=>{ ctx.fillStyle="#3B3AC9"; ctx.fillRect(0,0,64,64); desenharPonto(ctx); link.setAttribute("href",c.toDataURL("image/png")); };
+    img.src=original;
+  }catch(e){}
+}
+function atualizarNotificacao(total){
+  try{ if("setAppBadge" in navigator){ if(total>0) navigator.setAppBadge(total); else navigator.clearAppBadge(); } }catch(e){}
+  document.title = total>0 ? `(${total}) ${TITULO_BASE}` : TITULO_BASE;
+  atualizarFavicon(total>0);
+}
+
 function App({ inicial, aoSair, usuarioConectado }){
   const [state,setState]=useState(()=> inicial || prepararDados(store.get(), usuarioConectado) );
   const [query,setQuery]=useState("");
@@ -600,6 +623,13 @@ function App({ inicial, aoSair, usuarioConectado }){
       ? {...t,col:"done",completedAt:new Date(t.quando).getTime(),needsFix:false,fixNote:"",runningSince:null}
       : t); return s; });
   },[state.tasks,tique]);
+  useEffect(()=>{
+    const cu=state.users.find((u)=>u.id===state.session.currentUserId);
+    const mid=cu&&cu.memberId;
+    const pendentesMsgs = mid ? (state.messages||[]).filter((m)=>m.paraMembro===mid && !m.lida).length : 0;
+    const novasTarefas = mid ? (state.tasks||[]).filter((t)=>t.assignee===mid && t.col==="todo").length : 0;
+    atualizarNotificacao(pendentesMsgs+novasTarefas);
+  },[state.messages, state.tasks, state.session, state.users]);
   const patch=(fn)=>setState((s)=>fn({...s}));
 
   const currentUser=state.users.find((u)=>u.id===state.session.currentUserId);
@@ -1128,10 +1158,10 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
   const [editHoras,setEditHoras]=useState(false); const [horasTexto,setHorasTexto]=useState("");
   const [editTudo,setEditTudo]=useState(false);
   useEffect(()=>{
-    const emEdicao = editTitulo || editTrab || editNota!==null || editHoras || editTudo || !!menu;
+    const emEdicao = editTitulo || editTrab || editNota!==null || editFazer!==null || editHoras || editTudo || !!menu;
     if(onEditLock) onEditLock(task.id, emEdicao);
     return ()=>{ if(onEditLock) onEditLock(task.id, false); };
-  }, [editTitulo, editTrab, editNota, editHoras, editTudo, menu, task.id]);
+  }, [editTitulo, editTrab, editNota, editFazer, editHoras, editTudo, menu, task.id]);
   const [enviandoPdf,setEnviandoPdf]=useState(false); const pdfRef=useRef();
   const pri=PRIORITIES[task.priority]; const col=COL[task.col];
   const done=task.col==="done"; const inReview=task.col==="review"; const fixing=inReview&&task.needsFix; const inProtocolado=task.col==="protocolado";
@@ -1184,7 +1214,7 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
         // "O que fazer" agora funciona como o diário: cada anotação vira uma linha com a data.
         // Migra uma descrição antiga (texto único) para a primeira anotação, uma vez.
         let fazer=task.fazerNotas;
-        if(!fazer){ fazer = task.desc ? [{ id:uid(), data:(task.createdAt||Date.now()), texto:task.desc }] : []; }
+        if(!fazer){ fazer = task.desc ? [{ id:"legacy-"+task.id, data:(task.createdAt||Date.now()), texto:task.desc }] : []; }
         const podeEscrever = canEdit && isPrivileged;         // só o master/gerente escreve o que fazer
         if(fazer.length===0 && !podeEscrever) return null;
         const persistir=(lista)=> onUpdate({ fazerNotas:lista, desc:"" });
