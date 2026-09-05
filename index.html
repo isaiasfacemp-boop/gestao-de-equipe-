@@ -739,12 +739,16 @@ function App({ inicial, aoSair, usuarioConectado }){
       return jah.includes(membroId)?t:{...t,confirmados:[...jah,membroId]};
     }); return s; }); };
 
-  const enviarMensagem=(paraMembro,texto)=>{ if(!paraMembro||!texto.trim())return;
-    patch((s)=>{ s.messages=[...(s.messages||[]),{id:uid(),deUsuario:s.session.currentUserId,deMembro:myMemberId||null,paraMembro,texto:texto.trim(),em:Date.now(),lida:false}]; return s; }); };
+  const enviarMensagem=(paraMembro,texto,grupoId)=>{ if(!paraMembro||!texto.trim())return;
+    patch((s)=>{ s.messages=[...(s.messages||[]),{id:uid(),deUsuario:s.session.currentUserId,deMembro:myMemberId||null,paraMembro,texto:texto.trim(),em:Date.now(),lida:false,grupoId:grupoId||null}]; return s; }); };
   const marcarLidas=(memberId)=>patch((s)=>{ s.messages=(s.messages||[]).map((m)=>m.paraMembro===memberId?{...m,lida:true}:m); return s; });
-  const apagarMensagem=(id)=>patch((s)=>{ s.messages=(s.messages||[]).filter((m)=>{ if(m.id!==id) return true;
-      const meu = isMaster || (m.deMembro && m.deMembro===myMemberId);
-      return !meu; }); return s; });
+  const apagarMensagem=(id)=>patch((s)=>{
+    const alvo=(s.messages||[]).find((m)=>m.id===id); if(!alvo) return s;
+    const podeApagarEsta = isMaster || (alvo.deMembro && alvo.deMembro===myMemberId);
+    if(!podeApagarEsta) return s;
+    // mensagem "para todos": apaga todas as cópias do mesmo envio de uma vez
+    s.messages=(s.messages||[]).filter((m)=> alvo.grupoId ? m.grupoId!==alvo.grupoId : m.id!==id);
+    return s; });
 
   const alternarPainel=(memberId)=>patch((s)=>{ s.members=s.members.map((m)=>m.id===memberId?{...m,noPainel:m.noPainel===false}:m); return s; });
   const alternarEquipe=(memberId)=>patch((s)=>{ s.members=s.members.map((m)=>m.id===memberId?{...m,naEquipe:m.naEquipe===false}:m); return s; });
@@ -2208,7 +2212,7 @@ function NovoProjetoModal({ existentes, onCriar, onClose }){
 }
 
 function MensagensModal({ mensagens, membros, isMaster, meuMembroId, onEnviar, onApagar, onClose }){
-  const [para,setPara]=useState(""); const [texto,setTexto]=useState("");
+  const [para,setPara]=useState(""); const [selecionados,setSelecionados]=useState([]); const [texto,setTexto]=useState("");
   const [err,setErr]=useState(""); const [ok,setOk]=useState(""); const [aba,setAba]=useState("recebidas");
   const podeEnviar = isMaster || !!meuMembroId;
   const destinos = membros.filter((m)=>m.id!==meuMembroId);
@@ -2216,20 +2220,44 @@ function MensagensModal({ mensagens, membros, isMaster, meuMembroId, onEnviar, o
   const remetente=(m)=> m.deMembro ? nome(m.deMembro) : "Master";
 
   const enviar=()=>{
-    if(!para){ setErr("Escolha quem vai receber."); setOk(""); return; }
-    if(!texto.trim()){ setErr("Escreva a mensagem."); setOk(""); return; }
-    if(para==="__todos__"){
-      // master manda a mesma mensagem para cada pessoa da equipe (uma cópia para cada)
-      destinos.forEach((m)=>onEnviar(m.id,texto));
-      setTexto(""); setErr(""); setOk(`Enviada para toda a equipe (${destinos.length} ${destinos.length===1?"pessoa":"pessoas"}).`);
+    if(isMaster){
+      const destinatarios = selecionados.length>0 ? destinos.filter((m)=>selecionados.includes(m.id)) : destinos;
+      if(destinatarios.length===0){ setErr("Escolha quem vai receber."); setOk(""); return; }
+      if(!texto.trim()){ setErr("Escreva a mensagem."); setOk(""); return; }
+      if(destinatarios.length===1){
+        onEnviar(destinatarios[0].id,texto); setTexto(""); setErr(""); setOk(`Enviada para ${destinatarios[0].name} — só ele vê.`);
+        return;
+      }
+      // mais de uma pessoa (ou todos): mesmo grupoId, para poder apagar tudo de uma vez
+      const grupoId=uid();
+      destinatarios.forEach((m)=>onEnviar(m.id,texto,grupoId));
+      setTexto(""); setErr("");
+      setOk(destinatarios.length===destinos.length
+        ? `Enviada para toda a equipe (${destinatarios.length} pessoas).`
+        : `Enviada para ${destinatarios.length} pessoas.`);
       return;
     }
+    if(!para){ setErr("Escolha quem vai receber."); setOk(""); return; }
+    if(!texto.trim()){ setErr("Escreva a mensagem."); setOk(""); return; }
     onEnviar(para,texto); setTexto(""); setErr(""); setOk(`Enviada para ${nome(para)} — só ele vê.`);
   };
 
   const recebidas = isMaster ? mensagens : mensagens.filter((m)=>m.paraMembro===meuMembroId);
   const enviadas  = isMaster ? [] : mensagens.filter((m)=>m.deMembro===meuMembroId);
-  const lista = (isMaster || aba==="recebidas" ? recebidas : enviadas).slice().sort((a,b)=>b.em-a.em);
+  const listaBase = (isMaster || aba==="recebidas" ? recebidas : enviadas).slice().sort((a,b)=>b.em-a.em);
+  // no master, agrupa as mensagens de mais de um destinatário (mesmo grupoId) numa única linha
+  let lista=listaBase;
+  if(isMaster){
+    const vistos=new Set(); lista=[];
+    listaBase.forEach((m)=>{
+      if(m.grupoId){
+        if(vistos.has(m.grupoId)) return;
+        vistos.add(m.grupoId);
+        const doGrupo=listaBase.filter((x)=>x.grupoId===m.grupoId);
+        lista.push({ ...m, grupoQtd:doGrupo.length, grupoLidas:doGrupo.filter((x)=>x.lida).length, grupoNomes:doGrupo.map((x)=>nome(x.paraMembro)) });
+      } else lista.push(m);
+    });
+  }
   const podeApagar=(m)=> isMaster || (m.deMembro && m.deMembro===meuMembroId);
 
   return (<div style={S.overlay}>
@@ -2246,11 +2274,23 @@ function MensagensModal({ mensagens, membros, isMaster, meuMembroId, onEnviar, o
 
       {podeEnviar && (<div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
         <div><div style={S.launchLabel}>Para</div>
-          <select style={{...S.authInput,margin:0,cursor:"pointer"}} value={para} onChange={(e)=>{setPara(e.target.value);setErr("");setOk("");}}>
-            <option value="">Escolher…</option>
-            {isMaster && destinos.length>0 && <option value="__todos__">Todos da equipe ({destinos.length})</option>}
-            {destinos.map((m)=>(<option key={m.id} value={m.id}>{m.name}</option>))}
-          </select></div>
+          {isMaster ? (<React.Fragment>
+            <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+              <button type="button" style={{...S.convidadoChip,...(selecionados.length===0?S.convidadoChipOn:{})}}
+                onClick={()=>{setSelecionados([]);setErr("");setOk("");}}>Todos ({destinos.length})</button>
+              {destinos.map((m)=>{ const marcado=selecionados.includes(m.id);
+                return (<button key={m.id} type="button" style={{...S.convidadoChip,...(marcado?S.convidadoChipOn:{})}}
+                  onClick={()=>{ setSelecionados((cs)=> marcado?cs.filter((id)=>id!==m.id):[...cs,m.id]); setErr(""); setOk(""); }}>
+                  {m.name.split(" ")[0]}</button>); })}
+            </div>
+            {selecionados.length>0 && <div style={{fontSize:10.5,color:"#8A8F9E",marginTop:4}}>
+              {selecionados.length} pessoa{selecionados.length===1?"":"s"} selecionada{selecionados.length===1?"":"s"}</div>}
+          </React.Fragment>) : (
+            <select style={{...S.authInput,margin:0,cursor:"pointer"}} value={para} onChange={(e)=>{setPara(e.target.value);setErr("");setOk("");}}>
+              <option value="">Escolher…</option>
+              {destinos.map((m)=>(<option key={m.id} value={m.id}>{m.name}</option>))}
+            </select>
+          )}</div>
         <div><div style={S.launchLabel}>Mensagem</div>
           <textarea style={{...S.authInput,margin:0,minHeight:76,resize:"vertical"}} value={texto}
             onChange={(e)=>{setTexto(e.target.value);setErr("");setOk("");}} placeholder="Escreva aqui — só quem receber vai ver."/></div>
@@ -2269,13 +2309,15 @@ function MensagensModal({ mensagens, membros, isMaster, meuMembroId, onEnviar, o
           return (<div key={m.id} style={{...S.msgItem,...(recebida&&!m.lida?S.msgNova:{})}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:5,flexWrap:"wrap"}}>
               {isMaster
-                ? <span style={S.msgPara}><Ic n="mail" s={11} c="#3B3AC9"/> {remetente(m)} → {nome(m.paraMembro)}</span>
+                ? (m.grupoQtd
+                    ? <span style={S.msgPara}><Ic n="users" s={11} c="#8B3ABF"/> {remetente(m)} → {m.grupoQtd===destinos.length ? `Todos da equipe (${m.grupoQtd})` : (m.grupoNomes||[]).join(", ")} <span style={{color:"#8A8F9E",fontWeight:500}}>· {m.grupoLidas} de {m.grupoQtd} leram</span></span>
+                    : <span style={S.msgPara}><Ic n="mail" s={11} c="#3B3AC9"/> {remetente(m)} → {nome(m.paraMembro)}</span>)
                 : (recebida
                     ? <span style={S.msgPara}><Ic n="mail" s={11} c="#3B3AC9"/> de {remetente(m)}</span>
                     : <span style={{...S.msgPara,color:"#2F9E6E"}}><Ic n="mail" s={11} c="#2F9E6E"/> para {nome(m.paraMembro)}</span>)}
               {recebida && !m.lida && <span style={S.msgNovaTag}>nova</span>}
               <span style={{fontSize:11,color:"#A0A5B2",marginLeft:"auto"}}>{hhmm(m.em)} · {ddmm(new Date(m.em))}</span>
-              {podeApagar(m) && <button style={{...S.projDel,position:"static",opacity:.6}} onClick={()=>onApagar(m.id)}><Ic n="trash" s={13} c="#C0397E"/></button>}
+              {podeApagar(m) && <button style={{...S.projDel,position:"static",opacity:.6}} title={m.grupoQtd?"Apagar para todos os destinatários":"Apagar"} onClick={()=>onApagar(m.id)}><Ic n="trash" s={13} c="#C0397E"/></button>}
             </div>
             <div style={{fontSize:13.5,color:"#20232E",lineHeight:1.45,whiteSpace:"pre-wrap"}}>{m.texto}</div>
           </div>);
