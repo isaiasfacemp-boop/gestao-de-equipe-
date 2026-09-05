@@ -888,6 +888,8 @@ function App({ inicial, aoSair, usuarioConectado }){
     const soma=(t.workedMs||0)+(t.runningSince?agora-t.runningSince:0);
     updateTask(id,{col:"done",needsFix:false,fixNote:"",workedMs:soma,runningSince:null,
       acceptedAt:t.acceptedAt??agora,completedAt:agora}); };
+  // Reabrir uma reunião já concluída (só o Master): volta para "A fazer", mantendo quem já confirmou.
+  const reabrirReuniao=(id)=>updateTask(id,{col:"todo",completedAt:null});
   const sendToReview=(id)=>setRevisaoDe(id);
   // Envio Em andamento -> Revisão (1ª revisão do trabalho): não conta como retrabalho.
   const confirmarRevisao=(id,note)=>{
@@ -1070,7 +1072,8 @@ function App({ inicial, aoSair, usuarioConectado }){
 
                   {col.id==="done" ? (
                     <ConcluidoCalendario tarefas={filtered.filter((t)=>t.col==="done")} membros={state.members}
-                      membroFiltro={doneMembro} onMembroFiltro={setDoneMembro} isMaster={isMaster} onRevisao={sendToReview}/>
+                      membroFiltro={doneMembro} onMembroFiltro={setDoneMembro} isMaster={isMaster} onRevisao={sendToReview}
+                      onReabrirReuniao={reabrirReuniao} onExcluirReuniao={removeTask}/>
                   ) : (
                   <div style={S.cardList}>
                     {items.map((t)=>(<Card key={t.id} task={t} member={memberById(t.assignee)} members={state.members} projects={state.projects} catalog={catalog} meuMembroId={myMemberId} projetoNome={(state.projects.find((p)=>p.id===t.project)||{}).name||""} onConfirmar={()=>confirmarReuniao(t.id,myMemberId)}
@@ -1568,7 +1571,7 @@ function EditarTarefaModal({ task, projects, members, catalog, onSalvar, onFecha
 }
 
 // ---------- Lançar tarefa (só na coluna A fazer, a partir do catálogo) ----------
-function ConcluidoCalendario({ tarefas, membros, membroFiltro, onMembroFiltro, isMaster, onRevisao }){
+function ConcluidoCalendario({ tarefas, membros, membroFiltro, onMembroFiltro, isMaster, onRevisao, onReabrirReuniao, onExcluirReuniao }){
   const [offset,setOffset]=useState(0);
   const chaveDia=(d)=>`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
   // por padrão só o dia de hoje fica aberto; os demais começam recolhidos
@@ -1640,6 +1643,10 @@ function ConcluidoCalendario({ tarefas, membros, membroFiltro, onMembroFiltro, i
               <span style={S.calItemTempo}>{hms(horasReais(t))}</span>
               {isMaster && !reuniao && <button className="cal-rev" style={S.calRev} title="Enviar para Revisão Interna"
                 onClick={()=>onRevisao(t.id)}><Ic n="undo" s={12} c="#B8860B"/></button>}
+              {isMaster && reuniao && <button className="cal-rev" style={S.calRev} title="Reabrir reunião"
+                onClick={()=>onReabrirReuniao(t.id)}><Ic n="undo" s={12} c="#737A8C"/></button>}
+              {isMaster && reuniao && <button className="cal-rev" style={S.calRev} title="Excluir reunião"
+                onClick={()=>{ if(window.confirm(`Excluir a reunião "${t.title}"?`)) onExcluirReuniao(t.id); }}><Ic n="trash" s={12} c="#C0397E"/></button>}
             </div>); })}
         </div>);
       })}
