@@ -73,9 +73,13 @@ function Ic({ n, s=16, c="currentColor", style }) {
     bar:<React.Fragment><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></React.Fragment>,
     list:<React.Fragment><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4.5" cy="6" r="1.3" fill={c} stroke="none"/><circle cx="4.5" cy="12" r="1.3" fill={c} stroke="none"/><circle cx="4.5" cy="18" r="1.3" fill={c} stroke="none"/></React.Fragment>,
     grip:<g fill={c} stroke="none"><circle cx="9" cy="5" r="1.4"/><circle cx="9" cy="12" r="1.4"/><circle cx="9" cy="19" r="1.4"/><circle cx="15" cy="5" r="1.4"/><circle cx="15" cy="12" r="1.4"/><circle cx="15" cy="19" r="1.4"/></g>,
+    edit:<React.Fragment><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></React.Fragment>,
   };
   return <svg {...base}>{P[n]}</svg>;
 }
+const paraDatetimeLocal = (ts)=>{ if(!ts) return ""; const d=new Date(ts); const p=(n)=>String(n).padStart(2,"0");
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; };
+const deDatetimeLocal = (s)=>{ if(!s) return null; const t=new Date(s).getTime(); return isNaN(t)?null:t; };
 
 function Avatar({ m, size=32, w, h, radius }){
   const L=w||size, A=h||size, r=radius!==undefined?radius:(w&&h?7:"50%");
@@ -141,6 +145,12 @@ const msUteis = (inicioTs, fimTs)=>{
     cursor.setDate(cursor.getDate()+1);
   }
   return total;
+};
+const proximoDiaUtilInicio = (ts)=>{
+  const [h0,m0]=JANELAS_EXPEDIENTE[0];
+  const d=new Date(ts); d.setDate(d.getDate()+1); d.setHours(h0,m0,0,0);
+  while(d.getDay()===0 || d.getDay()===6){ d.setDate(d.getDate()+1); }
+  return d.getTime();
 };
 const quandoTexto = (iso)=>{ if(!iso) return "";
   const d=new Date(iso); if(isNaN(d)) return "";
@@ -726,16 +736,17 @@ function App({ inicial, aoSair, usuarioConectado }){
   const editCatalogItem=(id,title,desc)=>patch((s)=>{ s.taskCatalog=(s.taskCatalog||[]).map((c)=>c.id===id?{...c,title:title.trim(),desc:(desc||"").trim()}:c); return s; });
 
   // lançamento sempre na coluna "A fazer", a partir do catálogo
-  const launchMany=({itens,assignee,desc})=>{
+  const launchMany=({itens,assignee,desc,contarAgora})=>{
     patch((s)=>{
       const agora=Date.now();
+      const inicioContagem = contarAgora===false ? proximoDiaUtilInicio(agora) : agora;
       const novas=(itens||[]).map((it)=>{
         const item=(s.taskCatalog||[]).find((c)=>c.id===it.catalogId); if(!item) return null;
         return { id:uid(), project:s.activeProject, col:"todo", title:item.title,
           tipo:it.reuniao?"reuniao":"tarefa", quando:it.quando||"", confirmados:[],
           convidados:it.reuniao?(it.convidados&&it.convidados.length?it.convidados:[]):[],
           priority:it.priority||"media", hours:Math.max(0,+it.hours||0), assignee:it.reuniao?null:(assignee||null),
-          createdAt:agora, acceptedAt:null, workedMs:0, runningSince:null,
+          createdAt:inicioContagem, acceptedAt:null, workedMs:0, runningSince:null,
           desc:((desc&&desc.trim())||item.desc||"").trim(),
           needsFix:false, fixNote:"", completedAt:null, reworkCount:0, protocoladoAt:null };
       }).filter(Boolean);
@@ -923,7 +934,10 @@ function App({ inicial, aoSair, usuarioConectado }){
                   <div style={{marginBottom:10}}><div style={S.panelTitle}>Equipe · {membrosEquipe.length}</div></div>
                   <div style={S.equipeGrid}>
                     {membrosEquipe.map((m)=>{ const fazer=emAbertoMembro(m.id); const feito=concluidoMembro(m.id);
-                      return (<div key={m.id} style={{...S.equipeCard,cursor:"pointer"}} title={`Ver tarefas de ${m.name}`} onClick={()=>setMembroTarefas(m.id)}>
+                      const podeAbrir = isPrivileged || m.id===myMemberId;
+                      return (<div key={m.id} style={{...S.equipeCard,cursor:podeAbrir?"pointer":"default"}}
+                        title={podeAbrir?`Ver tarefas de ${m.name}`:undefined}
+                        onClick={()=>{ if(podeAbrir) setMembroTarefas(m.id); }}>
                         <div style={S.equipeCardHead}>
                           <Avatar m={m} size={20}/>
                           <span style={S.equipeCardNome}>{m.name}{m.id===myMemberId && <span style={{fontSize:9.5,color:"#8A8F9E",marginLeft:4}}>você</span>}</span>
@@ -967,7 +981,7 @@ function App({ inicial, aoSair, usuarioConectado }){
                       membroFiltro={doneMembro} onMembroFiltro={setDoneMembro} isMaster={isMaster} onRevisao={sendToReview}/>
                   ) : (
                   <div style={S.cardList}>
-                    {items.map((t)=>(<Card key={t.id} task={t} member={memberById(t.assignee)} members={state.members} meuMembroId={myMemberId} projetoNome={(state.projects.find((p)=>p.id===t.project)||{}).name||""} onConfirmar={()=>confirmarReuniao(t.id,myMemberId)}
+                    {items.map((t)=>(<Card key={t.id} task={t} member={memberById(t.assignee)} members={state.members} projects={state.projects} meuMembroId={myMemberId} projetoNome={(state.projects.find((p)=>p.id===t.project)||{}).name||""} onConfirmar={()=>confirmarReuniao(t.id,myMemberId)}
                       canEdit={canEdit(t)} canDrag={canDrag(t)} canAct={canAct(t)} isPrivileged={isPrivileged} isMaster={isMaster} mine={isMine(t)}
                       onDragStart={()=>setDrag(t.id)} onDragEnd={()=>{setDrag(null);setDragOver(null);}}
                       onUpdate={(f)=>updateTask(t.id,f)} onRemove={()=>removeTask(t.id)}
@@ -1085,7 +1099,7 @@ function DropMenu({ pos, children }){
 // Repassar tarefa: janela central (igual à de trocar de usuário), sem rolagem escondendo opções.
 function RepassarModal({ members, task, onEscolher, onClose }){
   const opcoes = members.filter((m)=>m.id!==task.assignee);
-  return ReactDOM.createPortal(<div data-dropmenu="1" style={S.overlay} onClick={onClose}>
+  return ReactDOM.createPortal(<div data-dropmenu="1" style={S.overlay}>
     <div style={{...S.modal,maxWidth:360}} onClick={(e)=>e.stopPropagation()}>
       <div style={S.modalHead}><h2 style={S.modalTitle}>Repassar tarefa</h2><button style={S.iconBtn} onClick={onClose}><Ic n="x" s={18}/></button></div>
       <div style={{fontSize:12.5,color:"#8A8F9E",marginBottom:12}}>Escolha quem vai continuar "{task.title}".</div>
@@ -1101,7 +1115,7 @@ function RepassarModal({ members, task, onEscolher, onClose }){
 }
 
 // ---------- Task card ----------
-function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, canEdit, canDrag, canAct, isPrivileged, isMaster, mine,
+function Card({ task, member, members, projects, meuMembroId, projetoNome, onConfirmar, canEdit, canDrag, canAct, isPrivileged, isMaster, mine,
                 onDragStart, onDragEnd, onUpdate, onRemove, onAccept, onComplete, onResume, onSendToReview, onBackToDoing, onToProtocolado, onBackToReview, onDoingToReview, onProtocoladoToDoing, onRepassar, onEditLock }){
   const [menu,setMenu]=useState(null); const [menuPos,setMenuPos]=useState(null); const ref=useRef();
   const [editDesc,setEditDesc]=useState(false); const [rascunho,setRascunho]=useState("");
@@ -1110,11 +1124,12 @@ function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, ca
   const [editTrab,setEditTrab]=useState(false); const [trabTexto,setTrabTexto]=useState("");
   const [editTitulo,setEditTitulo]=useState(false); const [tituloTexto,setTituloTexto]=useState("");
   const [editHoras,setEditHoras]=useState(false); const [horasTexto,setHorasTexto]=useState("");
+  const [editTudo,setEditTudo]=useState(false);
   useEffect(()=>{
-    const emEdicao = editTitulo || editTrab || editNota!==null || editHoras || !!menu;
+    const emEdicao = editTitulo || editTrab || editNota!==null || editHoras || editTudo || !!menu;
     if(onEditLock) onEditLock(task.id, emEdicao);
     return ()=>{ if(onEditLock) onEditLock(task.id, false); };
-  }, [editTitulo, editTrab, editNota, editHoras, menu, task.id]);
+  }, [editTitulo, editTrab, editNota, editHoras, editTudo, menu, task.id]);
   const [enviandoPdf,setEnviandoPdf]=useState(false); const pdfRef=useRef();
   const pri=PRIORITIES[task.priority]; const col=COL[task.col];
   const done=task.col==="done"; const inReview=task.col==="review"; const fixing=inReview&&task.needsFix; const inProtocolado=task.col==="protocolado";
@@ -1149,15 +1164,17 @@ function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, ca
           : fixing ? <Ic n="undo" s={13} c="#B8860B" style={{flexShrink:0,marginTop:2}}/>
           : canDrag ? <Ic n="grip" s={14} c="#C2C6D0" style={{cursor:"grab",flexShrink:0,marginTop:2}}/>
           : <Ic n="circle" s={12} c="#C2C6D0" style={{flexShrink:0,marginTop:3}}/>}
-        {editTitulo ? (<div style={{display:"flex",alignItems:"center",gap:5,flex:1}}>
+        {editTitulo ? (<div style={{display:"flex",alignItems:"center",gap:5,flex:1}} onClick={(e)=>e.stopPropagation()}>
           <input autoFocus value={tituloTexto} onChange={(e)=>setTituloTexto(e.target.value)}
             onKeyDown={(e)=>{ if(e.key==="Enter"&&tituloTexto.trim()){ onUpdate({title:tituloTexto.trim()}); setEditTitulo(false); } if(e.key==="Escape") setEditTitulo(false); }}
-            onBlur={()=>{ if(tituloTexto.trim()) onUpdate({title:tituloTexto.trim()}); setEditTitulo(false); }}
             style={{...S.cardTitle,border:"1px solid #C7CBFF",borderRadius:6,padding:"2px 6px",flex:1}}/>
+          <button style={S.iconBtn} onClick={()=>{ if(tituloTexto.trim()){ onUpdate({title:tituloTexto.trim()}); setEditTitulo(false); } }}><Ic n="check" s={13} c="#1F7A55"/></button>
+          <button style={S.iconBtn} onClick={()=>setEditTitulo(false)}><Ic n="x" s={13} c="#8A8F9E"/></button>
         </div>) : (
           <p style={{...S.cardTitle,...(ehReuniao?S.cardTituloReuniao:{}),...(canEdit&&isPrivileged?{cursor:"text"}:{})}}
             title={canEdit&&isPrivileged?"Clique para editar a tarefa":undefined}
             onClick={()=>{ if(canEdit&&isPrivileged){ setTituloTexto(task.title); setEditTitulo(true); } }}>{task.title}</p>)}
+        {canEdit && isMaster && <button className="card-del" style={S.cardDel} title="Editar tarefa" onClick={()=>setEditTudo(true)}><Ic n="edit" s={13}/></button>}
         {canEdit && isPrivileged && <button className="card-del" style={S.cardDel} onClick={onRemove}><Ic n="x" s={13}/></button>}
       </div>
 
@@ -1356,8 +1373,96 @@ function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, ca
       </DropMenu>)}
       {menu==="rep" && <RepassarModal members={members} task={task} onClose={()=>setMenu(null)}
         onEscolher={(mid)=>{ onRepassar(mid); setMenu(null); }}/>}
+      {editTudo && <EditarTarefaModal task={task} projects={projects||[]} members={members}
+        onSalvar={(campos)=>{ onUpdate(campos); setEditTudo(false); }} onFechar={()=>setEditTudo(false)}/>}
     </div>
   );
+}
+
+function EditarTarefaModal({ task, projects, members, onSalvar, onFechar }){
+  const ehReuniao=task.tipo==="reuniao";
+  const [titulo,setTitulo]=useState(task.title||"");
+  const [projeto,setProjeto]=useState(task.project||"");
+  const [assignee,setAssignee]=useState(task.assignee||"");
+  const [priority,setPriority]=useState(task.priority||"media");
+  const [horas,setHoras]=useState(String(task.hours||0));
+  const [criadaEm,setCriadaEm]=useState(paraDatetimeLocal(task.createdAt));
+  const [quando,setQuando]=useState(task.quando||"");
+  const [convidados,setConvidados]=useState(task.convidados||[]);
+  const [err,setErr]=useState("");
+
+  const salvar=()=>{
+    if(!titulo.trim()){ setErr("Escreva o título da tarefa."); return; }
+    if(!projeto){ setErr("Escolha o projeto."); return; }
+    const horasNum=+horas; if(isNaN(horasNum)||horasNum<0){ setErr("Horas inválidas."); return; }
+    const campos={ title:titulo.trim(), project:projeto, priority, hours:Math.max(0,horasNum) };
+    const criadaTs=deDatetimeLocal(criadaEm);
+    if(criadaTs) campos.createdAt=criadaTs;
+    if(ehReuniao){ campos.quando=quando; campos.convidados=convidados||[]; }
+    else{ campos.assignee=assignee||null; }
+    onSalvar(campos);
+  };
+
+  return (<div style={S.overlay}>
+    <div style={S.modal} onClick={(e)=>e.stopPropagation()}>
+      <div style={S.modalHead}>
+        <h2 style={S.modalTitle}>Editar tarefa</h2>
+        <button style={S.iconBtn} onClick={onFechar}><Ic n="x" s={18}/></button>
+      </div>
+
+      <div style={S.launchLabel}>Título</div>
+      <input style={{...S.authInput,margin:0}} autoFocus value={titulo} onChange={(e)=>{setTitulo(e.target.value);setErr("");}}/>
+
+      <div style={{...S.launchLabel,marginTop:10}}>Projeto</div>
+      <select style={{...S.authInput,margin:0}} value={projeto} onChange={(e)=>{setProjeto(e.target.value);setErr("");}}>
+        <option value="">Escolher…</option>
+        {projects.map((p)=>(<option key={p.id} value={p.id}>{p.name}</option>))}
+      </select>
+
+      {!ehReuniao ? (<React.Fragment>
+        <div style={{...S.launchLabel,marginTop:10}}>Responsável</div>
+        <select style={{...S.authInput,margin:0}} value={assignee} onChange={(e)=>setAssignee(e.target.value)}>
+          <option value="">Ninguém</option>
+          {members.map((m)=>(<option key={m.id} value={m.id}>{m.name}</option>))}
+        </select>
+      </React.Fragment>) : (<React.Fragment>
+        <div style={{...S.launchLabel,marginTop:10}}>Quando</div>
+        <input style={{...S.authInput,margin:0}} type="datetime-local" value={quando} onChange={(e)=>setQuando(e.target.value)}/>
+        <div style={{...S.launchLabel,marginTop:10}}>Convidados</div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+          <button type="button" style={{...S.convidadoChip,...((!convidados||convidados.length===0)?S.convidadoChipOn:{})}}
+            onClick={()=>setConvidados([])}>Todos</button>
+          {members.map((m)=>{ const marcado=(convidados||[]).includes(m.id);
+            return (<button key={m.id} type="button" style={{...S.convidadoChip,...(marcado?S.convidadoChipOn:{})}}
+              onClick={()=>setConvidados((cs)=>marcado?(cs||[]).filter((id)=>id!==m.id):[...(cs||[]),m.id])}>
+              {m.name.split(" ")[0]}</button>); })}
+        </div>
+      </React.Fragment>)}
+
+      <div style={{display:"flex",gap:8,marginTop:10}}>
+        <div style={{flex:1}}>
+          <div style={S.launchLabel}>Prioridade</div>
+          <select style={{...S.authInput,margin:0,color:PRIORITIES[priority].color,fontWeight:600}} value={priority} onChange={(e)=>setPriority(e.target.value)}>
+            {Object.entries(PRIORITIES).map(([k,v])=>(<option key={k} value={k}>{v.label}</option>))}
+          </select>
+        </div>
+        <div style={{flex:1}}>
+          <div style={S.launchLabel}>Horas previstas</div>
+          <input style={{...S.authInput,margin:0}} type="number" min="0" step="0.5" value={horas} onChange={(e)=>setHoras(e.target.value)}/>
+        </div>
+      </div>
+
+      <div style={{...S.launchLabel,marginTop:10}}>Contagem começou em</div>
+      <input style={{...S.authInput,margin:0}} type="datetime-local" value={criadaEm} onChange={(e)=>setCriadaEm(e.target.value)}/>
+      <div style={{fontSize:11.5,color:"#8A8F9E",marginTop:4}}>Ajusta o horário usado para calcular o tempo de espera/resposta da tarefa.</div>
+
+      {err && <div style={{...S.authErr,marginTop:10}}>{err}</div>}
+      <div style={{display:"flex",gap:8,marginTop:16}}>
+        <button style={{...S.primaryBtn,flex:1,justifyContent:"center"}} onClick={salvar}>Salvar</button>
+        <button style={S.ghostBtn} onClick={onFechar}>Cancelar</button>
+      </div>
+    </div>
+  </div>);
 }
 
 // ---------- Lançar tarefa (só na coluna A fazer, a partir do catálogo) ----------
@@ -1462,6 +1567,7 @@ function LaunchTask({ catalog, members, onLaunch, onOpenCatalog, isMaster }){
   const [linhas,setLinhas]=useState([linhaVazia()]);
   const [assignee,setAssignee]=useState(""); const [desc,setDesc]=useState("");
   const [err,setErr]=useState("");
+  const [pendente,setPendente]=useState(null); // payload aguardando a escolha de contagem
 
   const mudar=(key,campo,valor)=>setLinhas((ls)=>ls.map((l)=>l.key===key?{...l,[campo]:valor}:l));
   const addLinha=()=>setLinhas((ls)=>[...ls,linhaVazia()]);
@@ -1483,9 +1589,13 @@ function LaunchTask({ catalog, members, onLaunch, onOpenCatalog, isMaster }){
   const submit=()=>{
     if(validas.length===0){ setErr("Escolha ao menos uma tarefa cadastrada."); return; }
     if(precisaResp && !assignee){ setErr("Escolha o responsável das tarefas."); return; }
-    onLaunch({ itens:validas.map((l)=>({catalogId:l.catalogId,hours:horasDaLinha(l),priority:l.priority,reuniao:l.reuniao,quando:l.quando,convidados:l.reuniao?(l.convidados||[]):[]})),
+    setPendente({ itens:validas.map((l)=>({catalogId:l.catalogId,hours:horasDaLinha(l),priority:l.priority,reuniao:l.reuniao,quando:l.quando,convidados:l.reuniao?(l.convidados||[]):[]})),
                assignee, desc });
-    limpar(); setOpen(false);
+  };
+  const confirmarContagem=(contarAgora)=>{
+    if(!pendente) return;
+    onLaunch({ ...pendente, contarAgora });
+    setPendente(null); limpar(); setOpen(false);
   };
 
   if(catalog.length===0) return (<div style={S.launchEmpty}>
@@ -1570,6 +1680,30 @@ function LaunchTask({ catalog, members, onLaunch, onOpenCatalog, isMaster }){
       <button style={{...S.primaryBtn,background:COL.todo.tint,padding:"7px 14px",fontSize:13}} onClick={submit}>
         <Ic n="check" s={14} c="#fff"/> Lançar{validas.length>1?` ${validas.length} tarefas`:""}</button>
       <button style={S.ghostBtn} onClick={()=>{limpar();setOpen(false);}}>Cancelar</button>
+    </div>
+    {pendente && <ContagemModal onEscolher={confirmarContagem} onCancelar={()=>setPendente(null)}/>}
+  </div>);
+}
+
+function ContagemModal({ onEscolher, onCancelar }){
+  return (<div style={S.overlay}>
+    <div style={S.modalPequeno} onClick={(e)=>e.stopPropagation()}>
+      <div style={S.modalHead}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <div style={{...S.brandMark,width:34,height:34,fontSize:15,background:"#3B3AC9",boxShadow:"none"}}><Ic n="clock" s={17} c="#fff"/></div>
+          <h2 style={{...S.modalTitle,marginBottom:0}}>Quando começa a contar?</h2>
+        </div>
+        <button type="button" style={S.iconBtn} onClick={onCancelar}><Ic n="x" s={18}/></button>
+      </div>
+      <p style={{fontSize:13.5,color:"#4A4F5E",lineHeight:1.5,margin:"4px 0 0"}}>
+        Escolha se a espera desta tarefa conta a partir de agora ou só a partir do próximo dia útil.</p>
+      <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:18}}>
+        <button style={{...S.primaryBtn,justifyContent:"center"}} onClick={()=>onEscolher(true)}>
+          <Ic n="check" s={15} c="#fff"/> Contar a partir de agora</button>
+        <button style={{...S.primaryBtn,justifyContent:"center",background:"#5A6072"}} onClick={()=>onEscolher(false)}>
+          <Ic n="clock" s={15} c="#fff"/> Contar só no próximo dia útil</button>
+        <button style={S.ghostBtn} onClick={onCancelar}>Cancelar</button>
+      </div>
     </div>
   </div>);
 }
@@ -1903,7 +2037,7 @@ function CatalogModal({ catalog, onAdd, onRemove, onEdit, onClose }){
     setEditId(null); setTitle(""); setDesc("");
   };
 
-  return (<div style={S.overlay} onClick={onClose}>
+  return (<div style={S.overlay}>
     <div style={S.modal} onClick={(e)=>e.stopPropagation()}>
       <div style={S.modalHead}><h2 style={S.modalTitle}>Cadastro de tarefas</h2><button style={S.iconBtn} onClick={onClose}><Ic n="x" s={18}/></button></div>
       <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16,...(editando?{border:"1px solid #C7CBFF",background:"#F7F8FE",borderRadius:11,padding:12}:{})}}>
@@ -1935,7 +2069,7 @@ function TarefasMembroModal({ membro, tasks, projects, onClose }){
   const nomeProjeto=(pid)=> (projects.find((p)=>p.id===pid)||{}).name || "Sem projeto";
   const ordem={ todo:0, doing:1, review:2, protocolado:3, done:4 };
   const lista=[...tasks].sort((a,b)=> (ordem[a.col]??9)-(ordem[b.col]??9) || (b.createdAt||0)-(a.createdAt||0));
-  return (<div style={S.overlay} onClick={onClose}>
+  return (<div style={S.overlay}>
     <div style={S.modal} onClick={(e)=>e.stopPropagation()}>
       <div style={S.modalHead}>
         <div style={{display:"flex",alignItems:"center",gap:9}}>
@@ -1964,7 +2098,7 @@ function RevisaoModal({ tarefa, onConfirmar, onClose }){
   const enviar=(e)=>{ if(e && e.preventDefault) e.preventDefault();
     const n=(nota || (ref.current&&ref.current.value) || "");
     onConfirmar(n); };
-  return (<div style={S.overlay} onClick={onClose}>
+  return (<div style={S.overlay}>
     <form style={S.modalPequeno} onClick={(e)=>e.stopPropagation()} onSubmit={enviar}>
       <div style={S.modalHead}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -1987,7 +2121,7 @@ function RevisaoModal({ tarefa, onConfirmar, onClose }){
 }
 
 function ConfirmModal({ titulo, mensagem, confirmarLabel, perigo, onConfirmar, onCancelar }){
-  return (<div style={S.overlay} onClick={onCancelar}>
+  return (<div style={S.overlay}>
     <div style={S.modalPequeno} onClick={(e)=>e.stopPropagation()}>
       <div style={S.modalHead}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -2016,7 +2150,7 @@ function NovoProjetoModal({ existentes, onCriar, onClose }){
     if(existentes.some((p)=>p.name.toLowerCase()===n.toLowerCase())){ setErr("Já existe um projeto com esse nome."); return; }
     onCriar(n); onClose();
   };
-  return (<div style={S.overlay} onClick={onClose}>
+  return (<div style={S.overlay}>
     <form style={S.modalPequeno} onClick={(e)=>e.stopPropagation()} onSubmit={criar}>
       <div style={S.modalHead}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -2063,7 +2197,7 @@ function MensagensModal({ mensagens, membros, isMaster, meuMembroId, onEnviar, o
   const lista = (isMaster || aba==="recebidas" ? recebidas : enviadas).slice().sort((a,b)=>b.em-a.em);
   const podeApagar=(m)=> isMaster || (m.deMembro && m.deMembro===meuMembroId);
 
-  return (<div style={S.overlay} onClick={onClose}>
+  return (<div style={S.overlay}>
     <div style={S.modal} onClick={(e)=>e.stopPropagation()}>
       <div style={S.modalHead}>
         <div>
@@ -2120,7 +2254,7 @@ function MensagensModal({ mensagens, membros, isMaster, meuMembroId, onEnviar, o
 
 function SwitchUserModal({ users, members, currentUser, onEscolher, onClose }){
   const membroDe=(u)=>members.find((m)=>m.id===u.memberId);
-  return (<div style={S.overlay} onClick={onClose}>
+  return (<div style={S.overlay}>
     <div style={{...S.modal,maxWidth:360}} onClick={(e)=>e.stopPropagation()}>
       <div style={S.modalHead}><h2 style={S.modalTitle}>Trocar de usuário</h2><button style={S.iconBtn} onClick={onClose}><Ic n="x" s={18}/></button></div>
       <div style={{fontSize:12.5,color:"#8A8F9E",marginBottom:12}}>Escolha quem vai usar o sistema agora.</div>
@@ -2174,7 +2308,7 @@ function UsersModal({ users, members, tasks=[], currentUser, onAdd, onReset, onP
     }).catch((e)=>{ setErr(e.message||"Não foi possível cadastrar."); setOk(""); });
   };
 
-  return (<div style={S.overlay} onClick={onClose}>
+  return (<div style={S.overlay}>
     <div style={S.modal} onClick={(e)=>e.stopPropagation()}>
       <div style={S.modalHead}>
         <div>
@@ -2264,7 +2398,7 @@ function UsersModal({ users, members, tasks=[], currentUser, onAdd, onReset, onP
       <input ref={arquivoRef} type="file" accept="image/*" style={{display:"none"}} onChange={aoEscolher}/>
       <p style={S.hint}><Ic n="lock" s={12} c="#737A8C"/> A foto é recortada em 3x4 automaticamente. Login local — não use senhas reais/sensíveis aqui.</p>
     </div>
-    {redefinirUser && <div style={S.overlay} onClick={()=>setRedefinirUser(null)}><div onClick={(e)=>e.stopPropagation()}>
+    {redefinirUser && <div style={S.overlay}><div onClick={(e)=>e.stopPropagation()}>
       <ChangePasswordCard titulo={`Redefinir senha de ${redefinirUser.username}`} sub="O usuário troca a senha no próximo acesso" salvarLabel="Redefinir senha"
         onSave={(pw)=>{ onReset(redefinirUser.id,pw); setRedefinirUser(null); setOk(`Senha de ${redefinirUser.username} redefinida — ele troca no próximo acesso.`); }}
         onCancel={()=>setRedefinirUser(null)}/>
@@ -2300,7 +2434,7 @@ function EditarPessoaModal({ alvo, users, onSalvar, onFechar }){
     }
     onSalvar({ nome, login });
   };
-  return (<div style={S.overlay} onClick={onFechar}>
+  return (<div style={S.overlay}>
     <div style={S.modal} onClick={(e)=>e.stopPropagation()}>
       <div style={S.modalHead}>
         <h2 style={S.modalTitle}>Editar pessoa</h2>
