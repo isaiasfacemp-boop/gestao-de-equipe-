@@ -522,6 +522,7 @@ function App({ inicial, aoSair, usuarioConectado }){
   const [showUsers,setShowUsers]=useState(false);
   const [showSwitch,setShowSwitch]=useState(false);
   const [showMsgs,setShowMsgs]=useState(false);
+  const [membroTarefas,setMembroTarefas]=useState(null);
   const [gerandoPdf,setGerandoPdf]=useState(false);
   const [projAberto,setProjAberto]=useState(true);
   const [showNewProj,setShowNewProj]=useState(false);
@@ -922,7 +923,7 @@ function App({ inicial, aoSair, usuarioConectado }){
                   <div style={{marginBottom:10}}><div style={S.panelTitle}>Equipe · {membrosEquipe.length}</div></div>
                   <div style={S.equipeGrid}>
                     {membrosEquipe.map((m)=>{ const fazer=emAbertoMembro(m.id); const feito=concluidoMembro(m.id);
-                      return (<div key={m.id} style={S.equipeCard} title={m.name}>
+                      return (<div key={m.id} style={{...S.equipeCard,cursor:"pointer"}} title={`Ver tarefas de ${m.name}`} onClick={()=>setMembroTarefas(m.id)}>
                         <div style={S.equipeCardHead}>
                           <Avatar m={m} size={20}/>
                           <span style={S.equipeCardNome}>{m.name}{m.id===myMemberId && <span style={{fontSize:9.5,color:"#8A8F9E",marginLeft:4}}>você</span>}</span>
@@ -998,6 +999,8 @@ function App({ inicial, aoSair, usuarioConectado }){
       {showMsgs && <MensagensModal mensagens={minhasMsgs} membros={state.members} isMaster={isMaster} meuMembroId={myMemberId}
         onEnviar={enviarMensagem} onApagar={apagarMensagem} onClose={()=>setShowMsgs(false)}/>}
       {showCatalog && <CatalogModal catalog={catalog} onAdd={addCatalogItem} onRemove={removeCatalogItem} onEdit={editCatalogItem} onClose={()=>setShowCatalog(false)}/>}
+      {membroTarefas && <TarefasMembroModal membro={memberById(membroTarefas)} projects={state.projects}
+        tasks={state.tasks.filter((t)=>t.assignee===membroTarefas && t.tipo!=="reuniao")} onClose={()=>setMembroTarefas(null)}/>}
       {showUsers && <UsersModal users={state.users} members={state.members} tasks={state.tasks} currentUser={currentUser}
         onAdd={addUser} onReset={resetUserPassword} onPhoto={setMemberPhoto} onRenomear={renomearPessoa}
         onLogin={alterarLogin} onAcesso={alterarAcesso} onPainel={alternarPainel} onEquipe={alternarEquipe} onRemoverPessoa={removerPessoa} onClose={()=>setShowUsers(false)}/>}
@@ -1925,6 +1928,34 @@ function CatalogModal({ catalog, onAdd, onRemove, onEdit, onClose }){
         {catalog.length===0 && <p style={{color:"#8A8F9E",fontSize:14,textAlign:"center",padding:20}}>Nenhuma tarefa cadastrada ainda.</p>}
       </div>
       <p style={S.hint}><Ic n="list" s={12} c="#737A8C"/> No quadro, o lançamento acontece só na coluna "A fazer": escolha a tarefa, o tempo e o responsável.</p>
+    </div>
+  </div>);
+}
+function TarefasMembroModal({ membro, tasks, projects, onClose }){
+  const nomeProjeto=(pid)=> (projects.find((p)=>p.id===pid)||{}).name || "Sem projeto";
+  const ordem={ todo:0, doing:1, review:2, protocolado:3, done:4 };
+  const lista=[...tasks].sort((a,b)=> (ordem[a.col]??9)-(ordem[b.col]??9) || (b.createdAt||0)-(a.createdAt||0));
+  return (<div style={S.overlay} onClick={onClose}>
+    <div style={S.modal} onClick={(e)=>e.stopPropagation()}>
+      <div style={S.modalHead}>
+        <div style={{display:"flex",alignItems:"center",gap:9}}>
+          <Avatar m={membro} size={30}/>
+          <h2 style={S.modalTitle}>Tarefas de {membro.name}</h2>
+        </div>
+        <button style={S.iconBtn} onClick={onClose}><Ic n="x" s={18}/></button>
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:8,maxHeight:"60vh",overflowY:"auto"}}>
+        {lista.map((t)=>{ const col=COL[t.col]||{tint:"#8A8F9E",name:t.col};
+          return (<div key={t.id} style={S.memberRow}>
+            <span style={{...S.dot,background:col.tint,width:10,height:10}}/>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontWeight:600,fontSize:13.5,color:"#14161F"}}>{t.title}</div>
+              <div style={{fontSize:11.5,color:"#8A8F9E",marginTop:2}}>{nomeProjeto(t.project)}</div>
+            </div>
+            <span style={{fontSize:11.5,fontWeight:700,color:col.tint,whiteSpace:"nowrap"}}>{col.name}</span>
+          </div>); })}
+        {lista.length===0 && <p style={{color:"#8A8F9E",fontSize:14,textAlign:"center",padding:20}}>Nenhuma tarefa nesse momento.</p>}
+      </div>
     </div>
   </div>);
 }
