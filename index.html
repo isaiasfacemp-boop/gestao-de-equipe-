@@ -648,9 +648,26 @@ function App({ inicial, aoSair, usuarioConectado }){
     const vencidas=(state.tasks||[]).filter((t)=>t.tipo==="reuniao" && t.col!=="done" && t.quando && new Date(t.quando).getTime()<=agora);
     if(vencidas.length===0) return;
     const ids=new Set(vencidas.map((t)=>t.id));
-    patch((s)=>{ s.tasks=s.tasks.map((t)=> ids.has(t.id)
-      ? {...t,col:"done",completedAt:new Date(t.quando).getTime(),needsFix:false,fixNote:"",runningSince:null}
-      : t); return s; });
+    patch((s)=>{
+      const todosIds=(s.members||[]).map((m)=>m.id);
+      // Quem é afetado por cada reunião que está começando agora: os convidados marcados,
+      // ou todo mundo quando a reunião é para a equipe inteira (sem convidados específicos).
+      const afetados=new Set();
+      vencidas.forEach((r)=>{ const alvos=(r.convidados&&r.convidados.length)?r.convidados:todosIds; alvos.forEach((m)=>afetados.add(m)); });
+      s.tasks=s.tasks.map((t)=>{
+        if(ids.has(t.id)) return {...t,col:"done",completedAt:new Date(t.quando).getTime(),needsFix:false,fixNote:"",runningSince:null};
+        // Pausa automaticamente a tarefa de quem está com o relógio rodando e entrou na reunião —
+        // a pessoa está na reunião, não trabalhando na tarefa. O tempo já rodado fica guardado
+        // e a tarefa fica "Pausada", esperando a pessoa retomar depois com "Continuar tarefa".
+        if(t.tipo!=="reuniao" && t.runningSince && afetados.has(t.assignee)){
+          const soma=(t.workedMs||0)+(agora-t.runningSince);
+          const nota={ id:uid(), data:agora, texto:"Pausada automaticamente: início de reunião" };
+          return {...t, workedMs:soma, runningSince:null, diario:[...(t.diario||[]),nota]};
+        }
+        return t;
+      });
+      return s;
+    });
   },[state.tasks,tique]);
   useEffect(()=>{
     const cu=state.users.find((u)=>u.id===state.session.currentUserId);
@@ -861,6 +878,12 @@ function App({ inicial, aoSair, usuarioConectado }){
       return s;
     });
   };
+  // Pausar manualmente uma tarefa "Em andamento" a qualquer momento (emergência, imprevisto etc.).
+  // Só para o cronômetro e guarda o tempo já trabalhado — a tarefa continua "Em andamento",
+  // esperando a pessoa retomar depois com "Continuar tarefa".
+  const pauseTask=(id)=>{ const t=state.tasks.find((x)=>x.id===id); if(!t||!t.runningSince) return;
+    const agora=Date.now(); const soma=(t.workedMs||0)+(agora-t.runningSince);
+    updateTask(id,{workedMs:soma,runningSince:null}); };
   const completeTask=(id)=>{ const t=state.tasks.find((x)=>x.id===id); const agora=Date.now();
     const soma=(t.workedMs||0)+(t.runningSince?agora-t.runningSince:0);
     updateTask(id,{col:"done",needsFix:false,fixNote:"",workedMs:soma,runningSince:null,
@@ -1054,7 +1077,7 @@ function App({ inicial, aoSair, usuarioConectado }){
                       canEdit={canEdit(t)} canDrag={canDrag(t)} canAct={canAct(t)} isPrivileged={isPrivileged} isMaster={isMaster} mine={isMine(t)}
                       onDragStart={()=>setDrag(t.id)} onDragEnd={()=>{setDrag(null);setDragOver(null);}}
                       onUpdate={(f)=>updateTask(t.id,f)} onRemove={()=>removeTask(t.id)}
-                      onAccept={()=>acceptTask(t.id)} onComplete={()=>completeTask(t.id)} onResume={()=>resumeTask(t.id)}
+                      onAccept={()=>acceptTask(t.id)} onComplete={()=>completeTask(t.id)} onResume={()=>resumeTask(t.id)} onPause={()=>pauseTask(t.id)}
                       onSendToReview={()=>sendToReview(t.id)} onBackToDoing={()=>backToDoing(t.id)}
                       onToProtocolado={()=>toProtocolado(t.id)} onBackToReview={()=>backToReview(t.id)}
                       onDoingToReview={()=>doingToReview(t.id)} onProtocoladoToDoing={()=>protocoladoToDoing(t.id)}
@@ -1185,7 +1208,7 @@ function RepassarModal({ members, task, onEscolher, onClose }){
 
 // ---------- Task card ----------
 function Card({ task, member, members, projects, catalog, meuMembroId, projetoNome, onConfirmar, canEdit, canDrag, canAct, isPrivileged, isMaster, mine,
-                onDragStart, onDragEnd, onUpdate, onRemove, onAccept, onComplete, onResume, onSendToReview, onBackToDoing, onToProtocolado, onBackToReview, onDoingToReview, onProtocoladoToDoing, onRepassar, onEditLock }){
+                onDragStart, onDragEnd, onUpdate, onRemove, onAccept, onComplete, onResume, onPause, onSendToReview, onBackToDoing, onToProtocolado, onBackToReview, onDoingToReview, onProtocoladoToDoing, onRepassar, onEditLock }){
   const [menu,setMenu]=useState(null); const [menuPos,setMenuPos]=useState(null); const ref=useRef();
   const [editDesc,setEditDesc]=useState(false); const [rascunho,setRascunho]=useState("");
   const [novaNota,setNovaNota]=useState(""); const [editNota,setEditNota]=useState(null); const [notaTexto,setNotaTexto]=useState("");
@@ -1396,7 +1419,7 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
           {quemConfirmou.map((m)=>(<Avatar key={m.id} m={m} size={22}/>))}
         </div>) : <div style={{fontSize:11.5,color:"#A0A5B2",marginTop:4}}>ninguém confirmou ainda</div>}
       </div>)}
-      {ehReuniao && meuMembroId && !isMaster && (
+      {ehReuniao && meuMembroId && (
         jaConfirmei
           ? <div style={{...S.confFeito,margin:"8px 11px 10px"}}><Ic n="checkc" s={13} c="#2F9E6E"/> Você confirmou que viu</div>
           : <button style={{...S.doneBtn,background:"#8B3ABF",margin:"8px 11px 10px",width:"auto"}} onClick={onConfirmar}>
@@ -1410,6 +1433,8 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
         <button style={{...S.doneBtn,background:COL.doing.tint}} onClick={onAccept}><Ic n="check" s={13} c="#fff"/> Aceitar tarefa</button>)}
       {!ehReuniao && task.col==="doing" && canAct && !task.runningSince && (
         <button style={{...S.doneBtn,background:"#2F9E6E"}} onClick={onResume}><Ic n="bar" s={13} c="#fff"/> Continuar tarefa</button>)}
+      {!ehReuniao && task.col==="doing" && canAct && task.runningSince && (
+        <button style={S.cancelBtn} onClick={onPause} title="Pausar agora, por qualquer motivo"><Ic n="hourglass" s={12} c="#737A8C"/> Pausar tarefa</button>)}
       {!ehReuniao && task.col==="doing" && canAct && (
         <button style={{...S.doneBtn,background:COL.review.tint}} onClick={onDoingToReview}><Ic n="checkc" s={13} c="#fff"/> Ir para Revisão Interna</button>)}
       {!ehReuniao && inReview && canAct && (
