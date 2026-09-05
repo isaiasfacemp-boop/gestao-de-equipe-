@@ -670,6 +670,7 @@ function App({ inicial, aoSair, usuarioConectado }){
   if(emReunioes && reuniaoMembro) filtered=filtered.filter((t)=>{ const conf=t.confirmados||[]; return t.col==="done" ? conf.includes(reuniaoMembro) : !conf.includes(reuniaoMembro); });
   if(folderFilter) filtered=filtered.filter((t)=>t.folderName===folderFilter);
   if(query) filtered=filtered.filter((t)=>t.title.toLowerCase().includes(query.toLowerCase()));
+  const resumoTarefas = isPrivileged ? state.tasks.filter((t)=>t.tipo!=="reuniao") : filtered;
   const todasMsgs=state.messages||[];
   const minhasMsgs=isMaster?todasMsgs:todasMsgs.filter((m)=>m.paraMembro===myMemberId||m.deMembro===myMemberId);
   const naoLidas=myMemberId?todasMsgs.filter((m)=>m.paraMembro===myMemberId&&!m.lida).length:0;
@@ -917,9 +918,10 @@ function App({ inicial, aoSair, usuarioConectado }){
 
       <main style={S.main}>
         <header style={S.topbar}>
-          <div style={{width:"100%"}}><h1 style={S.h1}>{emReunioes ? "Reuniões" : (project?.name ?? "Sem projeto")}</h1>
+          <div style={{width:"100%"}}><h1 style={S.h1}>{emReunioes ? "Reuniões" : (isPrivileged ? "JG2 PROJETOS" : (project?.name ?? "Sem projeto"))}</h1>
             {emReunioes && <div style={{fontSize:12.5,color:"#8A5FD6",fontWeight:600,marginTop:2}}>Reuniões de todos os projetos</div>}
-            {isPrivileged && !emReunioes && <ResumoSemanal tarefas={filtered}/>}
+            {isPrivileged && !emReunioes && <div style={{fontSize:12.5,color:"#3B3AC9",fontWeight:600,marginTop:2}}>Resumo de todos os projetos</div>}
+            {isPrivileged && !emReunioes && <ResumoSemanal tarefas={resumoTarefas}/>}
           </div>
         </header>
 
@@ -981,7 +983,7 @@ function App({ inicial, aoSair, usuarioConectado }){
                       membroFiltro={doneMembro} onMembroFiltro={setDoneMembro} isMaster={isMaster} onRevisao={sendToReview}/>
                   ) : (
                   <div style={S.cardList}>
-                    {items.map((t)=>(<Card key={t.id} task={t} member={memberById(t.assignee)} members={state.members} projects={state.projects} meuMembroId={myMemberId} projetoNome={(state.projects.find((p)=>p.id===t.project)||{}).name||""} onConfirmar={()=>confirmarReuniao(t.id,myMemberId)}
+                    {items.map((t)=>(<Card key={t.id} task={t} member={memberById(t.assignee)} members={state.members} projects={state.projects} catalog={catalog} meuMembroId={myMemberId} projetoNome={(state.projects.find((p)=>p.id===t.project)||{}).name||""} onConfirmar={()=>confirmarReuniao(t.id,myMemberId)}
                       canEdit={canEdit(t)} canDrag={canDrag(t)} canAct={canAct(t)} isPrivileged={isPrivileged} isMaster={isMaster} mine={isMine(t)}
                       onDragStart={()=>setDrag(t.id)} onDragEnd={()=>{setDrag(null);setDragOver(null);}}
                       onUpdate={(f)=>updateTask(t.id,f)} onRemove={()=>removeTask(t.id)}
@@ -1115,7 +1117,7 @@ function RepassarModal({ members, task, onEscolher, onClose }){
 }
 
 // ---------- Task card ----------
-function Card({ task, member, members, projects, meuMembroId, projetoNome, onConfirmar, canEdit, canDrag, canAct, isPrivileged, isMaster, mine,
+function Card({ task, member, members, projects, catalog, meuMembroId, projetoNome, onConfirmar, canEdit, canDrag, canAct, isPrivileged, isMaster, mine,
                 onDragStart, onDragEnd, onUpdate, onRemove, onAccept, onComplete, onResume, onSendToReview, onBackToDoing, onToProtocolado, onBackToReview, onDoingToReview, onProtocoladoToDoing, onRepassar, onEditLock }){
   const [menu,setMenu]=useState(null); const [menuPos,setMenuPos]=useState(null); const ref=useRef();
   const [editDesc,setEditDesc]=useState(false); const [rascunho,setRascunho]=useState("");
@@ -1373,13 +1375,13 @@ function Card({ task, member, members, projects, meuMembroId, projetoNome, onCon
       </DropMenu>)}
       {menu==="rep" && <RepassarModal members={members} task={task} onClose={()=>setMenu(null)}
         onEscolher={(mid)=>{ onRepassar(mid); setMenu(null); }}/>}
-      {editTudo && <EditarTarefaModal task={task} projects={projects||[]} members={members}
+      {editTudo && <EditarTarefaModal task={task} projects={projects||[]} members={members} catalog={catalog||[]}
         onSalvar={(campos)=>{ onUpdate(campos); setEditTudo(false); }} onFechar={()=>setEditTudo(false)}/>}
     </div>
   );
 }
 
-function EditarTarefaModal({ task, projects, members, onSalvar, onFechar }){
+function EditarTarefaModal({ task, projects, members, catalog, onSalvar, onFechar }){
   const ehReuniao=task.tipo==="reuniao";
   const [titulo,setTitulo]=useState(task.title||"");
   const [projeto,setProjeto]=useState(task.project||"");
@@ -1411,7 +1413,10 @@ function EditarTarefaModal({ task, projects, members, onSalvar, onFechar }){
       </div>
 
       <div style={S.launchLabel}>Título</div>
-      <input style={{...S.authInput,margin:0}} autoFocus value={titulo} onChange={(e)=>{setTitulo(e.target.value);setErr("");}}/>
+      <select style={{...S.authInput,margin:0}} value={titulo} onChange={(e)=>{setTitulo(e.target.value);setErr("");}}>
+        {!(catalog||[]).some((c)=>c.title===titulo) && titulo && <option value={titulo}>{titulo}</option>}
+        {(catalog||[]).map((c)=>(<option key={c.id} value={c.title}>{c.title}</option>))}
+      </select>
 
       <div style={{...S.launchLabel,marginTop:10}}>Projeto</div>
       <select style={{...S.authInput,margin:0}} value={projeto} onChange={(e)=>{setProjeto(e.target.value);setErr("");}}>
