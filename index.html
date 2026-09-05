@@ -602,15 +602,16 @@ function atualizarNotificacao(total){
 // ---------- Aviso de novidades ----------
 // Toda vez que você atualizar o sistema e quiser avisar a equipe, troque a "versao" abaixo
 // (qualquer texto novo já serve, ex: data de hoje) e escreva o que mudou em "texto".
-// Cada pessoa vê o aviso só na primeira vez que abrir o app depois da troca; ao clicar no X,
-// não aparece de novo até a próxima vez que você mudar a "versao".
+// O aviso é por pessoa (login), não por aparelho: guardado na nuvem em state.novidadesVistas,
+// então funciona mesmo se a pessoa trocar de celular/computador ou compartilhar o mesmo aparelho
+// com outra conta. Cada um só deixa de ver de novo se marcar a caixinha "Não mostrar novamente".
 const NOVIDADE = {
-  versao: "2026-09-05-1",
+  versao: "2026-09-05-2",
   titulo: "Novidades no sistema",
-  texto: "• Selo vermelho no ícone do app quando chega mensagem ou tarefa nova\n• Editar tudo de uma tarefa de uma vez (só master), incluindo trocar o projeto\n• Mandar mensagem para várias pessoas ao mesmo tempo",
+  texto: "• Modo claro e escuro (botão no topo)\n• Tela de confirmação antes de concluir uma tarefa\n• Selo vermelho no ícone do app quando chega mensagem ou tarefa nova\n• Editar tudo de uma tarefa de uma vez (só master), incluindo trocar o projeto\n• Mandar mensagem para várias pessoas ao mesmo tempo",
   imagem: "" // opcional: cole aqui o link de uma imagem/print para mostrar junto
 };
-function NovidadeModal({ novidade, onFechar }){
+function NovidadeModal({ novidade, onFechar, naoMostrar, onToggleNaoMostrar }){
   return (<div style={S.overlay}>
     <div style={{...S.modal,maxWidth:420}} onClick={(e)=>e.stopPropagation()}>
       <div style={S.modalHead}>
@@ -619,17 +620,31 @@ function NovidadeModal({ novidade, onFechar }){
       </div>
       {novidade.imagem && <img src={novidade.imagem} alt="" style={{width:"100%",borderRadius:10,marginBottom:10,display:"block"}}/>}
       {novidade.texto && <div style={{fontSize:13.5,color:"var(--text-secondary)",lineHeight:1.6,whiteSpace:"pre-wrap"}}>{novidade.texto}</div>}
-      <button style={{...S.primaryBtn,marginTop:16,width:"100%",justifyContent:"center"}} onClick={onFechar}>Entendi</button>
+      <label style={{display:"flex",alignItems:"center",gap:8,marginTop:16,fontSize:12.5,color:"var(--text-secondary)",cursor:"pointer",userSelect:"none"}}>
+        <input type="checkbox" checked={naoMostrar} onChange={(e)=>onToggleNaoMostrar(e.target.checked)}
+          style={{width:15,height:15,cursor:"pointer",accentColor:"#3B3AC9"}}/>
+        Não mostrar esta mensagem novamente
+      </label>
+      <button style={{...S.primaryBtn,marginTop:12,width:"100%",justifyContent:"center"}} onClick={onFechar}>Entendi</button>
     </div>
   </div>);
 }
 
 function App({ inicial, aoSair, usuarioConectado }){
   const [state,setState]=useState(()=> inicial || prepararDados(store.get(), usuarioConectado) );
+  const [novidadeNaoMostrar,setNovidadeNaoMostrar]=useState(false);
   const [novidadeAberta,setNovidadeAberta]=useState(()=>{
-    try{ return localStorage.getItem("ge-novidade-vista")!==NOVIDADE.versao; }catch(e){ return false; }
+    try{
+      const vistas=(inicial||store.get()||{}).novidadesVistas||{};
+      return vistas[usuarioConectado]!==NOVIDADE.versao;
+    }catch(e){ return false; }
   });
-  const fecharNovidade=()=>{ try{ localStorage.setItem("ge-novidade-vista",NOVIDADE.versao); }catch(e){} setNovidadeAberta(false); };
+  const fecharNovidade=()=>{
+    if(novidadeNaoMostrar){
+      patch((s)=>{ s.novidadesVistas={...(s.novidadesVistas||{}), [usuarioConectado]:NOVIDADE.versao}; return s; });
+    }
+    setNovidadeAberta(false);
+  };
   const [query,setQuery]=useState("");
   const [showCatalog,setShowCatalog]=useState(false);
   const [folderFilter,setFolderFilter]=useState("");
@@ -1060,7 +1075,8 @@ function App({ inicial, aoSair, usuarioConectado }){
       </aside>
       {showSwitch && <SwitchUserModal users={state.users} members={state.members} currentUser={currentUser}
         onEscolher={(id)=>{ login(id); setShowSwitch(false); }} onClose={()=>setShowSwitch(false)}/>}
-      {novidadeAberta && <NovidadeModal novidade={NOVIDADE} onFechar={fecharNovidade}/>}
+      {novidadeAberta && <NovidadeModal novidade={NOVIDADE} onFechar={fecharNovidade}
+        naoMostrar={novidadeNaoMostrar} onToggleNaoMostrar={setNovidadeNaoMostrar}/>}
 
       <main style={S.main}>
         <header style={S.topbar}>
