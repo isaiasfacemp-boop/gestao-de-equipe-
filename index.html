@@ -919,7 +919,7 @@ function App({ inicial, aoSair, usuarioConectado }){
       const novas=(itens||[]).map((it)=>{
         const item=(s.taskCatalog||[]).find((c)=>c.id===it.catalogId); if(!item) return null;
         return { id:uid(), project:s.activeProject, col:"todo", title:item.title,
-          tipo:it.reuniao?"reuniao":"tarefa", quando:it.quando||"", confirmados:[],
+          tipo:it.reuniao?"reuniao":"tarefa", quando:it.quando||"", confirmados:[], criadoPor:myMemberId||null,
           convidados:it.reuniao?(it.convidados&&it.convidados.length?it.convidados:[]):[],
           priority:it.priority||"media", hours:Math.max(0,+it.hours||0), assignee:it.reuniao?null:(assignee||null),
           createdAt:inicioContagem, acceptedAt:null, workedMs:0, runningSince:null,
@@ -1357,6 +1357,8 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
         <Ic n="calendar" s={13} c="#fff"/> REUNIÃO
         {task.quando && <span style={S.faixaQuando}>{quandoTexto(task.quando)}</span>}
       </div>)}
+      {ehReuniao && task.criadoPor && (()=>{ const criador=members.find((m)=>m.id===task.criadoPor);
+        return criador ? <div style={{fontSize:11,color:"var(--text-muted)",padding:"6px 11px 0"}}>Marcada por {criador.name}</div> : null; })()}
       {!ehReuniao && projetoNome && <div style={S.projetoTag} title={"Projeto: "+projetoNome}>
         <Ic n="folder" s={11} c="#3B3AC9"/> {projetoNome}</div>}
       {task.folderName && !editTrab && <div style={{...S.folderTag,color:corTrab,background:corTrab+"14",borderColor:corTrab+"33"}}
@@ -1538,7 +1540,7 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
           ? <div style={{...S.confFeito,margin:"8px 11px 10px"}}><Ic n="checkc" s={13} c="#2F9E6E"/> Você confirmou que viu</div>
           : <button style={{...S.doneBtn,background:"#8B3ABF",margin:"8px 11px 10px",width:"auto"}} onClick={onConfirmar}>
               <Ic n="checkc" s={13} c="#fff"/> Confirmar que vi</button>)}
-      {ehReuniao && isMaster && task.col!=="done" && (
+      {ehReuniao && task.col!=="done" && (task.criadoPor ? task.criadoPor===meuMembroId : isMaster) && (
         <button style={{...S.doneBtn,margin:"8px 11px 10px",width:"auto"}} onClick={onComplete}>
           <Ic n="checkc" s={13} c="#fff"/> Encerrar reunião</button>)}
 
