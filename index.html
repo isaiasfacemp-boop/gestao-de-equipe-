@@ -147,6 +147,7 @@ function Avatar({ m, size=32, w, h, radius }){
 }
 
 // ---------- Tokens ----------
+const LOGO_JG2 = "data:image/png;base64,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";
 const FONT = "'Inter', system-ui, -apple-system, sans-serif";
 const COLUMNS = [
   { id:"todo",   name:"A fazer",        tint:"#D8442F", bg:"#FCEDEA" },
@@ -1015,10 +1016,27 @@ function App({ inicial, aoSair, usuarioConectado }){
   const moveTask=(id,col)=>{ if(col==="done")return; updateTask(id,{col,completedAt:null}); };
 
   // ---------- Gestão Financeira (só master/gerente) ----------
+  const FIN_ANDAMENTO_IDX=FIN_COLUMNS.findIndex((c)=>c.id==="em_andamento_fin");
   const addFinCard=(col,title)=>{ if(!title||!title.trim())return;
-    patch((s)=>{ s.financeiro=[...(s.financeiro||[]),{ id:uid(), col, title:title.trim(), notas:"", createdAt:Date.now() }]; return s; }); };
-  const moveFinCard=(id,col)=>patch((s)=>{ s.financeiro=(s.financeiro||[]).map((c)=>c.id===id?{...c,col}:c); return s; });
-  const updateFinCard=(id,fields)=>patch((s)=>{ s.financeiro=(s.financeiro||[]).map((c)=>c.id===id?{...c,...fields}:c); return s; });
+    patch((s)=>{ s.financeiro=[...(s.financeiro||[]),{ id:uid(), col, title:title.trim(), notas:"", valor:0, createdAt:Date.now() }]; return s; }); };
+  // Sempre que o cartão muda de coluna, guarda quando ele chegou em "Em andamento" (é a partir
+  // daí que o valor entra nos números do Painel) e quando chegou em "Arquivado" (conta como
+  // recebido). Se voltar de Arquivado pra trás, tira a marca de recebido.
+  const updateFinCard=(id,fields)=>patch((s)=>{
+    s.financeiro=(s.financeiro||[]).map((c)=>{
+      if(c.id!==id) return c;
+      let extra={};
+      if(fields.col && fields.col!==c.col){
+        const idxNovo=FIN_COLUMNS.findIndex((x)=>x.id===fields.col);
+        if(idxNovo>=FIN_ANDAMENTO_IDX && !c.emAndamentoDesde) extra.emAndamentoDesde=Date.now();
+        if(fields.col==="arquivado_fin") extra.arquivadoEm=c.arquivadoEm||Date.now();
+        else if(c.arquivadoEm) extra.arquivadoEm=null;
+      }
+      return {...c,...fields,...extra};
+    });
+    return s;
+  });
+  const moveFinCard=(id,col)=>updateFinCard(id,{col});
   const removeFinCard=(id)=>patch((s)=>{ s.financeiro=(s.financeiro||[]).filter((c)=>c.id!==id); return s; });
 
   // fluxo: A fazer -> (aceitar) Em andamento -> (concluir) Concluído -> (master) Revisão -> (concluir) Concluído
@@ -1122,8 +1140,7 @@ function App({ inicial, aoSair, usuarioConectado }){
     <div className="tela-cheia" style={S.app}>
       <aside style={S.sidebar}>
         <div style={{flex:1,overflowY:"auto"}}>
-          <div style={S.brand}><div style={S.brandMark}>◆</div>
-            <div><div style={S.brandName}>Equipe</div><div style={S.brandSub}>gestão de trabalho</div></div></div>
+          <div style={S.brand}><div style={S.logoBox}><img src={LOGO_JG2} alt="JG2 Engenharia e Arquitetura" style={S.logoImg}/></div></div>
 
           {isPrivileged && (<div style={{...S.abasLat,marginBottom:14}}>
             <button style={{...S.abaLat,...(!emFinanceiro?S.abaLatOn:{})}} onClick={voltarGestaoTrabalho}>
@@ -1167,11 +1184,18 @@ function App({ inicial, aoSair, usuarioConectado }){
         </div>
 
         <div style={S.sideFooter}>
-          {isPrivileged && !emFinanceiro && (<div style={S.abasLat}>
-            <button style={{...S.abaLat,...(state.view==="board"?S.abaLatOn:{})}} onClick={()=>patch((s)=>({...s,view:"board"}))}>
-              <Ic n="grid" s={14} c={state.view==="board"?"#3B3AC9":"var(--text-secondary)"}/> Quadro</button>
-            <button style={{...S.abaLat,...(state.view==="dash"?S.abaLatOn:{})}} onClick={()=>patch((s)=>({...s,view:"dash"}))}>
-              <Ic n="bar" s={14} c={state.view==="dash"?"#3B3AC9":"var(--text-secondary)"}/> Painel</button>
+          {isPrivileged && (<div style={S.abasLat}>
+            {emFinanceiro ? (<React.Fragment>
+              <button style={{...S.abaLat,...((state.viewFinanceiro||"board")==="board"?S.abaLatOn:{})}} onClick={()=>patch((s)=>({...s,viewFinanceiro:"board"}))}>
+                <Ic n="grid" s={14} c={(state.viewFinanceiro||"board")==="board"?"#3B3AC9":"var(--text-secondary)"}/> Quadro</button>
+              <button style={{...S.abaLat,...(state.viewFinanceiro==="dash"?S.abaLatOn:{})}} onClick={()=>patch((s)=>({...s,viewFinanceiro:"dash"}))}>
+                <Ic n="bar" s={14} c={state.viewFinanceiro==="dash"?"#3B3AC9":"var(--text-secondary)"}/> Painel</button>
+            </React.Fragment>) : (<React.Fragment>
+              <button style={{...S.abaLat,...(state.view==="board"?S.abaLatOn:{})}} onClick={()=>patch((s)=>({...s,view:"board"}))}>
+                <Ic n="grid" s={14} c={state.view==="board"?"#3B3AC9":"var(--text-secondary)"}/> Quadro</button>
+              <button style={{...S.abaLat,...(state.view==="dash"?S.abaLatOn:{})}} onClick={()=>patch((s)=>({...s,view:"dash"}))}>
+                <Ic n="bar" s={14} c={state.view==="dash"?"#3B3AC9":"var(--text-secondary)"}/> Painel</button>
+            </React.Fragment>)}
           </div>)}
           {isPrivileged && (<div style={{position:"relative"}} ref={refMenuRelatorio}>
             <button style={S.sideBtn} disabled={gerandoPdf} onClick={()=>setMenuRelatorio((v)=>!v)}>
@@ -1217,8 +1241,12 @@ function App({ inicial, aoSair, usuarioConectado }){
         </header>
 
         {emFinanceiro ? (
-          <FinanceiroBoard cards={state.financeiro||[]} onAdd={addFinCard} onUpdate={updateFinCard} onRemove={removeFinCard}
-            drag={dragFin} setDrag={setDragFin} dragOver={dragOverFin} setDragOver={setDragOverFin} onDrop={(col)=>{ if(dragFin) moveFinCard(dragFin,col); setDragFin(null); setDragOverFin(null); }}/>
+          (state.viewFinanceiro||"board")==="board" ? (
+            <FinanceiroBoard cards={state.financeiro||[]} onAdd={addFinCard} onUpdate={updateFinCard} onRemove={removeFinCard}
+              drag={dragFin} setDrag={setDragFin} dragOver={dragOverFin} setDragOver={setDragOverFin} onDrop={(col)=>{ if(dragFin) moveFinCard(dragFin,col); setDragFin(null); setDragOverFin(null); }}/>
+          ) : (
+            <FinanceiroDashboard cards={state.financeiro||[]}/>
+          )
         ) : (!project && !emReunioes) ? (
           <div style={S.empty}><p style={{margin:0,color:"var(--icon-muted)"}}>Nenhum projeto ainda.</p>
             {isPrivileged && <button style={S.primaryBtn} onClick={addProject}><Ic n="plus" s={16} c="#fff"/> Criar projeto</button>}</div>
@@ -1332,13 +1360,18 @@ function App({ inicial, aoSair, usuarioConectado }){
 }
 
 // ---------- Gestão Financeira ----------
+const formatarReal=(centavos)=>((centavos||0)/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 function FinCard({ card, col, nextCol, prevCol, onUpdate, onRemove, onDragStart, onDragEnd }){
   const [editando,setEditando]=useState(false);
   const [titulo,setTitulo]=useState(card.title);
   const [notaAberta,setNotaAberta]=useState(false);
   const [notas,setNotas]=useState(card.notas ?? card.observacao ?? "");
+  const [valorCent,setValorCent]=useState(card.valor||0);
   const salvarTitulo=()=>{ const t=titulo.trim(); if(t) onUpdate({title:t}); else setTitulo(card.title); setEditando(false); };
   const salvarNotas=()=>{ onUpdate({notas}); setNotaAberta(false); };
+  const mudarValor=(e)=>{ const digitos=e.target.value.replace(/\D/g,""); const cent=digitos?parseInt(digitos,10):0;
+    setValorCent(cent); onUpdate({valor:cent}); };
+  const temAlgo = valorCent>0 || (notas&&notas.trim());
   return (
     <div className="card" draggable onDragStart={onDragStart} onDragEnd={onDragEnd}
       style={{...S.finCard}}>
@@ -1353,12 +1386,19 @@ function FinCard({ card, col, nextCol, prevCol, onUpdate, onRemove, onDragStart,
         </div>
       )}
       {notaAberta ? (
-        <textarea autoFocus style={{...S.authInput,margin:"6px 0 0",minHeight:56,resize:"vertical",fontSize:12}} value={notas}
-          onChange={(e)=>setNotas(e.target.value)} onBlur={salvarNotas} placeholder="Anotações, valores, contato…"/>
+        <div style={{marginTop:6,display:"flex",flexDirection:"column",gap:6}}>
+          <input inputMode="numeric" style={{...S.authInput,margin:0,fontSize:12.5,fontWeight:700,color:"#1F7A4C"}}
+            value={valorCent>0?formatarReal(valorCent):""} onChange={mudarValor} placeholder="Valor: R$ 0,00"/>
+          <textarea autoFocus style={{...S.authInput,margin:0,minHeight:52,resize:"vertical",fontSize:12}} value={notas}
+            onChange={(e)=>setNotas(e.target.value)} onBlur={salvarNotas} placeholder="Anotações, contato, prazo…"/>
+        </div>
       ) : (
         <div style={{display:"flex",alignItems:"center",gap:5,marginTop:6,cursor:"pointer",color:"var(--text-muted)"}} onClick={()=>setNotaAberta(true)}>
           <Ic n="list" s={13} c="var(--text-muted)"/>
-          <span style={{fontSize:11,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{notas?notas:"Nada anotado ainda."}</span>
+          {temAlgo ? (<React.Fragment>
+            {valorCent>0 && <span style={{fontSize:11.5,fontWeight:700,color:"#1F7A4C",flexShrink:0}}>{formatarReal(valorCent)}</span>}
+            {notas && notas.trim() && <span style={{fontSize:11,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{valorCent>0?" · ":""}{notas}</span>}
+          </React.Fragment>) : <span style={{fontSize:11}}>Nada anotado ainda.</span>}
         </div>
       )}
       {nextCol && <button style={{...S.doneBtn,background:nextCol.tint,fontSize:11.5,padding:"6px 8px",marginTop:8}}
@@ -1409,6 +1449,51 @@ function FinanceiroBoard({ cards, onAdd, onUpdate, onRemove, drag, setDrag, drag
     </div>
   );
 }
+function FinanceiroDashboard({ cards }){
+  const agora=new Date();
+  const mesAtual=agora.getMonth(), anoAtual=agora.getFullYear();
+  const noMes=(ts)=>{ if(!ts) return false; const d=new Date(ts); return d.getMonth()===mesAtual && d.getFullYear()===anoAtual; };
+  const noAno=(ts)=>{ if(!ts) return false; return new Date(ts).getFullYear()===anoAtual; };
+  const somaValor=(lista)=>lista.reduce((a,c)=>a+(c.valor||0),0);
+
+  // Recebido no mês: cartões que chegaram em Arquivado (considerado "pago/fechado") este mês.
+  const recebidoMes=somaValor(cards.filter((c)=>c.arquivadoEm && noMes(c.arquivadoEm)));
+  // A receber no ano: já entraram em Em andamento (ou depois) este ano, mas ainda não arquivaram —
+  // ou seja, valor contratado este ano que ainda está em aberto pra receber.
+  const aReceberAno=somaValor(cards.filter((c)=>c.emAndamentoDesde && noAno(c.emAndamentoDesde) && !c.arquivadoEm));
+  // Faturado no ano: soma de tudo que já foi arquivado (recebido) dentro deste ano.
+  const faturadoAno=somaValor(cards.filter((c)=>c.arquivadoEm && noAno(c.arquivadoEm)));
+  // Em carteira: soma de todo valor que já passou de "Em andamento" e ainda não foi arquivado,
+  // não importa o ano (visão geral do que está em aberto agora).
+  const emCarteira=somaValor(cards.filter((c)=>c.emAndamentoDesde && !c.arquivadoEm));
+
+  const maxContagem=Math.max(1,...FIN_COLUMNS.map((col)=>cards.filter((c)=>c.col===col.id).length));
+
+  return (<div style={S.dash}>
+    <div style={S.kpis}>
+      <Kpi label="Recebido este mês" value={formatarReal(recebidoMes)} accent="#1F7A4C"/>
+      <Kpi label="A receber este ano" value={formatarReal(aReceberAno)} accent="#D9843B"/>
+      <Kpi label="Faturado este ano" value={formatarReal(faturadoAno)} accent="#3B3AC9"/>
+      <Kpi label="Em carteira (em aberto)" value={formatarReal(emCarteira)} accent="#0E8F9E"/>
+    </div>
+    <div style={{fontSize:11.5,color:"var(--text-muted)",lineHeight:1.5,background:"var(--surface-alt)",border:"1px solid var(--border-soft)",borderRadius:10,padding:"10px 13px"}}>
+      <b>Como esses números são calculados:</b> o valor de um cartão só entra nas contas a partir do momento em que ele chega em <b>Em andamento</b> — antes disso é considerado só orçamento, não conta.
+      Quando o cartão chega em <b>Arquivado</b>, o valor dele é tratado como recebido/fechado (entra em "Recebido" e "Faturado"). Enquanto não chega lá, ele conta como "A receber" e "Em carteira".
+    </div>
+    <Panel title="Cartões por etapa" sub="Quantos clientes/obras estão em cada etapa agora">
+      <div style={{display:"flex",flexDirection:"column",gap:8}}>
+        {FIN_COLUMNS.map((col)=>{ const n=cards.filter((c)=>c.col===col.id).length;
+          return (<div key={col.id} style={{display:"flex",alignItems:"center",gap:10}}>
+            <span style={{width:150,flexShrink:0,fontSize:11.5,fontWeight:700,color:"var(--text-secondary)"}}>{col.name}</span>
+            <div style={{flex:1,height:14,borderRadius:20,background:"var(--surface-alt)",overflow:"hidden"}}>
+              <div style={{height:"100%",width:`${(n/maxContagem)*100}%`,background:col.tint,borderRadius:20,transition:"width .2s"}}/>
+            </div>
+            <span style={{width:22,textAlign:"right",fontSize:12.5,fontWeight:800,color:"var(--text)"}}>{n}</span>
+          </div>); })}
+      </div>
+    </Panel>
+  </div>);
+}
 
 // ---------- Auth ----------
 function Login({ users, onLogin }){
@@ -1426,7 +1511,8 @@ function Login({ users, onLogin }){
   };
   return (<form style={S.authCard} onSubmit={submit}>
     <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:22}}>
-      <div style={S.brandMark}>◆</div><div><div style={S.brandName}>Equipe</div><div style={S.brandSub}>gestão de trabalho</div></div></div>
+      <div style={S.logoBox}><img src={LOGO_JG2} alt="JG2 Engenharia e Arquitetura" style={S.logoImg}/></div>
+    </div>
     <h2 style={S.authTitle}>Entrar</h2>
     <label style={S.authLabel}>Usuário</label>
     <input ref={refU} style={S.authInput} value={u} onChange={(e)=>{setU(e.target.value);setErr("");}} placeholder="admin"
@@ -2938,6 +3024,8 @@ const S = {
   sidebar:{width:250,flexShrink:0,background:"var(--surface)",borderRight:"1px solid var(--border)",padding:"20px 16px",display:"flex",flexDirection:"column"},
   brand:{display:"flex",alignItems:"center",gap:11,marginBottom:26},
   brandMark:{width:34,height:34,borderRadius:9,background:"#3B3AC9",color:"#fff",display:"grid",placeItems:"center",fontSize:16,boxShadow:"0 2px 8px rgba(59,58,201,.35)",flexShrink:0},
+  logoBox:{display:"inline-flex",alignItems:"center",background:"#fff",borderRadius:8,padding:"5px 10px",flexShrink:0},
+  logoImg:{display:"block",height:34,width:"auto"},
   brandName:{fontWeight:800,fontSize:16,letterSpacing:"-.02em"}, brandSub:{fontSize:11,color:"var(--text-muted)",marginTop:-1},
   sideLabel:{display:"flex",alignItems:"center",justifyContent:"space-between",fontSize:11,fontWeight:700,letterSpacing:".08em",textTransform:"uppercase",color:"var(--text-muted)",marginBottom:8},
   iconBtn:{border:"none",background:"transparent",color:"var(--icon-muted)",cursor:"pointer",padding:4,borderRadius:6,display:"grid",placeItems:"center"},
@@ -3257,9 +3345,8 @@ function Root(){
   return (
     <div className="tela-cheia" style={S.authWrap}>
       <form onSubmit={entrar} style={{background:"var(--surface)",borderRadius:16,padding:26,width:"min(94vw,380px)",boxShadow:"0 20px 50px rgba(20,22,31,.22)",fontFamily:FONT}}>
-        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
-          <div style={S.brandMark}>◆</div>
-          <div style={{flex:1}}><div style={{fontWeight:700,fontSize:15}}>Equipe</div><div style={{fontSize:11.5,color:"var(--text-muted)"}}>gestão de trabalho</div></div>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:16}}>
+          <div style={S.logoBox}><img src={LOGO_JG2} alt="JG2 Engenharia e Arquitetura" style={S.logoImg}/></div>
           <ThemeToggle/>
         </div>
         <label style={{fontSize:12,fontWeight:700,color:"var(--text-secondary)",display:"block",marginBottom:4}}>Usuário</label>
