@@ -483,14 +483,30 @@ try { TOKEN = sessionStorage.getItem("ge-token") || null; } catch(e) {}
 function setToken(t){ TOKEN = t; try{ if(t) sessionStorage.setItem("ge-token", t); else sessionStorage.removeItem("ge-token"); }catch(e){} }
 
 async function apiCall(acao, extra){
-  const r = await fetch("/api", {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify(Object.assign({ acao, token: TOKEN }, extra||{}))
-  });
-  const j = await r.json().catch(()=>({erro:"Resposta inválida do servidor."}));
-  if(!r.ok) throw new Error(j.erro || "Erro no servidor.");
-  return j;
+  const tentar=async ()=>{
+    const r = await fetch("/api", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify(Object.assign({ acao, token: TOKEN }, extra||{}))
+    });
+    const j = await r.json().catch(()=>({erro:"Resposta inválida do servidor."}));
+    if(!r.ok){ const err=new Error(j.erro || "Erro no servidor."); err.status=r.status; throw err; }
+    return j;
+  };
+  try{
+    return await tentar();
+  }catch(e){
+    // Falha de rede (sem status) ou erro passageiro do servidor (5xx): tenta mais uma vez
+    // antes de desistir — evita que uma instabilidade momentânea pareça "senha errada"
+    // em ações sensíveis como trocar/redefinir senha.
+    const semStatus = e.status===undefined;
+    const erroServidor = typeof e.status==="number" && e.status>=500;
+    if(semStatus || erroServidor){
+      await new Promise((res)=>setTimeout(res,900));
+      return await tentar();
+    }
+    throw e;
+  }
 }
 
 // store agora fala com o banco: carregar/salvar do estado inteiro.
@@ -752,8 +768,11 @@ function App({ inicial, aoSair, usuarioConectado }){
   const login=(id)=>patch((s)=>{ s.session={currentUserId:id}; return s; });
   const logout=()=>patch((s)=>{ s.session={currentUserId:null}; return s; });
   const changePassword=(pw)=>{
-    patch((s)=>{ s.users=s.users.map((u)=>u.id===s.session.currentUserId?{...u,passHash:hashPw(pw),mustChange:false}:u); return s; });
-    apiCall("trocarSenha",{ nova:pw }).catch(()=>{}); // atualiza a senha da tela de conexão
+    // Só marca como trocada de fato depois que o servidor confirmar — se a rede falhar,
+    // a pessoa fica sabendo na hora, em vez de "trocar" só localmente e travar no próximo login.
+    return apiCall("trocarSenha",{ nova:pw }).then(()=>{
+      patch((s)=>{ s.users=s.users.map((u)=>u.id===s.session.currentUserId?{...u,passHash:hashPw(pw),mustChange:false}:u); return s; });
+    });
   };
   const addUser=(nome,username,password,role,noPainel,naEquipe)=>{
     const login=(username||"").trim().toLowerCase();
@@ -779,8 +798,12 @@ function App({ inicial, aoSair, usuarioConectado }){
   };
   const resetUserPassword=(id,pw)=>{
     const alvo=state.users.find((u)=>u.id===id);
-    patch((s)=>{ s.users=s.users.map((u)=>u.id===id?{...u,passHash:hashPw(pw),mustChange:true}:u); return s; });
-    if(alvo) apiCall("redefinirSenha",{ user:alvo.username, senha:pw }).catch(()=>{});
+    if(!alvo) return Promise.reject(new Error("Usuário não encontrado."));
+    // Mesma lógica: só grava a senha local depois que a senha da tela de conexão (servidor)
+    // for atualizada com sucesso — evita a pessoa não conseguir entrar com a senha nova.
+    return apiCall("redefinirSenha",{ user:alvo.username, senha:pw }).then(()=>{
+      patch((s)=>{ s.users=s.users.map((u)=>u.id===id?{...u,passHash:hashPw(pw),mustChange:true}:u); return s; });
+    });
   };
 
   // Login unificado: quem entrou pela tela de conexão vira o usuário do app.
@@ -1231,15 +1254,19 @@ function Login({ users, onLogin }){
 }
 
 function ChangePasswordCard({ onSave, onCancel, forced, titulo, sub, salvarLabel }){
-  const [p1,setP1]=useState(""); const [p2,setP2]=useState(""); const [err,setErr]=useState("");
+  const [p1,setP1]=useState(""); const [p2,setP2]=useState(""); const [err,setErr]=useState(""); const [ocupado,setOcupado]=useState(false);
   const r1=useRef(), r2=useRef();
   const submit=(e)=>{
     if(e && e.preventDefault) e.preventDefault();
+    if(ocupado) return;
     const a=(p1 || (r1.current&&r1.current.value) || "");
     const b=(p2 || (r2.current&&r2.current.value) || "");
     if(a.length<4){ setErr("A senha deve ter ao menos 4 caracteres."); return; }
     if(a!==b){ setErr("As senhas não coincidem."); return; }
-    onSave(a);
+    setErr(""); setOcupado(true);
+    Promise.resolve(onSave(a))
+      .catch((erro)=>{ setErr(erro?.message || "Não foi possível salvar a senha agora. Confira a internet e tente de novo."); })
+      .finally(()=>setOcupado(false));
   };
   return (<form style={S.authCard} onSubmit={submit}>
     <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:18}}>
@@ -1254,8 +1281,9 @@ function ChangePasswordCard({ onSave, onCancel, forced, titulo, sub, salvarLabel
       name="confirm-password" autoComplete="new-password" onKeyDown={(e)=>{ if(e.key==="Enter") submit(e); }}/>
     {err && <div style={S.authErr}>{err}</div>}
     <div style={{display:"flex",gap:8,marginTop:14}}>
-      <button type="submit" style={{...S.primaryBtn,flex:1,justifyContent:"center",padding:"11px"}}>{salvarLabel || "Salvar senha"}</button>
-      {onCancel && <button type="button" style={S.ghostBtn} onClick={onCancel}>Cancelar</button>}
+      <button type="submit" disabled={ocupado} style={{...S.primaryBtn,flex:1,justifyContent:"center",padding:"11px",opacity:ocupado?0.7:1}}>
+        {ocupado?"Salvando…":(salvarLabel || "Salvar senha")}</button>
+      {onCancel && <button type="button" style={S.ghostBtn} onClick={onCancel} disabled={ocupado}>Cancelar</button>}
     </div>
   </form>);
 }
@@ -2657,7 +2685,9 @@ function UsersModal({ users, members, tasks=[], currentUser, onAdd, onReset, onP
     </div>
     {redefinirUser && <div style={S.overlay}><div onClick={(e)=>e.stopPropagation()}>
       <ChangePasswordCard titulo={`Redefinir senha de ${redefinirUser.username}`} sub="O usuário troca a senha no próximo acesso" salvarLabel="Redefinir senha"
-        onSave={(pw)=>{ onReset(redefinirUser.id,pw); setRedefinirUser(null); setOk(`Senha de ${redefinirUser.username} redefinida — ele troca no próximo acesso.`); }}
+        onSave={(pw)=>Promise.resolve(onReset(redefinirUser.id,pw)).then(()=>{
+          setRedefinirUser(null); setOk(`Senha de ${redefinirUser.username} redefinida — ele troca no próximo acesso.`);
+        })}
         onCancel={()=>setRedefinirUser(null)}/>
     </div></div>}
     {editarAlvo && <EditarPessoaModal alvo={editarAlvo} users={users}
@@ -2701,8 +2731,8 @@ function EditarPessoaModal({ alvo, users, onSalvar, onFechar }){
       <input style={{...S.authInput,margin:0}} autoFocus value={nome} onChange={(e)=>{setNome(e.target.value);setErr("");}} />
       {temLogin && <>
         <div style={{...S.launchLabel,marginTop:10}}>Usuário (login)</div>
-        <input style={{...S.authInput,margin:0}} value={login} onChange={(e)=>{setLogin(e.target.value);setErr("");}} />
-        <div style={{fontSize:11.5,color:"var(--text-muted)",marginTop:4}}>É com esse login que a pessoa entra na tela de conexão.</div>
+        <input style={{...S.authInput,margin:0,background:"var(--surface-alt)",color:"var(--text-muted)",cursor:"not-allowed"}} value={login} disabled/>
+        <div style={{fontSize:11.5,color:"var(--text-muted)",marginTop:4}}>É com esse login que a pessoa entra na tela de conexão — por segurança, não dá para mudar por aqui depois de criado (evita que a pessoa fique sem conseguir entrar). Para trocar, use "Redefinir senha" ou exclua e cadastre a pessoa de novo com o login certo.</div>
       </>}
       {err && <div style={{...S.authErr,marginTop:10}}>{err}</div>}
       <div style={{display:"flex",gap:8,marginTop:16}}>
