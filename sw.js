@@ -1,67 +1,63 @@
-const CACHE_NAME = "equipe-gestao-v1";
-const APP_SHELL = [
-  "/",
-  "/index.html",
-  "/manifest.json",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png"
-];
+// Service worker do app "Equipe · Gestão de Trabalho".
+//
+// Regra principal: a página em si (o index.html) SEMPRE tenta vir da rede
+// primeiro. Isso é o que evita o problema de alguém ficar travado numa
+// versão antiga do app depois que você publica uma atualização — só cai
+// pro que está guardado no aparelho se a pessoa estiver sem internet.
+// Outros arquivos (ícones, fontes) usam o que já está guardado e atualizam
+// por trás, pra abrir rápido sem travar o uso offline.
+//
+// Você não precisa mexer neste arquivo a cada atualização do app — ele já
+// busca a versão nova sozinho. Só troque o número da linha abaixo se um dia
+// quiser forçar a limpeza total do cache de todo mundo de uma vez.
+const CACHE_NAME = "equipe-cache-v2";
 
-// Instala e guarda o "esqueleto" do app em cache
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
-  );
+  // Assume a versão nova assim que ela terminar de instalar, sem esperar
+  // todas as abas antigas fecharem.
   self.skipWaiting();
 });
 
-// Remove caches antigos quando uma nova versão é publicada
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((key) => key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
-      )
-    )
+    caches.keys()
+      .then((nomes) => Promise.all(nomes.filter((n) => n !== CACHE_NAME).map((n) => caches.delete(n))))
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener("fetch", (event) => {
-  const { request } = event;
+  const req = event.request;
+  if (req.method !== "GET") return;
 
-  // Nunca cachear chamadas à API — sempre precisam de dados atuais do servidor
-  if (request.method !== "GET" || request.url.includes("/api")) {
-    return;
-  }
-
-  // Para navegação/HTML: tenta rede primeiro (versão mais nova), cai para cache se offline
-  if (request.mode === "navigate") {
+  // Navegação (abrir o app, apertar F5, etc.): rede primeiro, cache só de reserva.
+  if (req.mode === "navigate") {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          return response;
+      fetch(req)
+        .then((res) => {
+          const copia = res.clone();
+          caches.open(CACHE_NAME).then((c) => c.put(req, copia));
+          return res;
         })
-        .catch(() => caches.match("/index.html"))
+        .catch(() => caches.match(req).then((r) => r || caches.match("/index.html")))
     );
     return;
   }
 
-  // Para outros assets estáticos: cache primeiro, com atualização em segundo plano
+  // Demais arquivos (ícones, manifesto, fontes): usa o que já tem guardado
+  // pra ser rápido, e atualiza o cache por trás pra próxima vez.
   event.respondWith(
-    caches.match(request).then((cached) => {
-      const fetchPromise = fetch(request)
-        .then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          return response;
+    caches.match(req).then((emCache) => {
+      const buscaNaRede = fetch(req)
+        .then((res) => {
+          if (res && res.status === 200) {
+            const copia = res.clone();
+            caches.open(CACHE_NAME).then((c) => c.put(req, copia));
+          }
+          return res;
         })
-        .catch(() => cached);
-      return cached || fetchPromise;
+        .catch(() => emCache);
+      return emCache || buscaNaRede;
     })
   );
 });
