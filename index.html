@@ -901,6 +901,11 @@ function App({ inicial, aoSair, usuarioConectado }){
   const MODO_FINANCEIRO="__financeiro__";
   const emReunioes = state.activeProject===MODO_REUNIOES;
   const emFinanceiro = isPrivileged && state.activeProject===MODO_FINANCEIRO;
+  // Guarda qual projeto/reuniões estava aberto antes de entrar na Gestão Financeira,
+  // pra voltar exatamente pra lá ao clicar de novo em "Gestão de Trabalho".
+  const ultimoProjetoRef=useRef(state.activeProject!==MODO_FINANCEIRO?state.activeProject:null);
+  useEffect(()=>{ if(state.activeProject!==MODO_FINANCEIRO) ultimoProjetoRef.current=state.activeProject; },[state.activeProject]);
+  const voltarGestaoTrabalho=()=>patch((s)=>({...s,activeProject:ultimoProjetoRef.current ?? (s.projects[0]?.id ?? MODO_REUNIOES)}));
   const project=state.projects.find((p)=>p.id===state.activeProject);
   const memberById=(id)=>state.members.find((m)=>m.id===id);
   const catalog=state.taskCatalog||[];
@@ -1120,6 +1125,14 @@ function App({ inicial, aoSair, usuarioConectado }){
           <div style={S.brand}><div style={S.brandMark}>◆</div>
             <div><div style={S.brandName}>Equipe</div><div style={S.brandSub}>gestão de trabalho</div></div></div>
 
+          {isPrivileged && (<div style={{...S.abasLat,marginBottom:14}}>
+            <button style={{...S.abaLat,...(!emFinanceiro?S.abaLatOn:{})}} onClick={voltarGestaoTrabalho}>
+              <Ic n="grid" s={14} c={!emFinanceiro?"#3B3AC9":"var(--text-secondary)"}/> Trabalho</button>
+            <button style={{...S.abaLat,...(emFinanceiro?S.abaLatOn:{})}} onClick={()=>patch((s)=>({...s,activeProject:MODO_FINANCEIRO}))}>
+              <Ic n="cash" s={14} c={emFinanceiro?"#3B3AC9":"var(--text-secondary)"}/> Financeiro</button>
+          </div>)}
+
+          {!emFinanceiro && (<React.Fragment>
           <div style={S.sideLabel}>
             <span style={{display:"inline-flex",alignItems:"center",gap:5,cursor:"pointer"}} onClick={()=>setProjAberto((v)=>!v)}>
               <Ic n="chev" s={13} c="var(--text-muted)" style={{transform:projAberto?"none":"rotate(-90deg)",transition:"transform .15s"}}/>
@@ -1150,17 +1163,16 @@ function App({ inicial, aoSair, usuarioConectado }){
             <div style={S.projRecolhido} onClick={()=>setProjAberto(true)}>
               {state.projects.length} projeto{state.projects.length===1?"":"s"} · toque para mostrar
             </div>)}
+          </React.Fragment>)}
         </div>
 
         <div style={S.sideFooter}>
-          {isPrivileged && (<div style={S.abasLat}>
+          {isPrivileged && !emFinanceiro && (<div style={S.abasLat}>
             <button style={{...S.abaLat,...(state.view==="board"?S.abaLatOn:{})}} onClick={()=>patch((s)=>({...s,view:"board"}))}>
               <Ic n="grid" s={14} c={state.view==="board"?"#3B3AC9":"var(--text-secondary)"}/> Quadro</button>
             <button style={{...S.abaLat,...(state.view==="dash"?S.abaLatOn:{})}} onClick={()=>patch((s)=>({...s,view:"dash"}))}>
               <Ic n="bar" s={14} c={state.view==="dash"?"#3B3AC9":"var(--text-secondary)"}/> Painel</button>
           </div>)}
-          {isPrivileged && (<button style={S.sideBtn} onClick={()=>patch((s)=>({...s,activeProject:MODO_FINANCEIRO}))}>
-            <Ic n="cash" s={15} c={emFinanceiro?"#3B3AC9":"var(--text-secondary)"}/> <span style={emFinanceiro?{color:"#3B3AC9",fontWeight:700}:{}}>Gestão Financeira</span></button>)}
           {isPrivileged && (<div style={{position:"relative"}} ref={refMenuRelatorio}>
             <button style={S.sideBtn} disabled={gerandoPdf} onClick={()=>setMenuRelatorio((v)=>!v)}>
               <Ic n="flag" s={15} c="var(--text-secondary)"/> {gerandoPdf?"Gerando…":"Relatório PDF"}
@@ -1171,10 +1183,10 @@ function App({ inicial, aoSair, usuarioConectado }){
               <button style={{...S.ghostBtn,display:"block",width:"100%",textAlign:"left",padding:"9px 11px",color:"var(--text)",borderTop:"1px solid var(--border-soft)"}} onClick={()=>baixarRelatorio("financeiro")}>Gestão Financeira</button>
             </div>)}
           </div>)}
-          <button style={{...S.sideBtn,...(naoLidas>0?{borderColor:"var(--accent-tint-border)",background:"var(--accent-tint-bg)"}:{})}} onClick={()=>{ setShowMsgs(true); if(myMemberId&&naoLidas>0) marcarLidas(myMemberId); }}>
+          {!emFinanceiro && (<button style={{...S.sideBtn,...(naoLidas>0?{borderColor:"var(--accent-tint-border)",background:"var(--accent-tint-bg)"}:{})}} onClick={()=>{ setShowMsgs(true); if(myMemberId&&naoLidas>0) marcarLidas(myMemberId); }}>
             <Ic n="mail" s={15} c="var(--text-secondary)"/> {isMaster?"Mensagens":"Minhas mensagens"}
             {naoLidas>0 && <span style={S.badgeMsg}>{naoLidas}</span>}
-          </button>
+          </button>)}
           {isMaster && <button style={S.sideBtn} onClick={()=>setShowCatalog(true)}><Ic n="list" s={15} c="var(--text-secondary)"/> Cadastrar tarefa</button>}
           {isMaster && <button style={S.sideBtn} onClick={()=>setShowUsers(true)}><Ic n="userplus" s={15} c="var(--text-secondary)"/> Cadastrar usuário</button>}
           <div style={S.userChip}>
