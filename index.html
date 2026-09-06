@@ -955,7 +955,7 @@ function App({ inicial, aoSair, usuarioConectado }){
 
   // ---------- Gestão Financeira (só master/gerente) ----------
   const addFinCard=(col,title)=>{ if(!title||!title.trim())return;
-    patch((s)=>{ s.financeiro=[...(s.financeiro||[]),{ id:uid(), col, title:title.trim(), notas:"", createdAt:Date.now() }]; return s; }); };
+    patch((s)=>{ s.financeiro=[...(s.financeiro||[]),{ id:uid(), col, title:title.trim(), valor:0, observacao:"", createdAt:Date.now() }]; return s; }); };
   const moveFinCard=(id,col)=>patch((s)=>{ s.financeiro=(s.financeiro||[]).map((c)=>c.id===id?{...c,col}:c); return s; });
   const updateFinCard=(id,fields)=>patch((s)=>{ s.financeiro=(s.financeiro||[]).map((c)=>c.id===id?{...c,...fields}:c); return s; });
   const removeFinCard=(id)=>patch((s)=>{ s.financeiro=(s.financeiro||[]).filter((c)=>c.id!==id); return s; });
@@ -1256,13 +1256,18 @@ function App({ inicial, aoSair, usuarioConectado }){
 }
 
 // ---------- Gestão Financeira ----------
-function FinCard({ card, onUpdate, onRemove, onDragStart, onDragEnd }){
+const formatarReal=(centavos)=>((centavos||0)/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+function FinCard({ card, col, nextCol, prevCol, onUpdate, onRemove, onDragStart, onDragEnd }){
   const [editando,setEditando]=useState(false);
   const [titulo,setTitulo]=useState(card.title);
-  const [notaAberta,setNotaAberta]=useState(false);
-  const [notas,setNotas]=useState(card.notas||"");
+  const [aberto,setAberto]=useState(false);
+  const [valorCent,setValorCent]=useState(card.valor||0);
+  const [observacao,setObservacao]=useState(card.observacao ?? card.notas ?? "");
   const salvarTitulo=()=>{ const t=titulo.trim(); if(t) onUpdate({title:t}); else setTitulo(card.title); setEditando(false); };
-  const salvarNotas=()=>{ onUpdate({notas}); setNotaAberta(false); };
+  const mudarValor=(e)=>{ const digitos=e.target.value.replace(/\D/g,""); const cent=digitos?parseInt(digitos,10):0;
+    setValorCent(cent); onUpdate({valor:cent}); };
+  const salvarObservacao=()=>{ onUpdate({observacao}); setAberto(false); };
+  const temAlgo = valorCent>0 || (observacao&&observacao.trim());
   return (
     <div className="card" draggable onDragStart={onDragStart} onDragEnd={onDragEnd}
       style={{...S.finCard}}>
@@ -1276,19 +1281,32 @@ function FinCard({ card, onUpdate, onRemove, onDragStart, onDragEnd }){
           <button className="card-del" style={S.cardDel} onClick={onRemove}><Ic n="x" s={12}/></button>
         </div>
       )}
-      {notaAberta ? (
-        <textarea autoFocus style={{...S.authInput,margin:"6px 0 0",minHeight:56,resize:"vertical",fontSize:12}} value={notas}
-          onChange={(e)=>setNotas(e.target.value)} onBlur={salvarNotas} placeholder="Anotações, valores, contato…"/>
+      {aberto ? (
+        <div style={{marginTop:6,display:"flex",flexDirection:"column",gap:6}}>
+          <input inputMode="numeric" autoFocus style={{...S.authInput,margin:0,fontSize:13,fontWeight:700,color:"#1F7A4C"}}
+            value={valorCent>0?formatarReal(valorCent):""} onChange={mudarValor} placeholder="Valor: R$ 0,00"/>
+          <textarea style={{...S.authInput,margin:0,minHeight:52,resize:"vertical",fontSize:12}} value={observacao}
+            onChange={(e)=>setObservacao(e.target.value)} onBlur={salvarObservacao} placeholder="Observação, contato, prazo…"/>
+        </div>
       ) : (
-        <div style={{display:"flex",alignItems:"center",gap:5,marginTop:6,cursor:"pointer",color:"var(--text-muted)"}} onClick={()=>setNotaAberta(true)}>
+        <div style={{display:"flex",alignItems:"center",gap:6,marginTop:6,cursor:"pointer"}} onClick={()=>setAberto(true)}>
           <Ic n="list" s={13} c="var(--text-muted)"/>
-          <span style={{fontSize:11,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{card.notas?card.notas:"Nada anotado ainda."}</span>
+          {temAlgo ? (<React.Fragment>
+            {valorCent>0 && <span style={{fontSize:11.5,fontWeight:700,color:"#1F7A4C",flexShrink:0}}>{formatarReal(valorCent)}</span>}
+            {observacao && observacao.trim() && <span style={{fontSize:11,color:"var(--text-muted)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{valorCent>0?" · ":""}{observacao}</span>}
+          </React.Fragment>) : <span style={{fontSize:11,color:"var(--text-muted)"}}>Nada anotado ainda.</span>}
         </div>
       )}
+      {nextCol && <button style={{...S.doneBtn,background:nextCol.tint,fontSize:11.5,padding:"6px 8px",marginTop:8}}
+        onClick={()=>onUpdate({col:nextCol.id})} title={`Enviar para ${nextCol.name}`}>
+        <Ic n="check" s={12} c="#fff"/> Enviar para {nextCol.name}</button>}
+      {prevCol && <button style={{...S.cancelBtn,fontSize:11.5,padding:"5px 8px",marginTop:6}}
+        onClick={()=>onUpdate({col:prevCol.id})} title={`Voltar para ${prevCol.name}`}>
+        <Ic n="undo" s={12} c="var(--icon-muted)"/> Voltar para {prevCol.name}</button>}
     </div>
   );
 }
-function FinColuna({ col, cards, drag, dragOver, setDrag, setDragOver, onDrop, onAdd, onUpdate, onRemove }){
+function FinColuna({ col, cards, nextCol, prevCol, drag, dragOver, setDrag, setDragOver, onDrop, onAdd, onUpdate, onRemove }){
   const [novo,setNovo]=useState(""); const [addAberto,setAddAberto]=useState(false);
   const over=dragOver===col.id;
   const enviar=()=>{ if(!novo.trim())return; onAdd(col.id,novo); setNovo(""); };
@@ -1298,7 +1316,7 @@ function FinColuna({ col, cards, drag, dragOver, setDrag, setDragOver, onDrop, o
       <div style={S.colHead}><span style={{...S.dot,background:col.tint}}/><span style={{...S.colName,fontSize:12,letterSpacing:".01em"}}>{col.name}</span>
         <span style={{...S.colCount,color:col.tint,background:col.tint+"18"}}>{cards.length}</span></div>
       <div style={S.cardList}>
-        {cards.map((c)=>(<FinCard key={c.id} card={c} onUpdate={(f)=>onUpdate(c.id,f)} onRemove={()=>onRemove(c.id)}
+        {cards.map((c)=>(<FinCard key={c.id} card={c} col={col} nextCol={nextCol} prevCol={prevCol} onUpdate={(f)=>onUpdate(c.id,f)} onRemove={()=>onRemove(c.id)}
           onDragStart={()=>setDrag(c.id)} onDragEnd={()=>{setDrag(null);setDragOver(null);}}/>))}
         {cards.length===0 && <p style={S.colEmpty}>Nenhum cartão</p>}
       </div>
@@ -1318,8 +1336,9 @@ function FinColuna({ col, cards, drag, dragOver, setDrag, setDragOver, onDrop, o
 function FinanceiroBoard({ cards, onAdd, onUpdate, onRemove, drag, setDrag, dragOver, setDragOver, onDrop }){
   return (
     <div style={S.board}>
-      {FIN_COLUMNS.map((col)=>(
+      {FIN_COLUMNS.map((col,i)=>(
         <FinColuna key={col.id} col={col} cards={cards.filter((c)=>c.col===col.id)}
+          nextCol={FIN_COLUMNS[i+1]||null} prevCol={FIN_COLUMNS[i-1]||null}
           drag={drag} dragOver={dragOver} setDrag={setDrag} setDragOver={setDragOver} onDrop={onDrop}
           onAdd={onAdd} onUpdate={onUpdate} onRemove={onRemove}/>
       ))}
