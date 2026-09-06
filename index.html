@@ -1242,7 +1242,7 @@ function App({ inicial, aoSair, usuarioConectado }){
 
         {emFinanceiro ? (
           (state.viewFinanceiro||"board")==="board" ? (
-            <FinanceiroBoard cards={state.financeiro||[]} onAdd={addFinCard} onUpdate={updateFinCard} onRemove={removeFinCard}
+            <FinanceiroBoard cards={state.financeiro||[]} catalog={catalog} onAdd={addFinCard} onUpdate={updateFinCard} onRemove={removeFinCard}
               drag={dragFin} setDrag={setDragFin} dragOver={dragOverFin} setDragOver={setDragOverFin} onDrop={(col)=>{ if(dragFin) moveFinCard(dragFin,col); setDragFin(null); setDragOverFin(null); }}/>
           ) : (
             <FinanceiroDashboard cards={state.financeiro||[]}/>
@@ -1361,7 +1361,7 @@ function App({ inicial, aoSair, usuarioConectado }){
 
 // ---------- Gestão Financeira ----------
 const formatarReal=(centavos)=>((centavos||0)/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
-function FinCard({ card, col, nextCol, prevCol, onUpdate, onRemove, onDragStart, onDragEnd }){
+function FinCard({ card, col, catalog, nextCol, prevCol, onUpdate, onRemove, onDragStart, onDragEnd }){
   const [editando,setEditando]=useState(false);
   const [titulo,setTitulo]=useState(card.title);
   const [notaAberta,setNotaAberta]=useState(false);
@@ -1396,7 +1396,7 @@ function FinCard({ card, col, nextCol, prevCol, onUpdate, onRemove, onDragStart,
           <div style={{display:"flex",flexDirection:"column",gap:5}}>
             {itens.map((item)=>(
               <div key={item.id} style={{display:"flex",gap:5,alignItems:"center"}}>
-                <input style={{...S.authInput,margin:0,fontSize:11.5,flex:1,minWidth:0}} placeholder="O que é o serviço…" value={item.descricao}
+                <input list={`servicos-${card.id}`} style={{...S.authInput,margin:0,fontSize:11.5,flex:1,minWidth:0}} placeholder="O que é o serviço…" value={item.descricao}
                   onChange={(e)=>mudarDescricao(item.id,e.target.value)} onBlur={()=>salvarDescricao(item.id)}/>
                 <input inputMode="numeric" style={{...S.authInput,margin:0,fontSize:11.5,fontWeight:700,color:"#1F7A4C",width:96,flexShrink:0}}
                   value={item.valor>0?formatarReal(item.valor):""} onChange={(e)=>mudarValorItem(item.id,e)} placeholder="R$ 0,00"/>
@@ -1404,6 +1404,11 @@ function FinCard({ card, col, nextCol, prevCol, onUpdate, onRemove, onDragStart,
               </div>
             ))}
           </div>
+          {catalog && catalog.length>0 && (
+            <datalist id={`servicos-${card.id}`}>
+              {catalog.map((c)=>(<option key={c.id} value={c.title}/>))}
+            </datalist>
+          )}
           <button style={{...S.ghostBtn,padding:"5px 2px",fontSize:11.5,textAlign:"left"}} onClick={addItem}>
             <Ic n="plus" s={12} c="var(--text-muted)" style={{verticalAlign:-2,marginRight:4}}/> Adicionar item</button>
           {itens.length>0 && <div style={{display:"flex",justifyContent:"space-between",fontSize:12.5,fontWeight:800,borderTop:"1px solid var(--border-soft2)",paddingTop:6}}>
@@ -1431,7 +1436,7 @@ function FinCard({ card, col, nextCol, prevCol, onUpdate, onRemove, onDragStart,
     </div>
   );
 }
-function FinColuna({ col, cards, nextCol, prevCol, drag, dragOver, setDrag, setDragOver, onDrop, onAdd, onUpdate, onRemove }){
+function FinColuna({ col, cards, catalog, nextCol, prevCol, drag, dragOver, setDrag, setDragOver, onDrop, onAdd, onUpdate, onRemove }){
   const [novo,setNovo]=useState(""); const [addAberto,setAddAberto]=useState(false);
   const over=dragOver===col.id;
   const enviar=()=>{ if(!novo.trim())return; onAdd(col.id,novo); setNovo(""); };
@@ -1441,7 +1446,7 @@ function FinColuna({ col, cards, nextCol, prevCol, drag, dragOver, setDrag, setD
       <div style={S.colHead}><span style={{...S.dot,background:col.tint}}/><span style={{...S.colName,fontSize:12,letterSpacing:".01em"}}>{col.name}</span>
         <span style={{...S.colCount,color:col.tint,background:col.tint+"18"}}>{cards.length}</span></div>
       <div style={S.cardList}>
-        {cards.map((c)=>(<FinCard key={c.id} card={c} col={col} nextCol={nextCol} prevCol={prevCol} onUpdate={(f)=>onUpdate(c.id,f)} onRemove={()=>onRemove(c.id)}
+        {cards.map((c)=>(<FinCard key={c.id} card={c} col={col} catalog={catalog} nextCol={nextCol} prevCol={prevCol} onUpdate={(f)=>onUpdate(c.id,f)} onRemove={()=>onRemove(c.id)}
           onDragStart={()=>setDrag(c.id)} onDragEnd={()=>{setDrag(null);setDragOver(null);}}/>))}
         {cards.length===0 && <p style={S.colEmpty}>Nenhum cartão</p>}
       </div>
@@ -1458,11 +1463,11 @@ function FinColuna({ col, cards, nextCol, prevCol, drag, dragOver, setDrag, setD
     </section>
   );
 }
-function FinanceiroBoard({ cards, onAdd, onUpdate, onRemove, drag, setDrag, dragOver, setDragOver, onDrop }){
+function FinanceiroBoard({ cards, catalog, onAdd, onUpdate, onRemove, drag, setDrag, dragOver, setDragOver, onDrop }){
   return (
     <div style={S.board}>
       {FIN_COLUMNS.map((col,i)=>(
-        <FinColuna key={col.id} col={col} cards={cards.filter((c)=>c.col===col.id)}
+        <FinColuna key={col.id} col={col} cards={cards.filter((c)=>c.col===col.id)} catalog={catalog}
           nextCol={FIN_COLUMNS[i+1]||null} prevCol={FIN_COLUMNS[i-1]||null}
           drag={drag} dragOver={dragOver} setDrag={setDrag} setDragOver={setDragOver} onDrop={onDrop}
           onAdd={onAdd} onUpdate={onUpdate} onRemove={onRemove}/>
