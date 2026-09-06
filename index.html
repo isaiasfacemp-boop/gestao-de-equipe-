@@ -1018,7 +1018,7 @@ function App({ inicial, aoSair, usuarioConectado }){
   // ---------- Gestão Financeira (só master/gerente) ----------
   const FIN_ANDAMENTO_IDX=FIN_COLUMNS.findIndex((c)=>c.id==="em_andamento_fin");
   const addFinCard=(col,title)=>{ if(!title||!title.trim())return;
-    patch((s)=>{ s.financeiro=[...(s.financeiro||[]),{ id:uid(), col, title:title.trim(), notas:"", valor:0, createdAt:Date.now() }]; return s; }); };
+    patch((s)=>{ s.financeiro=[...(s.financeiro||[]),{ id:uid(), col, title:title.trim(), notas:"", itens:[], valor:0, createdAt:Date.now() }]; return s; }); };
   // Sempre que o cartão muda de coluna, guarda quando ele chegou em "Em andamento" (é a partir
   // daí que o valor entra nos números do Painel) e quando chegou em "Arquivado" (conta como
   // recebido). Se voltar de Arquivado pra trás, tira a marca de recebido.
@@ -1366,12 +1366,18 @@ function FinCard({ card, col, nextCol, prevCol, onUpdate, onRemove, onDragStart,
   const [titulo,setTitulo]=useState(card.title);
   const [notaAberta,setNotaAberta]=useState(false);
   const [notas,setNotas]=useState(card.notas ?? card.observacao ?? "");
-  const [valorCent,setValorCent]=useState(card.valor||0);
+  const [itens,setItens]=useState(()=> (card.itens&&card.itens.length) ? card.itens : (card.valor? [{id:uid(),descricao:"",valor:card.valor}] : []));
   const salvarTitulo=()=>{ const t=titulo.trim(); if(t) onUpdate({title:t}); else setTitulo(card.title); setEditando(false); };
-  const salvarNotas=()=>{ onUpdate({notas}); setNotaAberta(false); };
-  const mudarValor=(e)=>{ const digitos=e.target.value.replace(/\D/g,""); const cent=digitos?parseInt(digitos,10):0;
-    setValorCent(cent); onUpdate({valor:cent}); };
-  const temAlgo = valorCent>0 || (notas&&notas.trim());
+  const salvarNotas=()=>{ onUpdate({notas}); };
+  const total=itens.reduce((a,i)=>a+(i.valor||0),0);
+  const salvarItens=(novos)=>{ setItens(novos); onUpdate({itens:novos, valor:novos.reduce((a,i)=>a+(i.valor||0),0)}); };
+  const addItem=()=>salvarItens([...itens,{id:uid(),descricao:"",valor:0}]);
+  const removerItem=(id)=>salvarItens(itens.filter((i)=>i.id!==id));
+  const mudarDescricao=(id,val)=>setItens((prev)=>prev.map((i)=>i.id===id?{...i,descricao:val}:i));
+  const salvarDescricao=(id)=>salvarItens(itens);
+  const mudarValorItem=(id,e)=>{ const digitos=e.target.value.replace(/\D/g,""); const cent=digitos?parseInt(digitos,10):0;
+    const novos=itens.map((i)=>i.id===id?{...i,valor:cent}:i); salvarItens(novos); };
+  const temAlgo = total>0 || (notas&&notas.trim());
   return (
     <div className="card" draggable onDragStart={onDragStart} onDragEnd={onDragEnd}
       style={{...S.finCard}}>
@@ -1387,17 +1393,32 @@ function FinCard({ card, col, nextCol, prevCol, onUpdate, onRemove, onDragStart,
       )}
       {notaAberta ? (
         <div style={{marginTop:6,display:"flex",flexDirection:"column",gap:6}}>
-          <input inputMode="numeric" style={{...S.authInput,margin:0,fontSize:12.5,fontWeight:700,color:"#1F7A4C"}}
-            value={valorCent>0?formatarReal(valorCent):""} onChange={mudarValor} placeholder="Valor: R$ 0,00"/>
-          <textarea autoFocus style={{...S.authInput,margin:0,minHeight:52,resize:"vertical",fontSize:12}} value={notas}
+          <div style={{display:"flex",flexDirection:"column",gap:5}}>
+            {itens.map((item)=>(
+              <div key={item.id} style={{display:"flex",gap:5,alignItems:"center"}}>
+                <input style={{...S.authInput,margin:0,fontSize:11.5,flex:1,minWidth:0}} placeholder="O que é o serviço…" value={item.descricao}
+                  onChange={(e)=>mudarDescricao(item.id,e.target.value)} onBlur={()=>salvarDescricao(item.id)}/>
+                <input inputMode="numeric" style={{...S.authInput,margin:0,fontSize:11.5,fontWeight:700,color:"#1F7A4C",width:96,flexShrink:0}}
+                  value={item.valor>0?formatarReal(item.valor):""} onChange={(e)=>mudarValorItem(item.id,e)} placeholder="R$ 0,00"/>
+                <button style={{...S.cardDel,position:"static",opacity:.7}} onClick={()=>removerItem(item.id)} title="Remover item"><Ic n="x" s={12}/></button>
+              </div>
+            ))}
+          </div>
+          <button style={{...S.ghostBtn,padding:"5px 2px",fontSize:11.5,textAlign:"left"}} onClick={addItem}>
+            <Ic n="plus" s={12} c="var(--text-muted)" style={{verticalAlign:-2,marginRight:4}}/> Adicionar item</button>
+          {itens.length>0 && <div style={{display:"flex",justifyContent:"space-between",fontSize:12.5,fontWeight:800,borderTop:"1px solid var(--border-soft2)",paddingTop:6}}>
+            <span style={{color:"var(--text-secondary)"}}>Total</span><span style={{color:"#1F7A4C"}}>{formatarReal(total)}</span>
+          </div>}
+          <textarea style={{...S.authInput,margin:0,minHeight:48,resize:"vertical",fontSize:12}} value={notas}
             onChange={(e)=>setNotas(e.target.value)} onBlur={salvarNotas} placeholder="Anotações, contato, prazo…"/>
+          <button style={{...S.ghostBtn,padding:"4px 2px",fontSize:11.5,alignSelf:"flex-end"}} onClick={()=>setNotaAberta(false)}>Fechar</button>
         </div>
       ) : (
         <div style={{display:"flex",alignItems:"center",gap:5,marginTop:6,cursor:"pointer",color:"var(--text-muted)"}} onClick={()=>setNotaAberta(true)}>
           <Ic n="list" s={13} c="var(--text-muted)"/>
           {temAlgo ? (<React.Fragment>
-            {valorCent>0 && <span style={{fontSize:11.5,fontWeight:700,color:"#1F7A4C",flexShrink:0}}>{formatarReal(valorCent)}</span>}
-            {notas && notas.trim() && <span style={{fontSize:11,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{valorCent>0?" · ":""}{notas}</span>}
+            {total>0 && <span style={{fontSize:11.5,fontWeight:700,color:"#1F7A4C",flexShrink:0}}>{formatarReal(total)}</span>}
+            {notas && notas.trim() && <span style={{fontSize:11,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{total>0?" · ":""}{notas}</span>}
           </React.Fragment>) : <span style={{fontSize:11}}>Nada anotado ainda.</span>}
         </div>
       )}
