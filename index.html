@@ -489,6 +489,46 @@ function gerarRelatorioEquipePdf(tasks, members, projects){
   doc.save(`relatorio-equipe-${agora.toISOString().slice(0,10)}.pdf`);
 }
 
+// ---------- Relatório PDF da Gestão Financeira ----------
+function gerarRelatorioFinanceiroPdf(cards){
+  const { jsPDF }=window.jspdf;
+  const doc=new jsPDF({ orientation:"landscape" });
+  const largura=doc.internal.pageSize.getWidth();
+  const agora=new Date();
+
+  doc.setFillColor(31,122,76); doc.rect(0,0,largura,24,"F");
+  doc.setTextColor(255); doc.setFontSize(18); doc.text("Relatório da Gestão Financeira", 14, 15);
+  doc.setFontSize(9.5);
+  doc.text(`Gerado em ${agora.toLocaleDateString("pt-BR")} às ${agora.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}`, 14, 21);
+  doc.setTextColor(0);
+
+  doc.autoTable({
+    startY:32,
+    head:[["Etapa","Cartões"]],
+    body:FIN_COLUMNS.map((col)=>[col.name, String(cards.filter((c)=>c.col===col.id).length)]),
+    theme:"grid", styles:{fontSize:9.5}, headStyles:{fillColor:[31,122,76]},
+    tableWidth:(largura-28)/2, margin:{left:14},
+  });
+
+  const porEtapa=FIN_COLUMNS.flatMap((col)=>cards.filter((c)=>c.col===col.id).map((c)=>[col.name, c.title, c.notas||"—", new Date(c.createdAt).toLocaleDateString("pt-BR")]));
+  doc.autoTable({
+    startY:doc.lastAutoTable.finalY+10,
+    head:[["Etapa","Cliente/obra","Anotações","Criado em"]],
+    body: porEtapa.length? porEtapa : [["—","Nenhum cartão cadastrado ainda","",""]],
+    theme:"grid", styles:{fontSize:9}, headStyles:{fillColor:[31,122,76]}, margin:{left:14,right:14},
+  });
+
+  const totalPaginas=doc.internal.getNumberOfPages();
+  for(let i=1;i<=totalPaginas;i++){
+    doc.setPage(i);
+    doc.setFontSize(8); doc.setTextColor(150);
+    doc.text(`Página ${i} de ${totalPaginas}`, largura-14, doc.internal.pageSize.getHeight()-8, {align:"right"});
+    doc.setTextColor(0);
+  }
+
+  doc.save(`relatorio-financeiro-${agora.toISOString().slice(0,10)}.pdf`);
+}
+
 // ---------- Storage ----------
 // ---------- Conexão com o servidor (Netlify Function + Neon) ----------
 // Guarda o token da sessão do servidor (obtido no login de conexão).
@@ -685,6 +725,22 @@ function App({ inicial, aoSair, usuarioConectado }){
   const [showMsgs,setShowMsgs]=useState(false);
   const [membroTarefas,setMembroTarefas]=useState(null);
   const [gerandoPdf,setGerandoPdf]=useState(false);
+  const [menuRelatorio,setMenuRelatorio]=useState(false);
+  const refMenuRelatorio=useRef();
+  useEffect(()=>{
+    if(!menuRelatorio) return;
+    const h=(e)=>{ if(refMenuRelatorio.current && !refMenuRelatorio.current.contains(e.target)) setMenuRelatorio(false); };
+    document.addEventListener("mousedown",h);
+    return ()=>document.removeEventListener("mousedown",h);
+  },[menuRelatorio]);
+  const baixarRelatorio=(tipo)=>{
+    setMenuRelatorio(false); setGerandoPdf(true);
+    try{
+      if(tipo==="financeiro") gerarRelatorioFinanceiroPdf(state.financeiro||[]);
+      else gerarRelatorioEquipePdf(state.tasks, state.members, state.projects);
+    }catch(e){ alert("Não foi possível gerar o PDF."); }
+    finally{ setGerandoPdf(false); }
+  };
   const [projAberto,setProjAberto]=useState(true);
   const [showNewProj,setShowNewProj]=useState(false);
   const [confirmarExcluir,setConfirmarExcluir]=useState(null);
@@ -955,7 +1011,7 @@ function App({ inicial, aoSair, usuarioConectado }){
 
   // ---------- Gestão Financeira (só master/gerente) ----------
   const addFinCard=(col,title)=>{ if(!title||!title.trim())return;
-    patch((s)=>{ s.financeiro=[...(s.financeiro||[]),{ id:uid(), col, title:title.trim(), valor:0, observacao:"", createdAt:Date.now() }]; return s; }); };
+    patch((s)=>{ s.financeiro=[...(s.financeiro||[]),{ id:uid(), col, title:title.trim(), notas:"", createdAt:Date.now() }]; return s; }); };
   const moveFinCard=(id,col)=>patch((s)=>{ s.financeiro=(s.financeiro||[]).map((c)=>c.id===id?{...c,col}:c); return s; });
   const updateFinCard=(id,fields)=>patch((s)=>{ s.financeiro=(s.financeiro||[]).map((c)=>c.id===id?{...c,...fields}:c); return s; });
   const removeFinCard=(id)=>patch((s)=>{ s.financeiro=(s.financeiro||[]).filter((c)=>c.id!==id); return s; });
@@ -1105,8 +1161,16 @@ function App({ inicial, aoSair, usuarioConectado }){
           </div>)}
           {isPrivileged && (<button style={S.sideBtn} onClick={()=>patch((s)=>({...s,activeProject:MODO_FINANCEIRO}))}>
             <Ic n="cash" s={15} c={emFinanceiro?"#3B3AC9":"var(--text-secondary)"}/> <span style={emFinanceiro?{color:"#3B3AC9",fontWeight:700}:{}}>Gestão Financeira</span></button>)}
-          {isPrivileged && (<button style={S.sideBtn} disabled={gerandoPdf} onClick={()=>{ setGerandoPdf(true); try{ gerarRelatorioEquipePdf(state.tasks, state.members, state.projects); }catch(e){ alert("Não foi possível gerar o PDF."); } finally{ setGerandoPdf(false); } }}>
-            <Ic n="flag" s={15} c="var(--text-secondary)"/> {gerandoPdf?"Gerando…":"Relatório PDF"}</button>)}
+          {isPrivileged && (<div style={{position:"relative"}} ref={refMenuRelatorio}>
+            <button style={S.sideBtn} disabled={gerandoPdf} onClick={()=>setMenuRelatorio((v)=>!v)}>
+              <Ic n="flag" s={15} c="var(--text-secondary)"/> {gerandoPdf?"Gerando…":"Relatório PDF"}
+              <Ic n="chev" s={13} c="var(--text-muted)" style={{marginLeft:"auto",transform:menuRelatorio?"rotate(180deg)":"none"}}/>
+            </button>
+            {menuRelatorio && (<div data-dropmenu="1" style={{position:"absolute",bottom:"100%",left:0,right:0,marginBottom:4,background:"var(--surface)",border:"1px solid var(--border)",borderRadius:9,boxShadow:"0 8px 24px rgba(20,22,31,.14)",overflow:"hidden",zIndex:20}}>
+              <button style={{...S.ghostBtn,display:"block",width:"100%",textAlign:"left",padding:"9px 11px",color:"var(--text)"}} onClick={()=>baixarRelatorio("trabalho")}>Gestão de Trabalho</button>
+              <button style={{...S.ghostBtn,display:"block",width:"100%",textAlign:"left",padding:"9px 11px",color:"var(--text)",borderTop:"1px solid var(--border-soft)"}} onClick={()=>baixarRelatorio("financeiro")}>Gestão Financeira</button>
+            </div>)}
+          </div>)}
           <button style={{...S.sideBtn,...(naoLidas>0?{borderColor:"var(--accent-tint-border)",background:"var(--accent-tint-bg)"}:{})}} onClick={()=>{ setShowMsgs(true); if(myMemberId&&naoLidas>0) marcarLidas(myMemberId); }}>
             <Ic n="mail" s={15} c="var(--text-secondary)"/> {isMaster?"Mensagens":"Minhas mensagens"}
             {naoLidas>0 && <span style={S.badgeMsg}>{naoLidas}</span>}
@@ -1256,18 +1320,13 @@ function App({ inicial, aoSair, usuarioConectado }){
 }
 
 // ---------- Gestão Financeira ----------
-const formatarReal=(centavos)=>((centavos||0)/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 function FinCard({ card, col, nextCol, prevCol, onUpdate, onRemove, onDragStart, onDragEnd }){
   const [editando,setEditando]=useState(false);
   const [titulo,setTitulo]=useState(card.title);
-  const [aberto,setAberto]=useState(false);
-  const [valorCent,setValorCent]=useState(card.valor||0);
-  const [observacao,setObservacao]=useState(card.observacao ?? card.notas ?? "");
+  const [notaAberta,setNotaAberta]=useState(false);
+  const [notas,setNotas]=useState(card.notas ?? card.observacao ?? "");
   const salvarTitulo=()=>{ const t=titulo.trim(); if(t) onUpdate({title:t}); else setTitulo(card.title); setEditando(false); };
-  const mudarValor=(e)=>{ const digitos=e.target.value.replace(/\D/g,""); const cent=digitos?parseInt(digitos,10):0;
-    setValorCent(cent); onUpdate({valor:cent}); };
-  const salvarObservacao=()=>{ onUpdate({observacao}); setAberto(false); };
-  const temAlgo = valorCent>0 || (observacao&&observacao.trim());
+  const salvarNotas=()=>{ onUpdate({notas}); setNotaAberta(false); };
   return (
     <div className="card" draggable onDragStart={onDragStart} onDragEnd={onDragEnd}
       style={{...S.finCard}}>
@@ -1281,20 +1340,13 @@ function FinCard({ card, col, nextCol, prevCol, onUpdate, onRemove, onDragStart,
           <button className="card-del" style={S.cardDel} onClick={onRemove}><Ic n="x" s={12}/></button>
         </div>
       )}
-      {aberto ? (
-        <div style={{marginTop:6,display:"flex",flexDirection:"column",gap:6}}>
-          <input inputMode="numeric" autoFocus style={{...S.authInput,margin:0,fontSize:13,fontWeight:700,color:"#1F7A4C"}}
-            value={valorCent>0?formatarReal(valorCent):""} onChange={mudarValor} placeholder="Valor: R$ 0,00"/>
-          <textarea style={{...S.authInput,margin:0,minHeight:52,resize:"vertical",fontSize:12}} value={observacao}
-            onChange={(e)=>setObservacao(e.target.value)} onBlur={salvarObservacao} placeholder="Observação, contato, prazo…"/>
-        </div>
+      {notaAberta ? (
+        <textarea autoFocus style={{...S.authInput,margin:"6px 0 0",minHeight:56,resize:"vertical",fontSize:12}} value={notas}
+          onChange={(e)=>setNotas(e.target.value)} onBlur={salvarNotas} placeholder="Anotações, valores, contato…"/>
       ) : (
-        <div style={{display:"flex",alignItems:"center",gap:6,marginTop:6,cursor:"pointer"}} onClick={()=>setAberto(true)}>
+        <div style={{display:"flex",alignItems:"center",gap:5,marginTop:6,cursor:"pointer",color:"var(--text-muted)"}} onClick={()=>setNotaAberta(true)}>
           <Ic n="list" s={13} c="var(--text-muted)"/>
-          {temAlgo ? (<React.Fragment>
-            {valorCent>0 && <span style={{fontSize:11.5,fontWeight:700,color:"#1F7A4C",flexShrink:0}}>{formatarReal(valorCent)}</span>}
-            {observacao && observacao.trim() && <span style={{fontSize:11,color:"var(--text-muted)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{valorCent>0?" · ":""}{observacao}</span>}
-          </React.Fragment>) : <span style={{fontSize:11,color:"var(--text-muted)"}}>Nada anotado ainda.</span>}
+          <span style={{fontSize:11,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{notas?notas:"Nada anotado ainda."}</span>
         </div>
       )}
       {nextCol && <button style={{...S.doneBtn,background:nextCol.tint,fontSize:11.5,padding:"6px 8px",marginTop:8}}
