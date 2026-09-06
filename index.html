@@ -1140,7 +1140,7 @@ function App({ inicial, aoSair, usuarioConectado }){
     <div className="tela-cheia" style={S.app}>
       <aside style={S.sidebar}>
         <div style={{flex:1,overflowY:"auto"}}>
-          <div style={S.brand}><div style={S.logoBox}><img src={LOGO_JG2} alt="JG2 Engenharia e Arquitetura" style={S.logoImg}/></div></div>
+          <div style={S.brand}><div style={{...S.logoBox,padding:"7px 12px"}}><img src={LOGO_JG2} alt="JG2 Engenharia e Arquitetura" style={{...S.logoImg,height:50}}/></div></div>
 
           {isPrivileged && (<div style={{...S.abasLat,marginBottom:14}}>
             <button style={{...S.abaLat,...(!emFinanceiro?S.abaLatOn:{})}} onClick={voltarGestaoTrabalho}>
@@ -1480,18 +1480,31 @@ function FinanceiroDashboard({ cards }){
       <b>Como esses números são calculados:</b> o valor de um cartão só entra nas contas a partir do momento em que ele chega em <b>Em andamento</b> — antes disso é considerado só orçamento, não conta.
       Quando o cartão chega em <b>Arquivado</b>, o valor dele é tratado como recebido/fechado (entra em "Recebido" e "Faturado"). Enquanto não chega lá, ele conta como "A receber" e "Em carteira".
     </div>
-    <Panel title="Cartões por etapa" sub="Quantos clientes/obras estão em cada etapa agora">
-      <div style={{display:"flex",flexDirection:"column",gap:8}}>
-        {FIN_COLUMNS.map((col)=>{ const n=cards.filter((c)=>c.col===col.id).length;
-          return (<div key={col.id} style={{display:"flex",alignItems:"center",gap:10}}>
-            <span style={{width:150,flexShrink:0,fontSize:11.5,fontWeight:700,color:"var(--text-secondary)"}}>{col.name}</span>
-            <div style={{flex:1,height:14,borderRadius:20,background:"var(--surface-alt)",overflow:"hidden"}}>
-              <div style={{height:"100%",width:`${(n/maxContagem)*100}%`,background:col.tint,borderRadius:20,transition:"width .2s"}}/>
-            </div>
-            <span style={{width:22,textAlign:"right",fontSize:12.5,fontWeight:800,color:"var(--text)"}}>{n}</span>
-          </div>); })}
-      </div>
-    </Panel>
+    <div style={S.grid2}>
+      {FIN_COLUMNS.map((col)=>{
+        const doColuna=cards.filter((c)=>c.col===col.id);
+        const maxValor=Math.max(1,...doColuna.map((c)=>c.valor||0));
+        return (
+          <Panel key={col.id} title={col.name} sub={`${doColuna.length} cartão${doColuna.length===1?"":"es"}`}>
+            {doColuna.length===0 ? (
+              <p style={{fontSize:12,color:"var(--text-muted)",margin:0}}>Nenhum cartão nesta etapa.</p>
+            ) : (
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                {doColuna.map((c)=>(
+                  <div key={c.id} style={{display:"flex",alignItems:"center",gap:8}}>
+                    <span style={{width:130,flexShrink:0,fontSize:11.5,fontWeight:600,color:"var(--text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={c.title}>{c.title}</span>
+                    <div style={{flex:1,height:13,borderRadius:20,background:"var(--surface-alt)",overflow:"hidden"}}>
+                      <div style={{height:"100%",width:`${((c.valor||0)/maxValor)*100}%`,background:col.tint,borderRadius:20,transition:"width .2s"}}/>
+                    </div>
+                    <span style={{width:74,textAlign:"right",flexShrink:0,fontSize:11,fontWeight:700,color:"var(--text-secondary)"}}>{c.valor?formatarReal(c.valor):"—"}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Panel>
+        );
+      })}
+    </div>
   </div>);
 }
 
@@ -3025,7 +3038,7 @@ const S = {
   brand:{display:"flex",alignItems:"center",gap:11,marginBottom:26},
   brandMark:{width:34,height:34,borderRadius:9,background:"#3B3AC9",color:"#fff",display:"grid",placeItems:"center",fontSize:16,boxShadow:"0 2px 8px rgba(59,58,201,.35)",flexShrink:0},
   logoBox:{display:"inline-flex",alignItems:"center",background:"#fff",borderRadius:8,padding:"5px 10px",flexShrink:0},
-  logoImg:{display:"block",height:34,width:"auto"},
+  logoImg:{display:"block",height:40,width:"auto"},
   brandName:{fontWeight:800,fontSize:16,letterSpacing:"-.02em"}, brandSub:{fontSize:11,color:"var(--text-muted)",marginTop:-1},
   sideLabel:{display:"flex",alignItems:"center",justifyContent:"space-between",fontSize:11,fontWeight:700,letterSpacing:".08em",textTransform:"uppercase",color:"var(--text-muted)",marginBottom:8},
   iconBtn:{border:"none",background:"transparent",color:"var(--icon-muted)",cursor:"pointer",padding:4,borderRadius:6,display:"grid",placeItems:"center"},
