@@ -1,17 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<script>
-(function(){
-  try{
-    var t = localStorage.getItem("ge-tema");
-    if(t!=="escuro" && t!=="claro"){
-      t = (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "escuro" : "claro";
-    }
-    document.documentElement.setAttribute("data-theme", t==="escuro" ? "dark" : "light");
-  }catch(e){}
-})();
-</script>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Equipe · Gestão de Trabalho</title>
@@ -26,31 +15,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg:#EEF0F4; --surface:#FFFFFF; --surface-alt:#F6F7FA; --surface-tabs:#E4E7EE;
-    --border:#E2E5EC; --border-soft:#E7E9EF; --border-soft2:#EDEFF3; --border-faint:#F0F1F5; --border-input:#D3D7E0;
-    --accent-tint-bg:#F7F8FE; --accent-tint-bg2:#EEF0FB; --accent-tint-border:#C7CBFF; --auth-gradient-2:#E4E6F5;
-    --text:#14161F; --text-strong:#20232E; --text-secondary:#5A6072; --text-muted:#8A8F9E;
-    --text-faint:#A0A5B2; --text-faint2:#B0B5C0; --text-faint3:#C2C6D0; --icon-muted:#737A8C;
-    --overlay:rgba(20,22,31,.45); --shadow:rgba(20,22,31,.10);
-  }
-  [data-theme="dark"]{
-    --bg:#14161B; --surface:#1D2027; --surface-alt:#242832; --surface-tabs:#2B303B;
-    --border:#333846; --border-soft:#2C303B; --border-soft2:#333846; --border-faint:#2A2E38; --border-input:#3A3F4C;
-    --accent-tint-bg:#23243A; --accent-tint-bg2:#262845; --accent-tint-border:#4A4A9E; --auth-gradient-2:#1B1E2C;
-    --text:#EDEEF3; --text-strong:#F5F6FA; --text-secondary:#C3C6D1; --text-muted:#9599A6;
-    --text-faint:#7B7F8C; --text-faint2:#6E7280; --text-faint3:#5E6270; --icon-muted:#9599A6;
-    --overlay:rgba(0,0,0,.6); --shadow:rgba(0,0,0,.4);
-  }
   * { box-sizing: border-box; }
   html,body,#root { height:100%; }
-  .tela-cheia { height:100vh; height:100dvh; }
-  [style*="overflow"] { -webkit-overflow-scrolling:touch; }
-  body { margin:0; font-family:'Inter',system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--text); transition:background .15s,color .15s; }
+  body { margin:0; font-family:'Inter',system-ui,-apple-system,sans-serif; }
   .proj .proj-del { opacity:0; transition:opacity .12s; }
   .proj:hover .proj-del { opacity:1; }
   .card { transition:box-shadow .12s; }
-  .card:hover { box-shadow:0 4px 16px var(--shadow); }
+  .card:hover { box-shadow:0 4px 16px rgba(20,22,31,.10); }
   .card .card-del { opacity:0; transition:opacity .12s; }
   .card:hover .card-del { opacity:1; }
   textarea:focus, input:focus, select:focus { outline:none; }
@@ -58,7 +29,7 @@
   .spin { width:26px; height:26px; border:3px solid #D9DCE6; border-top-color:#3B3AC9; border-radius:50%; animation:girar .8s linear infinite; }
   @keyframes girar { to { transform:rotate(360deg); } }
   ::-webkit-scrollbar { width:8px; height:8px; }
-  ::-webkit-scrollbar-thumb { background:var(--border-input); border-radius:8px; }
+  ::-webkit-scrollbar-thumb { background:#D3D7E0; border-radius:8px; }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -102,45 +73,15 @@ function Ic({ n, s=16, c="currentColor", style }) {
     bar:<React.Fragment><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></React.Fragment>,
     list:<React.Fragment><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4.5" cy="6" r="1.3" fill={c} stroke="none"/><circle cx="4.5" cy="12" r="1.3" fill={c} stroke="none"/><circle cx="4.5" cy="18" r="1.3" fill={c} stroke="none"/></React.Fragment>,
     grip:<g fill={c} stroke="none"><circle cx="9" cy="5" r="1.4"/><circle cx="9" cy="12" r="1.4"/><circle cx="9" cy="19" r="1.4"/><circle cx="15" cy="5" r="1.4"/><circle cx="15" cy="12" r="1.4"/><circle cx="15" cy="19" r="1.4"/></g>,
-    edit:<React.Fragment><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></React.Fragment>,
-    sun:<React.Fragment><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4.5"/><line x1="12" y1="19.5" x2="12" y2="22"/><line x1="4.6" y1="4.6" x2="6.3" y2="6.3"/><line x1="17.7" y1="17.7" x2="19.4" y2="19.4"/><line x1="2" y1="12" x2="4.5" y2="12"/><line x1="19.5" y1="12" x2="22" y2="12"/><line x1="4.6" y1="19.4" x2="6.3" y2="17.7"/><line x1="17.7" y1="6.3" x2="19.4" y2="4.6"/></React.Fragment>,
-    moon:<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>,
   };
   return <svg {...base}>{P[n]}</svg>;
 }
 
-// ---------- Tema claro/escuro ----------
-const TEMA_KEY = "ge-tema";
-function temaAtualInicial(){
-  try{ const s=localStorage.getItem(TEMA_KEY); if(s==="escuro"||s==="claro") return s; }catch(e){}
-  try{ if(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) return "escuro"; }catch(e){}
-  return "claro";
-}
-function aplicarTema(t){
-  try{ document.documentElement.setAttribute("data-theme", t==="escuro" ? "dark" : "light"); }catch(e){}
-}
-function ThemeToggle({ style }){
-  const [tema,setTema]=useState(temaAtualInicial);
-  useEffect(()=>{ aplicarTema(tema); try{ localStorage.setItem(TEMA_KEY,tema); }catch(e){} },[tema]);
-  const escuro=tema==="escuro";
-  return (
-    <button type="button" title={escuro?"Mudar para tema claro":"Mudar para tema escuro"}
-      onClick={()=>setTema(escuro?"claro":"escuro")}
-      style={{border:"1px solid var(--border)",background:"var(--surface)",color:"var(--text-secondary)",
-        cursor:"pointer",borderRadius:9,width:34,height:34,display:"grid",placeItems:"center",flexShrink:0,...style}}>
-      <Ic n={escuro?"sun":"moon"} s={16} c="var(--text-secondary)"/>
-    </button>
-  );
-}
-const paraDatetimeLocal = (ts)=>{ if(!ts) return ""; const d=new Date(ts); const p=(n)=>String(n).padStart(2,"0");
-  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; };
-const deDatetimeLocal = (s)=>{ if(!s) return null; const t=new Date(s).getTime(); return isNaN(t)?null:t; };
-
 function Avatar({ m, size=32, w, h, radius }){
   const L=w||size, A=h||size, r=radius!==undefined?radius:(w&&h?7:"50%");
   if(m&&m.photo) return <img src={m.photo} alt={m.name||""} title={m.name||""}
-    style={{width:L,height:A,borderRadius:r,objectFit:"cover",flexShrink:0,display:"block",border:"1px solid var(--border-soft)"}}/>;
-  return <span title={m?.name||""} style={{width:L,height:A,borderRadius:r,background:(m&&m.color)||"var(--text-faint)",color:"#fff",
+    style={{width:L,height:A,borderRadius:r,objectFit:"cover",flexShrink:0,display:"block",border:"1px solid #E7E9EF"}}/>;
+  return <span title={m?.name||""} style={{width:L,height:A,borderRadius:r,background:(m&&m.color)||"#A0A5B2",color:"#fff",
     fontSize:Math.max(9,Math.round(Math.min(L,A)*0.36)),fontWeight:700,display:"grid",placeItems:"center",flexShrink:0}}>
     {initials(m?.name||"")}</span>;
 }
@@ -156,11 +97,11 @@ const COLUMNS = [
 ];
 const COL = Object.fromEntries(COLUMNS.map((c)=>[c.id,c]));
 const PRIORITIES = { alta:{label:"Alta",color:"#D8442F"}, media:{label:"Média",color:"#D9843B"}, baixa:{label:"Baixa",color:"#5B8C4F"} };
-const ROLES = { master:{label:"Master",color:"#3B3AC9"}, gerente:{label:"Gerente",color:"#0E8F9E"}, membro:{label:"Membro",color:"var(--icon-muted)"} };
+const ROLES = { master:{label:"Master",color:"#3B3AC9"}, gerente:{label:"Gerente",color:"#0E8F9E"}, membro:{label:"Membro",color:"#737A8C"} };
 const FOLDER_COLORS = ["#D8442F","#2F6BD8","#8B3ABF","#0E8F9E","#C0397E","#5B8C4F","#D9843B","#3B3AC9"];
 const AVATAR_COLORS = ["#3B3AC9","#D8442F","#2F9E6E","#D9843B","#8B3ABF","#0E8F9E","#C0397E","#5563DE"];
 const uid = () => Math.random().toString(36).slice(2,10);
-const corDoTrabalho = (nome) => { if(!nome) return "var(--icon-muted)"; let h=0; for(let i=0;i<nome.length;i++) h=(h*31+nome.charCodeAt(i))>>>0; return FOLDER_COLORS[h%FOLDER_COLORS.length]; };
+const corDoTrabalho = (nome) => { if(!nome) return "#737A8C"; let h=0; for(let i=0;i<nome.length;i++) h=(h*31+nome.charCodeAt(i))>>>0; return FOLDER_COLORS[h%FOLDER_COLORS.length]; };
 const initials = (n) => n.trim().split(/\s+/).slice(0,2).map((w)=>w[0]?.toUpperCase()??"").join("");
 const dm = (ts) => { const d=new Date(ts); return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}`; };
 const daysAgo = (n) => Date.now() - n*86400000;
@@ -200,12 +141,6 @@ const msUteis = (inicioTs, fimTs)=>{
     cursor.setDate(cursor.getDate()+1);
   }
   return total;
-};
-const proximoDiaUtilInicio = (ts)=>{
-  const [h0,m0]=JANELAS_EXPEDIENTE[0];
-  const d=new Date(ts); d.setDate(d.getDate()+1); d.setHours(h0,m0,0,0);
-  while(d.getDay()===0 || d.getDay()===6){ d.setDate(d.getDate()+1); }
-  return d.getTime();
 };
 const quandoTexto = (iso)=>{ if(!iso) return "";
   const d=new Date(iso); if(isNaN(d)) return "";
@@ -485,30 +420,14 @@ try { TOKEN = sessionStorage.getItem("ge-token") || null; } catch(e) {}
 function setToken(t){ TOKEN = t; try{ if(t) sessionStorage.setItem("ge-token", t); else sessionStorage.removeItem("ge-token"); }catch(e){} }
 
 async function apiCall(acao, extra){
-  const tentar=async ()=>{
-    const r = await fetch("/api", {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify(Object.assign({ acao, token: TOKEN }, extra||{}))
-    });
-    const j = await r.json().catch(()=>({erro:"Resposta inválida do servidor."}));
-    if(!r.ok){ const err=new Error(j.erro || "Erro no servidor."); err.status=r.status; throw err; }
-    return j;
-  };
-  try{
-    return await tentar();
-  }catch(e){
-    // Falha de rede (sem status) ou erro passageiro do servidor (5xx): tenta mais uma vez
-    // antes de desistir — evita que uma instabilidade momentânea pareça "senha errada"
-    // em ações sensíveis como trocar/redefinir senha.
-    const semStatus = e.status===undefined;
-    const erroServidor = typeof e.status==="number" && e.status>=500;
-    if(semStatus || erroServidor){
-      await new Promise((res)=>setTimeout(res,900));
-      return await tentar();
-    }
-    throw e;
-  }
+  const r = await fetch("/api", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify(Object.assign({ acao, token: TOKEN }, extra||{}))
+  });
+  const j = await r.json().catch(()=>({erro:"Resposta inválida do servidor."}));
+  if(!r.ok) throw new Error(j.erro || "Erro no servidor.");
+  return j;
 }
 
 // store agora fala com o banco: carregar/salvar do estado inteiro.
@@ -587,82 +506,15 @@ function prepararDados(saved, usuarioConectado){
   saved.users.forEach((u)=>{ if(!u.memberId){
     const m={ id:uid(), name:u.username, color:AVATAR_COLORS[saved.members.length%AVATAR_COLORS.length] };
     saved.members.push(m); u.memberId=m.id; } });
-  // aponta a sessão para o usuário conectado (casa pelo login, exatamente) — sem cair no master por engano
+  // aponta a sessão para o usuário conectado (casa pelo login); senão, primeiro master
   const alvo=(usuarioConectado||"").toLowerCase();
-  const u=saved.users.find((x)=>x.username.toLowerCase()===alvo);
+  let u=saved.users.find((x)=>x.username.toLowerCase()===alvo) || saved.users.find((x)=>x.role==="master") || saved.users[0];
   saved.session={ currentUserId: u ? u.id : null };
   return saved;
 }
 
-const TITULO_BASE = document.title;
-function atualizarFavicon(comPonto){
-  try{
-    const link=document.querySelector('link[rel="icon"]');
-    if(!link) return;
-    if(!link.dataset.hrefOriginal) link.dataset.hrefOriginal=link.getAttribute("href")||"";
-    const original=link.dataset.hrefOriginal;
-    if(!comPonto){ if(original) link.setAttribute("href",original); return; }
-    const desenharPonto=(ctx)=>{ ctx.beginPath(); ctx.arc(50,14,13,0,Math.PI*2); ctx.fillStyle="#D8442F"; ctx.fill();
-      ctx.lineWidth=3; ctx.strokeStyle="#fff"; ctx.stroke(); };
-    const c=document.createElement("canvas"); c.width=64; c.height=64; const ctx=c.getContext("2d");
-    const img=new Image(); img.crossOrigin="anonymous";
-    img.onload=()=>{ ctx.drawImage(img,0,0,64,64); desenharPonto(ctx); link.setAttribute("href",c.toDataURL("image/png")); };
-    img.onerror=()=>{ ctx.fillStyle="#3B3AC9"; ctx.fillRect(0,0,64,64); desenharPonto(ctx); link.setAttribute("href",c.toDataURL("image/png")); };
-    img.src=original;
-  }catch(e){}
-}
-function atualizarNotificacao(total){
-  try{ if("setAppBadge" in navigator){ if(total>0) navigator.setAppBadge(total); else navigator.clearAppBadge(); } }catch(e){}
-  document.title = total>0 ? `(${total}) ${TITULO_BASE}` : TITULO_BASE;
-  atualizarFavicon(total>0);
-}
-
-// ---------- Aviso de novidades ----------
-// Toda vez que você atualizar o sistema e quiser avisar a equipe, troque a "versao" abaixo
-// (qualquer texto novo já serve, ex: data de hoje) e escreva o que mudou em "texto".
-// O aviso é por pessoa (login), não por aparelho: guardado na nuvem em state.novidadesVistas,
-// então funciona mesmo se a pessoa trocar de celular/computador ou compartilhar o mesmo aparelho
-// com outra conta. Cada um só deixa de ver de novo se marcar a caixinha "Não mostrar novamente".
-const NOVIDADE = {
-  versao: "2026-09-05-2",
-  titulo: "Novidades no sistema",
-  texto: "• Modo claro e escuro (botão no topo)\n• Tela de confirmação antes de concluir uma tarefa\n• Selo vermelho no ícone do app quando chega mensagem ou tarefa nova\n• Editar tudo de uma tarefa de uma vez (só master), incluindo trocar o projeto\n• Mandar mensagem para várias pessoas ao mesmo tempo",
-  imagem: "" // opcional: cole aqui o link de uma imagem/print para mostrar junto
-};
-function NovidadeModal({ novidade, onFechar, naoMostrar, onToggleNaoMostrar }){
-  return (<div style={S.overlay}>
-    <div style={{...S.modal,maxWidth:420}} onClick={(e)=>e.stopPropagation()}>
-      <div style={S.modalHead}>
-        <h2 style={S.modalTitle}>{novidade.titulo||"Novidades"}</h2>
-        <button style={S.iconBtn} onClick={onFechar}><Ic n="x" s={18}/></button>
-      </div>
-      {novidade.imagem && <img src={novidade.imagem} alt="" style={{width:"100%",borderRadius:10,marginBottom:10,display:"block"}}/>}
-      {novidade.texto && <div style={{fontSize:13.5,color:"var(--text-secondary)",lineHeight:1.6,whiteSpace:"pre-wrap"}}>{novidade.texto}</div>}
-      <label style={{display:"flex",alignItems:"center",gap:8,marginTop:16,fontSize:12.5,color:"var(--text-secondary)",cursor:"pointer",userSelect:"none"}}>
-        <input type="checkbox" checked={naoMostrar} onChange={(e)=>onToggleNaoMostrar(e.target.checked)}
-          style={{width:15,height:15,cursor:"pointer",accentColor:"#3B3AC9"}}/>
-        Não mostrar esta mensagem novamente
-      </label>
-      <button style={{...S.primaryBtn,marginTop:12,width:"100%",justifyContent:"center"}} onClick={onFechar}>Entendi</button>
-    </div>
-  </div>);
-}
-
 function App({ inicial, aoSair, usuarioConectado }){
   const [state,setState]=useState(()=> inicial || prepararDados(store.get(), usuarioConectado) );
-  const [novidadeNaoMostrar,setNovidadeNaoMostrar]=useState(false);
-  const [novidadeAberta,setNovidadeAberta]=useState(()=>{
-    try{
-      const vistas=(inicial||store.get()||{}).novidadesVistas||{};
-      return vistas[usuarioConectado]!==NOVIDADE.versao;
-    }catch(e){ return false; }
-  });
-  const fecharNovidade=()=>{
-    if(novidadeNaoMostrar){
-      patch((s)=>{ s.novidadesVistas={...(s.novidadesVistas||{}), [usuarioConectado]:NOVIDADE.versao}; return s; });
-    }
-    setNovidadeAberta(false);
-  };
   const [query,setQuery]=useState("");
   const [showCatalog,setShowCatalog]=useState(false);
   const [folderFilter,setFolderFilter]=useState("");
@@ -675,7 +527,6 @@ function App({ inicial, aoSair, usuarioConectado }){
   const [projAberto,setProjAberto]=useState(true);
   const [showNewProj,setShowNewProj]=useState(false);
   const [confirmarExcluir,setConfirmarExcluir]=useState(null);
-  const [confirmarConcluir,setConfirmarConcluir]=useState(null);
   const [reuniaoMembro,setReuniaoMembro]=useState("");
   const [revisaoDe,setRevisaoDe]=useState(null);
   const [drag,setDrag]=useState(null);
@@ -735,34 +586,10 @@ function App({ inicial, aoSair, usuarioConectado }){
     const vencidas=(state.tasks||[]).filter((t)=>t.tipo==="reuniao" && t.col!=="done" && t.quando && new Date(t.quando).getTime()<=agora);
     if(vencidas.length===0) return;
     const ids=new Set(vencidas.map((t)=>t.id));
-    patch((s)=>{
-      const todosIds=(s.members||[]).map((m)=>m.id);
-      // Quem é afetado por cada reunião que está começando agora: os convidados marcados,
-      // ou todo mundo quando a reunião é para a equipe inteira (sem convidados específicos).
-      const afetados=new Set();
-      vencidas.forEach((r)=>{ const alvos=(r.convidados&&r.convidados.length)?r.convidados:todosIds; alvos.forEach((m)=>afetados.add(m)); });
-      s.tasks=s.tasks.map((t)=>{
-        if(ids.has(t.id)) return {...t,col:"done",completedAt:new Date(t.quando).getTime(),needsFix:false,fixNote:"",runningSince:null};
-        // Pausa automaticamente a tarefa de quem está com o relógio rodando e entrou na reunião —
-        // a pessoa está na reunião, não trabalhando na tarefa. O tempo já rodado fica guardado
-        // e a tarefa fica "Pausada", esperando a pessoa retomar depois com "Continuar tarefa".
-        if(t.tipo!=="reuniao" && t.runningSince && afetados.has(t.assignee)){
-          const soma=(t.workedMs||0)+(agora-t.runningSince);
-          const nota={ id:uid(), data:agora, texto:"Pausada automaticamente: início de reunião" };
-          return {...t, workedMs:soma, runningSince:null, diario:[...(t.diario||[]),nota]};
-        }
-        return t;
-      });
-      return s;
-    });
+    patch((s)=>{ s.tasks=s.tasks.map((t)=> ids.has(t.id)
+      ? {...t,col:"done",completedAt:new Date(t.quando).getTime(),needsFix:false,fixNote:"",runningSince:null}
+      : t); return s; });
   },[state.tasks,tique]);
-  useEffect(()=>{
-    const cu=state.users.find((u)=>u.id===state.session.currentUserId);
-    const mid=cu&&cu.memberId;
-    const pendentesMsgs = mid ? (state.messages||[]).filter((m)=>m.paraMembro===mid && !m.lida).length : 0;
-    const novasTarefas = mid ? (state.tasks||[]).filter((t)=>t.assignee===mid && t.col==="todo" && !(t.vistoPor||[]).includes(mid)).length : 0;
-    atualizarNotificacao(pendentesMsgs+novasTarefas);
-  },[state.messages, state.tasks, state.session, state.users]);
   const patch=(fn)=>setState((s)=>fn({...s}));
 
   const currentUser=state.users.find((u)=>u.id===state.session.currentUserId);
@@ -770,11 +597,8 @@ function App({ inicial, aoSair, usuarioConectado }){
   const login=(id)=>patch((s)=>{ s.session={currentUserId:id}; return s; });
   const logout=()=>patch((s)=>{ s.session={currentUserId:null}; return s; });
   const changePassword=(pw)=>{
-    // Só marca como trocada de fato depois que o servidor confirmar — se a rede falhar,
-    // a pessoa fica sabendo na hora, em vez de "trocar" só localmente e travar no próximo login.
-    return apiCall("trocarSenha",{ nova:pw }).then(()=>{
-      patch((s)=>{ s.users=s.users.map((u)=>u.id===s.session.currentUserId?{...u,passHash:hashPw(pw),mustChange:false}:u); return s; });
-    });
+    patch((s)=>{ s.users=s.users.map((u)=>u.id===s.session.currentUserId?{...u,passHash:hashPw(pw),mustChange:false}:u); return s; });
+    apiCall("trocarSenha",{ nova:pw }).catch(()=>{}); // atualiza a senha da tela de conexão
   };
   const addUser=(nome,username,password,role,noPainel,naEquipe)=>{
     const login=(username||"").trim().toLowerCase();
@@ -800,27 +624,20 @@ function App({ inicial, aoSair, usuarioConectado }){
   };
   const resetUserPassword=(id,pw)=>{
     const alvo=state.users.find((u)=>u.id===id);
-    if(!alvo) return Promise.reject(new Error("Usuário não encontrado."));
-    // Mesma lógica: só grava a senha local depois que a senha da tela de conexão (servidor)
-    // for atualizada com sucesso — evita a pessoa não conseguir entrar com a senha nova.
-    return apiCall("redefinirSenha",{ user:alvo.username, senha:pw }).then(()=>{
-      patch((s)=>{ s.users=s.users.map((u)=>u.id===id?{...u,passHash:hashPw(pw),mustChange:true}:u); return s; });
-    });
+    patch((s)=>{ s.users=s.users.map((u)=>u.id===id?{...u,passHash:hashPw(pw),mustChange:true}:u); return s; });
+    if(alvo) apiCall("redefinirSenha",{ user:alvo.username, senha:pw }).catch(()=>{});
   };
 
   // Login unificado: quem entrou pela tela de conexão vira o usuário do app.
-  // Casa pelo login (username), exatamente — nunca cai no master por engano/erro de digitação.
+  // Casa pelo login (username). Se não houver correspondente, usa o primeiro master.
   if(!currentUser){
     const alvo=(usuarioConectado||"").toLowerCase();
-    const u=state.users.find((x)=>x.username.toLowerCase()===alvo);
-    if(u){ setTimeout(()=>login(u.id),0); return <div className="tela-cheia" style={S.authWrap}><div className="spin"/></div>; }
-    return <div className="tela-cheia" style={S.authWrap}><div style={{textAlign:"center",maxWidth:320,fontFamily:FONT}}>
-      <div style={{color:"#D8442F",fontWeight:700,marginBottom:6}}>Usuário ou senha inválidos</div>
-      <div style={{color:"var(--text-secondary)",fontSize:13,marginBottom:16}}>Confira os dados e tente novamente.</div>
-      <button style={{...S.primaryBtn,justifyContent:"center"}} onClick={()=>{ if(aoSair) aoSair(); }}>Tentar novamente</button>
-    </div></div>;
+    let u=state.users.find((x)=>x.username.toLowerCase()===alvo);
+    if(!u) u=state.users.find((x)=>x.role==="master") || state.users[0];
+    if(u){ setTimeout(()=>login(u.id),0); return <div style={S.authWrap}><div className="spin"/></div>; }
+    return <div style={S.authWrap}><div style={{color:"#5A6072",fontFamily:FONT}}>Nenhum usuário no sistema.</div></div>;
   }
-  if(currentUser.mustChange) return <div className="tela-cheia" style={S.authWrap}><ChangePasswordCard forced onSave={changePassword}/></div>;
+  if(currentUser.mustChange) return <div style={S.authWrap}><ChangePasswordCard forced onSave={changePassword}/></div>;
 
   const isMaster=currentUser.role==="master";
   const isPrivileged=currentUser.role==="master"||currentUser.role==="gerente";
@@ -843,7 +660,6 @@ function App({ inicial, aoSair, usuarioConectado }){
   if(emReunioes && reuniaoMembro) filtered=filtered.filter((t)=>{ const conf=t.confirmados||[]; return t.col==="done" ? conf.includes(reuniaoMembro) : !conf.includes(reuniaoMembro); });
   if(folderFilter) filtered=filtered.filter((t)=>t.folderName===folderFilter);
   if(query) filtered=filtered.filter((t)=>t.title.toLowerCase().includes(query.toLowerCase()));
-  const resumoTarefas = isPrivileged ? state.tasks.filter((t)=>t.tipo!=="reuniao") : filtered;
   const todasMsgs=state.messages||[];
   const minhasMsgs=isMaster?todasMsgs:todasMsgs.filter((m)=>m.paraMembro===myMemberId||m.deMembro===myMemberId);
   const naoLidas=myMemberId?todasMsgs.filter((m)=>m.paraMembro===myMemberId&&!m.lida).length:0;
@@ -882,16 +698,12 @@ function App({ inicial, aoSair, usuarioConectado }){
       return jah.includes(membroId)?t:{...t,confirmados:[...jah,membroId]};
     }); return s; }); };
 
-  const enviarMensagem=(paraMembro,texto,grupoId)=>{ if(!paraMembro||!texto.trim())return;
-    patch((s)=>{ s.messages=[...(s.messages||[]),{id:uid(),deUsuario:s.session.currentUserId,deMembro:myMemberId||null,paraMembro,texto:texto.trim(),em:Date.now(),lida:false,grupoId:grupoId||null}]; return s; }); };
+  const enviarMensagem=(paraMembro,texto)=>{ if(!paraMembro||!texto.trim())return;
+    patch((s)=>{ s.messages=[...(s.messages||[]),{id:uid(),deUsuario:s.session.currentUserId,deMembro:myMemberId||null,paraMembro,texto:texto.trim(),em:Date.now(),lida:false}]; return s; }); };
   const marcarLidas=(memberId)=>patch((s)=>{ s.messages=(s.messages||[]).map((m)=>m.paraMembro===memberId?{...m,lida:true}:m); return s; });
-  const apagarMensagem=(id)=>patch((s)=>{
-    const alvo=(s.messages||[]).find((m)=>m.id===id); if(!alvo) return s;
-    const podeApagarEsta = isMaster || (alvo.deMembro && alvo.deMembro===myMemberId);
-    if(!podeApagarEsta) return s;
-    // mensagem "para todos": apaga todas as cópias do mesmo envio de uma vez
-    s.messages=(s.messages||[]).filter((m)=> alvo.grupoId ? m.grupoId!==alvo.grupoId : m.id!==id);
-    return s; });
+  const apagarMensagem=(id)=>patch((s)=>{ s.messages=(s.messages||[]).filter((m)=>{ if(m.id!==id) return true;
+      const meu = isMaster || (m.deMembro && m.deMembro===myMemberId);
+      return !meu; }); return s; });
 
   const alternarPainel=(memberId)=>patch((s)=>{ s.members=s.members.map((m)=>m.id===memberId?{...m,noPainel:m.noPainel===false}:m); return s; });
   const alternarEquipe=(memberId)=>patch((s)=>{ s.members=s.members.map((m)=>m.id===memberId?{...m,naEquipe:m.naEquipe===false}:m); return s; });
@@ -914,17 +726,16 @@ function App({ inicial, aoSair, usuarioConectado }){
   const editCatalogItem=(id,title,desc)=>patch((s)=>{ s.taskCatalog=(s.taskCatalog||[]).map((c)=>c.id===id?{...c,title:title.trim(),desc:(desc||"").trim()}:c); return s; });
 
   // lançamento sempre na coluna "A fazer", a partir do catálogo
-  const launchMany=({itens,assignee,desc,contarAgora})=>{
+  const launchMany=({itens,assignee,desc})=>{
     patch((s)=>{
       const agora=Date.now();
-      const inicioContagem = contarAgora===false ? proximoDiaUtilInicio(agora) : agora;
       const novas=(itens||[]).map((it)=>{
         const item=(s.taskCatalog||[]).find((c)=>c.id===it.catalogId); if(!item) return null;
         return { id:uid(), project:s.activeProject, col:"todo", title:item.title,
-          tipo:it.reuniao?"reuniao":"tarefa", quando:it.quando||"", confirmados:[], criadoPor:myMemberId||null,
+          tipo:it.reuniao?"reuniao":"tarefa", quando:it.quando||"", confirmados:[],
           convidados:it.reuniao?(it.convidados&&it.convidados.length?it.convidados:[]):[],
           priority:it.priority||"media", hours:Math.max(0,+it.hours||0), assignee:it.reuniao?null:(assignee||null),
-          createdAt:inicioContagem, acceptedAt:null, workedMs:0, runningSince:null,
+          createdAt:agora, acceptedAt:null, workedMs:0, runningSince:null,
           desc:((desc&&desc.trim())||item.desc||"").trim(),
           needsFix:false, fixNote:"", completedAt:null, reworkCount:0, protocoladoAt:null };
       }).filter(Boolean);
@@ -972,18 +783,10 @@ function App({ inicial, aoSair, usuarioConectado }){
       return s;
     });
   };
-  // Pausar manualmente uma tarefa "Em andamento" a qualquer momento (emergência, imprevisto etc.).
-  // Só para o cronômetro e guarda o tempo já trabalhado — a tarefa continua "Em andamento",
-  // esperando a pessoa retomar depois com "Continuar tarefa".
-  const pauseTask=(id)=>{ const t=state.tasks.find((x)=>x.id===id); if(!t||!t.runningSince) return;
-    const agora=Date.now(); const soma=(t.workedMs||0)+(agora-t.runningSince);
-    updateTask(id,{workedMs:soma,runningSince:null}); };
   const completeTask=(id)=>{ const t=state.tasks.find((x)=>x.id===id); const agora=Date.now();
     const soma=(t.workedMs||0)+(t.runningSince?agora-t.runningSince:0);
     updateTask(id,{col:"done",needsFix:false,fixNote:"",workedMs:soma,runningSince:null,
       acceptedAt:t.acceptedAt??agora,completedAt:agora}); };
-  // Reabrir uma reunião já concluída (só o Master): volta para "A fazer", mantendo quem já confirmou.
-  const reabrirReuniao=(id)=>updateTask(id,{col:"todo",completedAt:null});
   const sendToReview=(id)=>setRevisaoDe(id);
   // Envio Em andamento -> Revisão (1ª revisão do trabalho): não conta como retrabalho.
   const confirmarRevisao=(id,note)=>{
@@ -1034,7 +837,7 @@ function App({ inicial, aoSair, usuarioConectado }){
   };
 
   return (
-    <div className="tela-cheia" style={S.app}>
+    <div style={S.app}>
       <aside style={S.sidebar}>
         <div style={{flex:1,overflowY:"auto"}}>
           <div style={S.brand}><div style={S.brandMark}>◆</div>
@@ -1042,8 +845,8 @@ function App({ inicial, aoSair, usuarioConectado }){
 
           <div style={S.sideLabel}>
             <span style={{display:"inline-flex",alignItems:"center",gap:5,cursor:"pointer"}} onClick={()=>setProjAberto((v)=>!v)}>
-              <Ic n="chev" s={13} c="var(--text-muted)" style={{transform:projAberto?"none":"rotate(-90deg)",transition:"transform .15s"}}/>
-              Projetos <span style={{color:"var(--text-faint2)",fontWeight:600}}>· {state.projects.length}</span>
+              <Ic n="chev" s={13} c="#8A8F9E" style={{transform:projAberto?"none":"rotate(-90deg)",transition:"transform .15s"}}/>
+              Projetos <span style={{color:"#B0B5C0",fontWeight:600}}>· {state.projects.length}</span>
             </span>
             {isPrivileged && <button style={S.iconBtn} onClick={addProject} title="Novo projeto"><Ic n="plus" s={15}/></button>}</div>
           {(()=>{ const totalReun=state.tasks.filter((t)=>t.tipo==="reuniao").length;
@@ -1075,18 +878,18 @@ function App({ inicial, aoSair, usuarioConectado }){
         <div style={S.sideFooter}>
           {isPrivileged && (<div style={S.abasLat}>
             <button style={{...S.abaLat,...(state.view==="board"?S.abaLatOn:{})}} onClick={()=>patch((s)=>({...s,view:"board"}))}>
-              <Ic n="grid" s={14} c={state.view==="board"?"#3B3AC9":"var(--text-secondary)"}/> Quadro</button>
+              <Ic n="grid" s={14} c={state.view==="board"?"#3B3AC9":"#5A6072"}/> Quadro</button>
             <button style={{...S.abaLat,...(state.view==="dash"?S.abaLatOn:{})}} onClick={()=>patch((s)=>({...s,view:"dash"}))}>
-              <Ic n="bar" s={14} c={state.view==="dash"?"#3B3AC9":"var(--text-secondary)"}/> Painel</button>
+              <Ic n="bar" s={14} c={state.view==="dash"?"#3B3AC9":"#5A6072"}/> Painel</button>
           </div>)}
           {isPrivileged && (<button style={S.sideBtn} disabled={gerandoPdf} onClick={()=>{ setGerandoPdf(true); try{ gerarRelatorioEquipePdf(state.tasks, state.members, state.projects); }catch(e){ alert("Não foi possível gerar o PDF."); } finally{ setGerandoPdf(false); } }}>
-            <Ic n="flag" s={15} c="var(--text-secondary)"/> {gerandoPdf?"Gerando…":"Relatório PDF"}</button>)}
-          <button style={{...S.sideBtn,...(naoLidas>0?{borderColor:"var(--accent-tint-border)",background:"var(--accent-tint-bg)"}:{})}} onClick={()=>{ setShowMsgs(true); if(myMemberId&&naoLidas>0) marcarLidas(myMemberId); }}>
-            <Ic n="mail" s={15} c="var(--text-secondary)"/> {isMaster?"Mensagens":"Minhas mensagens"}
+            <Ic n="flag" s={15} c="#4A4F5E"/> {gerandoPdf?"Gerando…":"Relatório PDF"}</button>)}
+          <button style={{...S.sideBtn,...(naoLidas>0?{borderColor:"#C7CBFF",background:"#F7F8FE"}:{})}} onClick={()=>{ setShowMsgs(true); if(myMemberId&&naoLidas>0) marcarLidas(myMemberId); }}>
+            <Ic n="mail" s={15} c="#4A4F5E"/> {isMaster?"Mensagens":"Minhas mensagens"}
             {naoLidas>0 && <span style={S.badgeMsg}>{naoLidas}</span>}
           </button>
-          {isMaster && <button style={S.sideBtn} onClick={()=>setShowCatalog(true)}><Ic n="list" s={15} c="var(--text-secondary)"/> Cadastrar tarefa</button>}
-          {isMaster && <button style={S.sideBtn} onClick={()=>setShowUsers(true)}><Ic n="userplus" s={15} c="var(--text-secondary)"/> Cadastrar usuário</button>}
+          {isMaster && <button style={S.sideBtn} onClick={()=>setShowCatalog(true)}><Ic n="list" s={15} c="#4A4F5E"/> Cadastrar tarefa</button>}
+          {isMaster && <button style={S.sideBtn} onClick={()=>setShowUsers(true)}><Ic n="userplus" s={15} c="#4A4F5E"/> Cadastrar usuário</button>}
           <div style={S.userChip}>
             <span style={{...S.avatarSm,background:ROLES[currentUser.role].color}}>{initials(currentUser.username)}</span>
             <div style={{flex:1,minWidth:0}}>
@@ -1100,21 +903,17 @@ function App({ inicial, aoSair, usuarioConectado }){
       </aside>
       {showSwitch && <SwitchUserModal users={state.users} members={state.members} currentUser={currentUser}
         onEscolher={(id)=>{ login(id); setShowSwitch(false); }} onClose={()=>setShowSwitch(false)}/>}
-      {novidadeAberta && <NovidadeModal novidade={NOVIDADE} onFechar={fecharNovidade}
-        naoMostrar={novidadeNaoMostrar} onToggleNaoMostrar={setNovidadeNaoMostrar}/>}
 
       <main style={S.main}>
         <header style={S.topbar}>
-          <div style={{flex:1,minWidth:0}}><h1 style={S.h1}>{emReunioes ? "Reuniões" : (isPrivileged ? "JG2 PROJETOS" : (project?.name ?? "Sem projeto"))}</h1>
+          <div style={{width:"100%"}}><h1 style={S.h1}>{emReunioes ? "Reuniões" : (project?.name ?? "Sem projeto")}</h1>
             {emReunioes && <div style={{fontSize:12.5,color:"#8A5FD6",fontWeight:600,marginTop:2}}>Reuniões de todos os projetos</div>}
-            {isPrivileged && !emReunioes && <div style={{fontSize:12.5,color:"#3B3AC9",fontWeight:600,marginTop:2}}>Resumo de todos os projetos</div>}
-            {isPrivileged && !emReunioes && <ResumoSemanal tarefas={resumoTarefas}/>}
+            {isPrivileged && !emReunioes && <ResumoSemanal tarefas={filtered}/>}
           </div>
-          <ThemeToggle style={{marginLeft:16}}/>
         </header>
 
         {(!project && !emReunioes) ? (
-          <div style={S.empty}><p style={{margin:0,color:"var(--icon-muted)"}}>Nenhum projeto ainda.</p>
+          <div style={S.empty}><p style={{margin:0,color:"#737A8C"}}>Nenhum projeto ainda.</p>
             {isPrivileged && <button style={S.primaryBtn} onClick={addProject}><Ic n="plus" s={16} c="#fff"/> Criar projeto</button>}</div>
         ) : (state.view!=="dash" || !isPrivileged) ? (
           <React.Fragment>
@@ -1124,24 +923,21 @@ function App({ inicial, aoSair, usuarioConectado }){
                   <div style={{marginBottom:10}}><div style={S.panelTitle}>Equipe · {membrosEquipe.length}</div></div>
                   <div style={S.equipeGrid}>
                     {membrosEquipe.map((m)=>{ const fazer=emAbertoMembro(m.id); const feito=concluidoMembro(m.id);
-                      const podeAbrir = isPrivileged || m.id===myMemberId;
-                      return (<div key={m.id} style={{...S.equipeCard,cursor:podeAbrir?"pointer":"default"}}
-                        title={podeAbrir?`Ver tarefas de ${m.name}`:undefined}
-                        onClick={()=>{ if(podeAbrir) setMembroTarefas(m.id); }}>
+                      return (<div key={m.id} style={{...S.equipeCard,cursor:"pointer"}} title={`Ver tarefas de ${m.name}`} onClick={()=>setMembroTarefas(m.id)}>
                         <div style={S.equipeCardHead}>
                           <Avatar m={m} size={20}/>
-                          <span style={S.equipeCardNome}>{m.name}{m.id===myMemberId && <span style={{fontSize:9.5,color:"var(--text-muted)",marginLeft:4}}>você</span>}</span>
+                          <span style={S.equipeCardNome}>{m.name}{m.id===myMemberId && <span style={{fontSize:9.5,color:"#8A8F9E",marginLeft:4}}>você</span>}</span>
                         </div>
                         <div style={{display:"flex",gap:10,fontSize:11}}>
-                          <span style={{color:fazer>0?"#D8442F":"var(--text-faint3)",fontWeight:700}}>Fazer {fazer}</span>
-                          <span style={{color:feito>0?"#2F9E6E":"var(--text-faint3)",fontWeight:700}}>Feito {feito}</span>
+                          <span style={{color:fazer>0?"#D8442F":"#C2C6D0",fontWeight:700}}>Fazer {fazer}</span>
+                          <span style={{color:feito>0?"#2F9E6E":"#C2C6D0",fontWeight:700}}>Feito {feito}</span>
                         </div>
                       </div>); })}
                   </div>
                 </div>
               </div>); })()}
             <div style={{padding:"14px 26px 0",display:"flex",alignItems:"center",flexWrap:"wrap",gap:10}}>
-              <div style={S.searchWrap}><Ic n="search" s={15} c="var(--text-muted)"/>
+              <div style={S.searchWrap}><Ic n="search" s={15} c="#8A8F9E"/>
                 <input style={S.search} placeholder="Buscar tarefa…" value={query} onChange={(e)=>setQuery(e.target.value)}/></div>
               {trabalhos.length>0 && !emReunioes && (
                 <select style={S.folderSelect} value={folderFilter} onChange={(e)=>setFolderFilter(e.target.value)}>
@@ -1168,15 +964,14 @@ function App({ inicial, aoSair, usuarioConectado }){
 
                   {col.id==="done" ? (
                     <ConcluidoCalendario tarefas={filtered.filter((t)=>t.col==="done")} membros={state.members}
-                      membroFiltro={doneMembro} onMembroFiltro={setDoneMembro} isMaster={isMaster} onRevisao={sendToReview}
-                      onReabrirReuniao={reabrirReuniao} onExcluirReuniao={removeTask}/>
+                      membroFiltro={doneMembro} onMembroFiltro={setDoneMembro} isMaster={isMaster} onRevisao={sendToReview}/>
                   ) : (
                   <div style={S.cardList}>
-                    {items.map((t)=>(<Card key={t.id} task={t} member={memberById(t.assignee)} members={state.members} projects={state.projects} catalog={catalog} meuMembroId={myMemberId} projetoNome={(state.projects.find((p)=>p.id===t.project)||{}).name||""} onConfirmar={()=>confirmarReuniao(t.id,myMemberId)}
+                    {items.map((t)=>(<Card key={t.id} task={t} member={memberById(t.assignee)} members={state.members} meuMembroId={myMemberId} projetoNome={(state.projects.find((p)=>p.id===t.project)||{}).name||""} onConfirmar={()=>confirmarReuniao(t.id,myMemberId)}
                       canEdit={canEdit(t)} canDrag={canDrag(t)} canAct={canAct(t)} isPrivileged={isPrivileged} isMaster={isMaster} mine={isMine(t)}
                       onDragStart={()=>setDrag(t.id)} onDragEnd={()=>{setDrag(null);setDragOver(null);}}
                       onUpdate={(f)=>updateTask(t.id,f)} onRemove={()=>removeTask(t.id)}
-                      onAccept={()=>acceptTask(t.id)} onComplete={()=>setConfirmarConcluir(t.id)} onResume={()=>resumeTask(t.id)} onPause={()=>pauseTask(t.id)}
+                      onAccept={()=>acceptTask(t.id)} onComplete={()=>completeTask(t.id)} onResume={()=>resumeTask(t.id)}
                       onSendToReview={()=>sendToReview(t.id)} onBackToDoing={()=>backToDoing(t.id)}
                       onToProtocolado={()=>toProtocolado(t.id)} onBackToReview={()=>backToReview(t.id)}
                       onDoingToReview={()=>doingToReview(t.id)} onProtocoladoToDoing={()=>protocoladoToDoing(t.id)}
@@ -1200,18 +995,6 @@ function App({ inicial, aoSair, usuarioConectado }){
         confirmarLabel="Excluir projeto" perigo
         onConfirmar={()=>excluirProjetoDeFato(confirmarExcluir.id)}
         onCancelar={()=>setConfirmarExcluir(null)}/>}
-      {confirmarConcluir && (()=>{
-        const t=state.tasks.find((x)=>x.id===confirmarConcluir); if(!t) return null;
-        const ehReuniao=t.tipo==="reuniao";
-        return <ConfirmModal
-          titulo={ehReuniao?"Encerrar reunião":"Concluir tarefa"}
-          mensagem={ehReuniao
-            ? `Encerrar a reunião "${t.title}"? Ela será movida para Concluído.`
-            : `Concluir a tarefa "${t.title}"? Tempo registrado até aqui: ${durMs(tempoReal(t))}. Depois de concluída, ela vai para a coluna Concluído.`}
-          confirmarLabel={ehReuniao?"Encerrar reunião":"Concluir tarefa"}
-          onConfirmar={()=>{ completeTask(confirmarConcluir); setConfirmarConcluir(null); }}
-          onCancelar={()=>setConfirmarConcluir(null)}/>;
-      })()}
       {showNewProj && <NovoProjetoModal existentes={state.projects} onCriar={criarProjeto} onClose={()=>setShowNewProj(false)}/>}
       {showMsgs && <MensagensModal mensagens={minhasMsgs} membros={state.members} isMaster={isMaster} meuMembroId={myMemberId}
         onEnviar={enviarMensagem} onApagar={apagarMensagem} onClose={()=>setShowMsgs(false)}/>}
@@ -1251,24 +1034,20 @@ function Login({ users, onLogin }){
       name="password" autoComplete="current-password" onKeyDown={(e)=>{ if(e.key==="Enter") submit(e); }}/>
     {err && <div style={S.authErr}>{err}</div>}
     <button type="submit" style={{...S.primaryBtn,width:"100%",justifyContent:"center",marginTop:14,padding:"11px"}}>Entrar</button>
-    {showHint && <p style={S.authHint}><Ic n="lock" s={12} c="var(--text-muted)"/> Primeiro acesso: <b>admin</b> / <b>admin</b> — você trocará a senha ao entrar.</p>}
+    {showHint && <p style={S.authHint}><Ic n="lock" s={12} c="#8A8F9E"/> Primeiro acesso: <b>admin</b> / <b>admin</b> — você trocará a senha ao entrar.</p>}
   </form>);
 }
 
 function ChangePasswordCard({ onSave, onCancel, forced, titulo, sub, salvarLabel }){
-  const [p1,setP1]=useState(""); const [p2,setP2]=useState(""); const [err,setErr]=useState(""); const [ocupado,setOcupado]=useState(false);
+  const [p1,setP1]=useState(""); const [p2,setP2]=useState(""); const [err,setErr]=useState("");
   const r1=useRef(), r2=useRef();
   const submit=(e)=>{
     if(e && e.preventDefault) e.preventDefault();
-    if(ocupado) return;
     const a=(p1 || (r1.current&&r1.current.value) || "");
     const b=(p2 || (r2.current&&r2.current.value) || "");
     if(a.length<4){ setErr("A senha deve ter ao menos 4 caracteres."); return; }
     if(a!==b){ setErr("As senhas não coincidem."); return; }
-    setErr(""); setOcupado(true);
-    Promise.resolve(onSave(a))
-      .catch((erro)=>{ setErr(erro?.message || "Não foi possível salvar a senha agora. Confira a internet e tente de novo."); })
-      .finally(()=>setOcupado(false));
+    onSave(a);
   };
   return (<form style={S.authCard} onSubmit={submit}>
     <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:18}}>
@@ -1283,9 +1062,8 @@ function ChangePasswordCard({ onSave, onCancel, forced, titulo, sub, salvarLabel
       name="confirm-password" autoComplete="new-password" onKeyDown={(e)=>{ if(e.key==="Enter") submit(e); }}/>
     {err && <div style={S.authErr}>{err}</div>}
     <div style={{display:"flex",gap:8,marginTop:14}}>
-      <button type="submit" disabled={ocupado} style={{...S.primaryBtn,flex:1,justifyContent:"center",padding:"11px",opacity:ocupado?0.7:1}}>
-        {ocupado?"Salvando…":(salvarLabel || "Salvar senha")}</button>
-      {onCancel && <button type="button" style={S.ghostBtn} onClick={onCancel} disabled={ocupado}>Cancelar</button>}
+      <button type="submit" style={{...S.primaryBtn,flex:1,justifyContent:"center",padding:"11px"}}>{salvarLabel || "Salvar senha"}</button>
+      {onCancel && <button type="button" style={S.ghostBtn} onClick={onCancel}>Cancelar</button>}
     </div>
   </form>);
 }
@@ -1299,7 +1077,7 @@ function DropMenu({ pos, children }){
   const abrirPraCima = espacoAbaixo<220 && espacoAcima>espacoAbaixo;
   const maxH=Math.max(140,Math.min(320,(abrirPraCima?espacoAcima:espacoAbaixo)-16));
   const style={ position:"fixed", ...(abrirPraCima?{bottom:vh-pos.top+4}:{top:pos.bottom+4}),
-    right:Math.max(8,vw-pos.right), background:"var(--surface)", borderRadius:10, border:"1px solid var(--border)",
+    right:Math.max(8,vw-pos.right), background:"#fff", borderRadius:10, border:"1px solid #E2E5EC",
     boxShadow:"0 8px 28px rgba(20,22,31,.14)", padding:5, zIndex:200, minWidth:170, maxHeight:maxH, overflowY:"auto" };
   return ReactDOM.createPortal(<div data-dropmenu="1" style={style} onClick={(e)=>e.stopPropagation()}>{children}</div>, document.body);
 }
@@ -1307,24 +1085,24 @@ function DropMenu({ pos, children }){
 // Repassar tarefa: janela central (igual à de trocar de usuário), sem rolagem escondendo opções.
 function RepassarModal({ members, task, onEscolher, onClose }){
   const opcoes = members.filter((m)=>m.id!==task.assignee);
-  return ReactDOM.createPortal(<div data-dropmenu="1" style={S.overlay}>
+  return ReactDOM.createPortal(<div data-dropmenu="1" style={S.overlay} onClick={onClose}>
     <div style={{...S.modal,maxWidth:360}} onClick={(e)=>e.stopPropagation()}>
       <div style={S.modalHead}><h2 style={S.modalTitle}>Repassar tarefa</h2><button style={S.iconBtn} onClick={onClose}><Ic n="x" s={18}/></button></div>
-      <div style={{fontSize:12.5,color:"var(--text-muted)",marginBottom:12}}>Escolha quem vai continuar "{task.title}".</div>
+      <div style={{fontSize:12.5,color:"#8A8F9E",marginBottom:12}}>Escolha quem vai continuar "{task.title}".</div>
       <div style={{display:"flex",flexDirection:"column",gap:6,maxHeight:400,overflowY:"auto"}}>
         {opcoes.map((m)=>(<button key={m.id} onClick={()=>onEscolher(m.id)}
-          style={{display:"flex",alignItems:"center",gap:10,padding:"9px 10px",borderRadius:11,border:"1px solid var(--border-soft)",background:"var(--surface)",cursor:"pointer",textAlign:"left",width:"100%"}}>
+          style={{display:"flex",alignItems:"center",gap:10,padding:"9px 10px",borderRadius:11,border:"1px solid #E7E9EF",background:"#fff",cursor:"pointer",textAlign:"left",width:"100%"}}>
           <Avatar m={m} size={30}/><div style={{fontSize:13.5,fontWeight:600}}>{m.name}</div>
         </button>))}
-        {opcoes.length===0 && <div style={{fontSize:11.5,color:"var(--text-faint)",padding:"4px 6px"}}>Nenhum colega disponível.</div>}
+        {opcoes.length===0 && <div style={{fontSize:11.5,color:"#A0A5B2",padding:"4px 6px"}}>Nenhum colega disponível.</div>}
       </div>
     </div>
   </div>, document.body);
 }
 
 // ---------- Task card ----------
-function Card({ task, member, members, projects, catalog, meuMembroId, projetoNome, onConfirmar, canEdit, canDrag, canAct, isPrivileged, isMaster, mine,
-                onDragStart, onDragEnd, onUpdate, onRemove, onAccept, onComplete, onResume, onPause, onSendToReview, onBackToDoing, onToProtocolado, onBackToReview, onDoingToReview, onProtocoladoToDoing, onRepassar, onEditLock }){
+function Card({ task, member, members, meuMembroId, projetoNome, onConfirmar, canEdit, canDrag, canAct, isPrivileged, isMaster, mine,
+                onDragStart, onDragEnd, onUpdate, onRemove, onAccept, onComplete, onResume, onSendToReview, onBackToDoing, onToProtocolado, onBackToReview, onDoingToReview, onProtocoladoToDoing, onRepassar, onEditLock }){
   const [menu,setMenu]=useState(null); const [menuPos,setMenuPos]=useState(null); const ref=useRef();
   const [editDesc,setEditDesc]=useState(false); const [rascunho,setRascunho]=useState("");
   const [novaNota,setNovaNota]=useState(""); const [editNota,setEditNota]=useState(null); const [notaTexto,setNotaTexto]=useState("");
@@ -1332,17 +1110,11 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
   const [editTrab,setEditTrab]=useState(false); const [trabTexto,setTrabTexto]=useState("");
   const [editTitulo,setEditTitulo]=useState(false); const [tituloTexto,setTituloTexto]=useState("");
   const [editHoras,setEditHoras]=useState(false); const [horasTexto,setHorasTexto]=useState("");
-  const [editTudo,setEditTudo]=useState(false);
   useEffect(()=>{
-    const emEdicao = editTitulo || editTrab || editNota!==null || editFazer!==null || editHoras || editTudo || !!menu;
+    const emEdicao = editTitulo || editTrab || editNota!==null || editHoras || !!menu;
     if(onEditLock) onEditLock(task.id, emEdicao);
     return ()=>{ if(onEditLock) onEditLock(task.id, false); };
-  }, [editTitulo, editTrab, editNota, editFazer, editHoras, editTudo, menu, task.id]);
-  useEffect(()=>{
-    if(task.tipo!=="reuniao" && task.col==="todo" && mine && meuMembroId && !(task.vistoPor||[]).includes(meuMembroId)){
-      onUpdate({ vistoPor:[...(task.vistoPor||[]), meuMembroId] });
-    }
-  },[task.id, task.col, task.tipo, mine, meuMembroId]);
+  }, [editTitulo, editTrab, editNota, editHoras, menu, task.id]);
   const [enviandoPdf,setEnviandoPdf]=useState(false); const pdfRef=useRef();
   const pri=PRIORITIES[task.priority]; const col=COL[task.col];
   const done=task.col==="done"; const inReview=task.col==="review"; const fixing=inReview&&task.needsFix; const inProtocolado=task.col==="protocolado";
@@ -1359,8 +1131,6 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
         <Ic n="calendar" s={13} c="#fff"/> REUNIÃO
         {task.quando && <span style={S.faixaQuando}>{quandoTexto(task.quando)}</span>}
       </div>)}
-      {ehReuniao && task.criadoPor && (()=>{ const criador=members.find((m)=>m.id===task.criadoPor);
-        return criador ? <div style={{fontSize:11,color:"var(--text-muted)",padding:"6px 11px 0"}}>Marcada por {criador.name}</div> : null; })()}
       {!ehReuniao && projetoNome && <div style={S.projetoTag} title={"Projeto: "+projetoNome}>
         <Ic n="folder" s={11} c="#3B3AC9"/> {projetoNome}</div>}
       {task.folderName && !editTrab && <div style={{...S.folderTag,color:corTrab,background:corTrab+"14",borderColor:corTrab+"33"}}
@@ -1370,26 +1140,24 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
       {editTrab && <div style={{display:"flex",gap:5,alignItems:"center",marginBottom:8}} onClick={(e)=>e.stopPropagation()}>
         <input autoFocus value={trabTexto} onChange={(e)=>setTrabTexto(e.target.value)}
           onKeyDown={(e)=>{ if(e.key==="Enter"){ onUpdate({folderName:trabTexto.trim()}); setEditTrab(false); } if(e.key==="Escape") setEditTrab(false); }}
-          style={{...S.folderTag,color:corTrab,border:`1px solid ${corTrab}55`,background:"var(--surface)",cursor:"text",width:130}}/>
+          style={{...S.folderTag,color:corTrab,border:`1px solid ${corTrab}55`,background:"#fff",cursor:"text",width:130}}/>
         <button style={S.iconBtn} onClick={()=>{ onUpdate({folderName:trabTexto.trim()}); setEditTrab(false); }}><Ic n="check" s={13} c="#1F7A55"/></button>
-        <button style={S.iconBtn} onClick={()=>setEditTrab(false)}><Ic n="x" s={13} c="var(--text-muted)"/></button>
+        <button style={S.iconBtn} onClick={()=>setEditTrab(false)}><Ic n="x" s={13} c="#8A8F9E"/></button>
       </div>}
       <div style={{...S.cardTop,...(ehReuniao?{padding:"10px 11px 0"}:{})}}>
         {done ? <Ic n="lock" s={13} c="#8FBFA8" style={{flexShrink:0,marginTop:2}}/>
           : fixing ? <Ic n="undo" s={13} c="#B8860B" style={{flexShrink:0,marginTop:2}}/>
-          : canDrag ? <Ic n="grip" s={14} c="var(--text-faint3)" style={{cursor:"grab",flexShrink:0,marginTop:2}}/>
-          : <Ic n="circle" s={12} c="var(--text-faint3)" style={{flexShrink:0,marginTop:3}}/>}
-        {editTitulo ? (<div style={{display:"flex",alignItems:"center",gap:5,flex:1}} onClick={(e)=>e.stopPropagation()}>
+          : canDrag ? <Ic n="grip" s={14} c="#C2C6D0" style={{cursor:"grab",flexShrink:0,marginTop:2}}/>
+          : <Ic n="circle" s={12} c="#C2C6D0" style={{flexShrink:0,marginTop:3}}/>}
+        {editTitulo ? (<div style={{display:"flex",alignItems:"center",gap:5,flex:1}}>
           <input autoFocus value={tituloTexto} onChange={(e)=>setTituloTexto(e.target.value)}
             onKeyDown={(e)=>{ if(e.key==="Enter"&&tituloTexto.trim()){ onUpdate({title:tituloTexto.trim()}); setEditTitulo(false); } if(e.key==="Escape") setEditTitulo(false); }}
-            style={{...S.cardTitle,border:"1px solid var(--accent-tint-border)",borderRadius:6,padding:"2px 6px",flex:1}}/>
-          <button style={S.iconBtn} onClick={()=>{ if(tituloTexto.trim()){ onUpdate({title:tituloTexto.trim()}); setEditTitulo(false); } }}><Ic n="check" s={13} c="#1F7A55"/></button>
-          <button style={S.iconBtn} onClick={()=>setEditTitulo(false)}><Ic n="x" s={13} c="var(--text-muted)"/></button>
+            onBlur={()=>{ if(tituloTexto.trim()) onUpdate({title:tituloTexto.trim()}); setEditTitulo(false); }}
+            style={{...S.cardTitle,border:"1px solid #C7CBFF",borderRadius:6,padding:"2px 6px",flex:1}}/>
         </div>) : (
           <p style={{...S.cardTitle,...(ehReuniao?S.cardTituloReuniao:{}),...(canEdit&&isPrivileged?{cursor:"text"}:{})}}
             title={canEdit&&isPrivileged?"Clique para editar a tarefa":undefined}
             onClick={()=>{ if(canEdit&&isPrivileged){ setTituloTexto(task.title); setEditTitulo(true); } }}>{task.title}</p>)}
-        {canEdit && isMaster && <button className="card-del" style={S.cardDel} title="Editar tarefa" onClick={()=>setEditTudo(true)}><Ic n="edit" s={13}/></button>}
         {canEdit && isPrivileged && <button className="card-del" style={S.cardDel} onClick={onRemove}><Ic n="x" s={13}/></button>}
       </div>
 
@@ -1397,7 +1165,7 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
         // "O que fazer" agora funciona como o diário: cada anotação vira uma linha com a data.
         // Migra uma descrição antiga (texto único) para a primeira anotação, uma vez.
         let fazer=task.fazerNotas;
-        if(!fazer){ fazer = task.desc ? [{ id:"legacy-"+task.id, data:(task.createdAt||Date.now()), texto:task.desc }] : []; }
+        if(!fazer){ fazer = task.desc ? [{ id:uid(), data:(task.createdAt||Date.now()), texto:task.desc }] : []; }
         const podeEscrever = canEdit && isPrivileged;         // só o master/gerente escreve o que fazer
         if(fazer.length===0 && !podeEscrever) return null;
         const persistir=(lista)=> onUpdate({ fazerNotas:lista, desc:"" });
@@ -1407,7 +1175,7 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
         const removerFazer=(id)=>{ persistir(fazer.filter((n)=>n.id!==id)); };
         return (<div style={{...S.descBox,...(ehReuniao?{margin:"8px 11px 0"}:{})}}>
           <span style={S.descLabel}>O que fazer</span>
-          {fazer.length===0 && <div style={{fontSize:11.5,color:"var(--text-faint)",marginBottom:6}}>Nada anotado ainda.</div>}
+          {fazer.length===0 && <div style={{fontSize:11.5,color:"#A0A5B2",marginBottom:6}}>Nada anotado ainda.</div>}
           {fazer.map((n)=>(<div key={n.id} style={S.diarioLinha}>
             <span style={S.fazerData}>{ddmm(new Date(n.data))}</span>
             {editFazer===n.id ? (<div style={{flex:1}}>
@@ -1420,7 +1188,7 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
             </div>) : (<React.Fragment>
               <span style={S.fazerTexto}>{n.texto}</span>
               {podeEscrever && <span style={S.diarioAcoes}>
-                <button style={S.diarioMini} title="Editar" onClick={()=>{ setEditFazer(n.id); setFazerTexto(n.texto); }}><Ic n="key" s={11} c="var(--text-muted)"/></button>
+                <button style={S.diarioMini} title="Editar" onClick={()=>{ setEditFazer(n.id); setFazerTexto(n.texto); }}><Ic n="key" s={11} c="#8A8F9E"/></button>
                 <button style={S.diarioMini} title="Remover" onClick={()=>removerFazer(n.id)}><Ic n="trash" s={11} c="#C0397E"/></button>
               </span>}
             </React.Fragment>)}
@@ -1445,7 +1213,7 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
         const removerNota=(id)=>{ onUpdate({diario:diario.filter((n)=>n.id!==id)}); };
         return (<div style={{...S.diarioBox,...(ehReuniao?{margin:"8px 11px 0"}:{})}}>
           <span style={S.descLabel}>Tarefa feita no dia</span>
-          {diario.length===0 && <div style={{fontSize:11.5,color:"var(--text-faint)",marginBottom:6}}>Nenhuma anotação ainda.</div>}
+          {diario.length===0 && <div style={{fontSize:11.5,color:"#A0A5B2",marginBottom:6}}>Nenhuma anotação ainda.</div>}
           {diario.map((n)=>(<div key={n.id} style={S.diarioLinha}>
             <span style={S.diarioData}>{ddmm(new Date(n.data))}</span>
             {editNota===n.id ? (<div style={{flex:1}}>
@@ -1458,7 +1226,7 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
             </div>) : (<React.Fragment>
               <span style={S.diarioTexto}>{n.texto}</span>
               {podeEditarLinhas && <span style={S.diarioAcoes}>
-                <button style={S.diarioMini} title="Editar" onClick={()=>{ setEditNota(n.id); setNotaTexto(n.texto); }}><Ic n="key" s={11} c="var(--text-muted)"/></button>
+                <button style={S.diarioMini} title="Editar" onClick={()=>{ setEditNota(n.id); setNotaTexto(n.texto); }}><Ic n="key" s={11} c="#8A8F9E"/></button>
                 <button style={S.diarioMini} title="Remover" onClick={()=>removerNota(n.id)}><Ic n="trash" s={11} c="#C0397E"/></button>
               </span>}
             </React.Fragment>)}
@@ -1482,7 +1250,7 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
             <span style={{...S.tempoVal,color:"#D8442F"}}>{durMs(msUteis(task.createdAt, Date.now()))}</span></div>)}
           {(task.workedMs>0 || task.runningSince) && <div style={S.tempoLinha}>
             <span style={S.tempoRot}>{task.runningSince?"Contando":(task.col==="doing"?"Pausada":"Tempo real")}</span>
-            <span style={{...S.tempoVal,color:task.runningSince?"#2F9E6E":"var(--text-strong)",fontWeight:800}}>
+            <span style={{...S.tempoVal,color:task.runningSince?"#2F9E6E":"#20232E",fontWeight:800}}>
               {task.runningSince && <span style={S.pulsando}>●</span>} {durMs(tempoReal(task))}</span></div>}
           {task.hours>0 && <div style={S.tempoLinha}>
             <span style={S.tempoRot}>Previsto</span><span style={S.tempoVal}>{hm(task.hours)}</span></div>}
@@ -1503,7 +1271,7 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
           {pdf ? (<div style={S.pdfLinha}>
             <a href={pdf.data} download={pdf.name} style={S.pdfNome} title={pdf.name}><Ic n="flag" s={11} c="#8B3ABF"/> {pdf.name}</a>
             {isPrivileged && <button style={S.diarioMini} title="Remover anexo" onClick={()=>onUpdate({protocoladoPdf:null})}><Ic n="trash" s={11} c="#C0397E"/></button>}
-          </div>) : (<div style={{fontSize:11.5,color:"var(--text-faint)"}}>Nenhum arquivo anexado ainda.</div>)}
+          </div>) : (<div style={{fontSize:11.5,color:"#A0A5B2"}}>Nenhum arquivo anexado ainda.</div>)}
           {isPrivileged && <button style={S.pdfBtn} disabled={enviandoPdf} onClick={()=>pdfRef.current&&pdfRef.current.click()}>
             <Ic n="plus" s={12} c="#8B3ABF"/> {enviandoPdf?"Enviando…":pdf?"Trocar PDF":"Anexar PDF"}</button>}
         </div>);
@@ -1514,15 +1282,15 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
         <div style={{display:"flex",gap:6,alignItems:"center"}}>
           <button disabled={!canEdit||!isPrivileged} style={{...S.pill,color:pri.color,borderColor:pri.color+"44",background:pri.color+"12",...((!canEdit||!isPrivileged)?{opacity:.75}:{})}}
             onClick={(e)=>{ if(!canEdit||!isPrivileged)return; setMenuPos(e.currentTarget.getBoundingClientRect()); setMenu(menu==="pri"?null:"pri"); }}><Ic n="flag" s={11} c={pri.color}/> {pri.label}</button>
-          <button disabled={!canEdit} style={{...S.pill,color:"var(--text-secondary)",borderColor:"#DDE0E7",background:"#F5F6F9",...(!canEdit?{opacity:.75}:{})}}
-            onClick={(e)=>{ if(!canEdit)return; setMenuPos(e.currentTarget.getBoundingClientRect()); setMenu(menu==="hrs"?null:"hrs"); }}><Ic n="clock" s={11} c="var(--text-secondary)"/> prev. {task.hours||0}h</button>
+          <button disabled={!canEdit} style={{...S.pill,color:"#5A6072",borderColor:"#DDE0E7",background:"#F5F6F9",...(!canEdit?{opacity:.75}:{})}}
+            onClick={(e)=>{ if(!canEdit)return; setMenuPos(e.currentTarget.getBoundingClientRect()); setMenu(menu==="hrs"?null:"hrs"); }}><Ic n="clock" s={11} c="#5A6072"/> prev. {task.hours||0}h</button>
         </div>
         {ehReuniao ? (<span style={S.todosTag} title="Reunião para toda a equipe"><Ic n="users" s={11} c="#8B3ABF"/> Todos</span>)
           : (<div style={{display:"flex",gap:6,alignItems:"center"}}>
           {!done && <button style={S.iconBtn} title="Repassar para colega"
-            onClick={()=>setMenu(menu==="rep"?null:"rep")}><Ic n="users" s={14} c="var(--text-secondary)"/></button>}
+            onClick={()=>setMenu(menu==="rep"?null:"rep")}><Ic n="users" s={14} c="#5A6072"/></button>}
           <button disabled={!canEdit||!isPrivileged} style={S.assignBtn} onClick={(e)=>{ if(!canEdit||!isPrivileged)return; setMenuPos(e.currentTarget.getBoundingClientRect()); setMenu(menu==="asg"?null:"asg"); }} title={member?.name??"Sem responsável"}>
-            {member ? <Avatar m={member} size={24}/> : <span style={S.avatarEmpty}><Ic n="circle" s={11} c="var(--text-faint)"/></span>}
+            {member ? <Avatar m={member} size={24}/> : <span style={S.avatarEmpty}><Ic n="circle" s={11} c="#A0A5B2"/></span>}
           </button>
           </div>)}
       </div>
@@ -1535,14 +1303,14 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
         </div>
         {quemConfirmou.length>0 ? (<div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:5}}>
           {quemConfirmou.map((m)=>(<Avatar key={m.id} m={m} size={22}/>))}
-        </div>) : <div style={{fontSize:11.5,color:"var(--text-faint)",marginTop:4}}>ninguém confirmou ainda</div>}
+        </div>) : <div style={{fontSize:11.5,color:"#A0A5B2",marginTop:4}}>ninguém confirmou ainda</div>}
       </div>)}
-      {ehReuniao && meuMembroId && (
+      {ehReuniao && meuMembroId && !isMaster && (
         jaConfirmei
           ? <div style={{...S.confFeito,margin:"8px 11px 10px"}}><Ic n="checkc" s={13} c="#2F9E6E"/> Você confirmou que viu</div>
           : <button style={{...S.doneBtn,background:"#8B3ABF",margin:"8px 11px 10px",width:"auto"}} onClick={onConfirmar}>
               <Ic n="checkc" s={13} c="#fff"/> Confirmar que vi</button>)}
-      {ehReuniao && task.col!=="done" && (task.criadoPor ? task.criadoPor===meuMembroId : isMaster) && (
+      {ehReuniao && isMaster && task.col!=="done" && (
         <button style={{...S.doneBtn,margin:"8px 11px 10px",width:"auto"}} onClick={onComplete}>
           <Ic n="checkc" s={13} c="#fff"/> Encerrar reunião</button>)}
 
@@ -1551,20 +1319,18 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
         <button style={{...S.doneBtn,background:COL.doing.tint}} onClick={onAccept}><Ic n="check" s={13} c="#fff"/> Aceitar tarefa</button>)}
       {!ehReuniao && task.col==="doing" && canAct && !task.runningSince && (
         <button style={{...S.doneBtn,background:"#2F9E6E"}} onClick={onResume}><Ic n="bar" s={13} c="#fff"/> Continuar tarefa</button>)}
-      {!ehReuniao && task.col==="doing" && canAct && task.runningSince && (
-        <button style={S.cancelBtn} onClick={onPause} title="Pausar agora, por qualquer motivo"><Ic n="hourglass" s={12} c="var(--icon-muted)"/> Pausar tarefa</button>)}
       {!ehReuniao && task.col==="doing" && canAct && (
         <button style={{...S.doneBtn,background:COL.review.tint}} onClick={onDoingToReview}><Ic n="checkc" s={13} c="#fff"/> Ir para Revisão Interna</button>)}
       {!ehReuniao && inReview && canAct && (
         <button style={{...S.doneBtn,background:COL.protocolado.tint}} onClick={onToProtocolado}><Ic n="checkc" s={13} c="#fff"/> Ir para Protocolado</button>)}
       {!ehReuniao && inReview && isMaster && (
-        <button style={S.cancelBtn} onClick={onBackToDoing}><Ic n="undo" s={12} c="var(--icon-muted)"/> Voltar para Em andamento</button>)}
+        <button style={S.cancelBtn} onClick={onBackToDoing}><Ic n="undo" s={12} c="#737A8C"/> Voltar para Em andamento</button>)}
       {!ehReuniao && inProtocolado && isMaster && (
         <button style={S.doneBtn} onClick={onComplete}><Ic n="checkc" s={13} c="#fff"/> Concluir</button>)}
       {!ehReuniao && inProtocolado && isMaster && (
         <button style={S.reviewBtn} onClick={onBackToReview}><Ic n="undo" s={13} c="#B8860B"/> Voltar para Revisão Interna</button>)}
       {!ehReuniao && inProtocolado && isMaster && (
-        <button style={S.cancelBtn} onClick={onProtocoladoToDoing}><Ic n="undo" s={12} c="var(--icon-muted)"/> Voltar para Em andamento</button>)}
+        <button style={S.cancelBtn} onClick={onProtocoladoToDoing}><Ic n="undo" s={12} c="#737A8C"/> Voltar para Em andamento</button>)}
       {!ehReuniao && done && isMaster && (
         <button style={S.reviewBtn} onClick={onSendToReview}><Ic n="undo" s={13} c="#B8860B"/> Enviar para Revisão Interna</button>)}
 
@@ -1581,112 +1347,21 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
             onKeyDown={(e)=>{ if(e.key==="Enter" && !isNaN(+horasTexto)){ onUpdate({hours:Math.max(0,+horasTexto)}); setEditHoras(false); setMenu(null); } if(e.key==="Escape") setEditHoras(false); }}
             style={{...S.authInput,padding:"5px 8px",width:70}}/>
           <button style={S.iconBtn} onClick={()=>{ if(!isNaN(+horasTexto)){ onUpdate({hours:Math.max(0,+horasTexto)}); setEditHoras(false); setMenu(null); } }}><Ic n="check" s={13} c="#1F7A55"/></button>
-          <button style={S.iconBtn} onClick={()=>setEditHoras(false)}><Ic n="x" s={13} c="var(--text-muted)"/></button>
+          <button style={S.iconBtn} onClick={()=>setEditHoras(false)}><Ic n="x" s={13} c="#8A8F9E"/></button>
         </div>}
       </DropMenu>)}
       {menu==="asg" && (<DropMenu pos={menuPos}>
-        <button style={S.menuItem} onClick={()=>{onUpdate({assignee:null,workedMs:tempoReal(task),runningSince:null});setMenu(null);}}><span style={S.avatarEmpty}><Ic n="circle" s={11} c="var(--text-faint)"/></span> Ninguém</button>
+        <button style={S.menuItem} onClick={()=>{onUpdate({assignee:null,workedMs:tempoReal(task),runningSince:null});setMenu(null);}}><span style={S.avatarEmpty}><Ic n="circle" s={11} c="#A0A5B2"/></span> Ninguém</button>
         {members.filter((m)=>m.id!==task.assignee).map((m)=>(<button key={m.id} style={S.menuItem} onClick={()=>{onRepassar(m.id);setMenu(null);}}><Avatar m={m} size={24}/> {m.name}</button>))}
       </DropMenu>)}
       {menu==="rep" && <RepassarModal members={members} task={task} onClose={()=>setMenu(null)}
         onEscolher={(mid)=>{ onRepassar(mid); setMenu(null); }}/>}
-      {editTudo && <EditarTarefaModal task={task} projects={projects||[]} members={members} catalog={catalog||[]}
-        onSalvar={(campos)=>{ onUpdate(campos); setEditTudo(false); }} onFechar={()=>setEditTudo(false)}/>}
     </div>
   );
 }
 
-function EditarTarefaModal({ task, projects, members, catalog, onSalvar, onFechar }){
-  const ehReuniao=task.tipo==="reuniao";
-  const [titulo,setTitulo]=useState(task.title||"");
-  const [projeto,setProjeto]=useState(task.project||"");
-  const [assignee,setAssignee]=useState(task.assignee||"");
-  const [priority,setPriority]=useState(task.priority||"media");
-  const [horas,setHoras]=useState(String(task.hours||0));
-  const [criadaEm,setCriadaEm]=useState(paraDatetimeLocal(task.createdAt));
-  const [quando,setQuando]=useState(task.quando||"");
-  const [convidados,setConvidados]=useState(task.convidados||[]);
-  const [err,setErr]=useState("");
-
-  const salvar=()=>{
-    if(!titulo.trim()){ setErr("Escreva o título da tarefa."); return; }
-    if(!projeto){ setErr("Escolha o projeto."); return; }
-    const horasNum=+horas; if(isNaN(horasNum)||horasNum<0){ setErr("Horas inválidas."); return; }
-    const campos={ title:titulo.trim(), project:projeto, priority, hours:Math.max(0,horasNum) };
-    const criadaTs=deDatetimeLocal(criadaEm);
-    if(criadaTs) campos.createdAt=criadaTs;
-    if(ehReuniao){ campos.quando=quando; campos.convidados=convidados||[]; }
-    else{ campos.assignee=assignee||null; }
-    onSalvar(campos);
-  };
-
-  return (<div style={S.overlay}>
-    <div style={S.modal} onClick={(e)=>e.stopPropagation()}>
-      <div style={S.modalHead}>
-        <h2 style={S.modalTitle}>Editar tarefa</h2>
-        <button style={S.iconBtn} onClick={onFechar}><Ic n="x" s={18}/></button>
-      </div>
-
-      <div style={S.launchLabel}>Título</div>
-      <select style={{...S.authInput,margin:0}} value={titulo} onChange={(e)=>{setTitulo(e.target.value);setErr("");}}>
-        {!(catalog||[]).some((c)=>c.title===titulo) && titulo && <option value={titulo}>{titulo}</option>}
-        {(catalog||[]).map((c)=>(<option key={c.id} value={c.title}>{c.title}</option>))}
-      </select>
-
-      <div style={{...S.launchLabel,marginTop:10}}>Projeto</div>
-      <select style={{...S.authInput,margin:0}} value={projeto} onChange={(e)=>{setProjeto(e.target.value);setErr("");}}>
-        <option value="">Escolher…</option>
-        {projects.map((p)=>(<option key={p.id} value={p.id}>{p.name}</option>))}
-      </select>
-
-      {!ehReuniao ? (<React.Fragment>
-        <div style={{...S.launchLabel,marginTop:10}}>Responsável</div>
-        <select style={{...S.authInput,margin:0}} value={assignee} onChange={(e)=>setAssignee(e.target.value)}>
-          <option value="">Ninguém</option>
-          {members.map((m)=>(<option key={m.id} value={m.id}>{m.name}</option>))}
-        </select>
-      </React.Fragment>) : (<React.Fragment>
-        <div style={{...S.launchLabel,marginTop:10}}>Quando</div>
-        <input style={{...S.authInput,margin:0}} type="datetime-local" value={quando} onChange={(e)=>setQuando(e.target.value)}/>
-        <div style={{...S.launchLabel,marginTop:10}}>Convidados</div>
-        <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-          <button type="button" style={{...S.convidadoChip,...((!convidados||convidados.length===0)?S.convidadoChipOn:{})}}
-            onClick={()=>setConvidados([])}>Todos</button>
-          {members.map((m)=>{ const marcado=(convidados||[]).includes(m.id);
-            return (<button key={m.id} type="button" style={{...S.convidadoChip,...(marcado?S.convidadoChipOn:{})}}
-              onClick={()=>setConvidados((cs)=>marcado?(cs||[]).filter((id)=>id!==m.id):[...(cs||[]),m.id])}>
-              {m.name.split(" ")[0]}</button>); })}
-        </div>
-      </React.Fragment>)}
-
-      <div style={{display:"flex",gap:8,marginTop:10}}>
-        <div style={{flex:1}}>
-          <div style={S.launchLabel}>Prioridade</div>
-          <select style={{...S.authInput,margin:0,color:PRIORITIES[priority].color,fontWeight:600}} value={priority} onChange={(e)=>setPriority(e.target.value)}>
-            {Object.entries(PRIORITIES).map(([k,v])=>(<option key={k} value={k}>{v.label}</option>))}
-          </select>
-        </div>
-        <div style={{flex:1}}>
-          <div style={S.launchLabel}>Horas previstas</div>
-          <input style={{...S.authInput,margin:0}} type="number" min="0" step="0.5" value={horas} onChange={(e)=>setHoras(e.target.value)}/>
-        </div>
-      </div>
-
-      <div style={{...S.launchLabel,marginTop:10}}>Contagem começou em</div>
-      <input style={{...S.authInput,margin:0}} type="datetime-local" value={criadaEm} onChange={(e)=>setCriadaEm(e.target.value)}/>
-      <div style={{fontSize:11.5,color:"var(--text-muted)",marginTop:4}}>Ajusta o horário usado para calcular o tempo de espera/resposta da tarefa.</div>
-
-      {err && <div style={{...S.authErr,marginTop:10}}>{err}</div>}
-      <div style={{display:"flex",gap:8,marginTop:16}}>
-        <button style={{...S.primaryBtn,flex:1,justifyContent:"center"}} onClick={salvar}>Salvar</button>
-        <button style={S.ghostBtn} onClick={onFechar}>Cancelar</button>
-      </div>
-    </div>
-  </div>);
-}
-
 // ---------- Lançar tarefa (só na coluna A fazer, a partir do catálogo) ----------
-function ConcluidoCalendario({ tarefas, membros, membroFiltro, onMembroFiltro, isMaster, onRevisao, onReabrirReuniao, onExcluirReuniao }){
+function ConcluidoCalendario({ tarefas, membros, membroFiltro, onMembroFiltro, isMaster, onRevisao }){
   const [offset,setOffset]=useState(0);
   const chaveDia=(d)=>`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
   // por padrão só o dia de hoje fica aberto; os demais começam recolhidos
@@ -1713,8 +1388,8 @@ function ConcluidoCalendario({ tarefas, membros, membroFiltro, onMembroFiltro, i
     <div style={S.calNav}>
       <button style={S.calNavBtn} onClick={()=>{ setOffset(offset-1); setAbertos({}); }} title="Semana anterior"><Ic n="chev" s={14} c="#3B3AC9" style={{transform:"rotate(90deg)"}}/> Anterior</button>
       <div style={S.calPeriodo}>
-        <div style={{fontWeight:800,fontSize:12.5,color:"var(--text-strong)"}}>{ddmm(dias[0])} — {ddmm(dias[6])}</div>
-        <div style={{fontSize:10.5,color:"var(--text-muted)",fontWeight:600}}>{offset===0?"Esta semana":offset===-1?"Semana passada":offset<0?`${-offset} semanas atrás`:offset===1?"Próxima semana":`${offset} semanas à frente`}</div>
+        <div style={{fontWeight:800,fontSize:12.5,color:"#20232E"}}>{ddmm(dias[0])} — {ddmm(dias[6])}</div>
+        <div style={{fontSize:10.5,color:"#8A8F9E",fontWeight:600}}>{offset===0?"Esta semana":offset===-1?"Semana passada":offset<0?`${-offset} semanas atrás`:offset===1?"Próxima semana":`${offset} semanas à frente`}</div>
       </div>
       <button style={{...S.calNavBtn,...(offset>=0?{visibility:"hidden"}:{})}} onClick={()=>{ setOffset(offset+1); setAbertos({}); }} title="Próxima semana">Próxima <Ic n="chev" s={14} c="#3B3AC9" style={{transform:"rotate(-90deg)"}}/></button>
     </div>
@@ -1747,21 +1422,17 @@ function ConcluidoCalendario({ tarefas, membros, membroFiltro, onMembroFiltro, i
             {temItens
               ? <span style={S.calDiaResumo}>{itens.length} · {hms(horasDia(d))}</span>
               : <span style={S.calDiaVazio}>—</span>}
-            {temItens && <span style={S.calDiaSeta}><Ic n="chev" s={15} c={aberto?"#6B3FBF":"var(--text-muted)"} style={{transform:aberto?"none":"rotate(-90deg)",transition:"transform .15s"}}/></span>}
+            {temItens && <span style={S.calDiaSeta}><Ic n="chev" s={15} c={aberto?"#6B3FBF":"#8A8F9E"} style={{transform:aberto?"none":"rotate(-90deg)",transition:"transform .15s"}}/></span>}
           </div>
           {aberto && itens.map((t)=>{ const m=membroById(t.assignee); const reuniao=t.tipo==="reuniao";
             return (<div key={t.id} className="cal-item" style={{...S.calItem,...(reuniao?{borderLeft:"3px solid #8B3ABF"}:{})}}>
               {reuniao ? <span style={{...S.avatarSm,background:"#8B3ABF"}}><Ic n="calendar" s={11} c="#fff"/></span>
-                       : (m ? <Avatar m={m} size={22}/> : <span style={S.avatarEmpty}><Ic n="circle" s={10} c="var(--text-faint)"/></span>)}
+                       : (m ? <Avatar m={m} size={22}/> : <span style={S.avatarEmpty}><Ic n="circle" s={10} c="#A0A5B2"/></span>)}
               <span style={S.calItemTitulo} title={(m?m.name+" · ":"")+t.title}>{t.title}</span>
               <span style={S.calItemHora}>{hhmm(t.completedAt)}</span>
               <span style={S.calItemTempo}>{hms(horasReais(t))}</span>
               {isMaster && !reuniao && <button className="cal-rev" style={S.calRev} title="Enviar para Revisão Interna"
                 onClick={()=>onRevisao(t.id)}><Ic n="undo" s={12} c="#B8860B"/></button>}
-              {isMaster && reuniao && <button className="cal-rev" style={S.calRev} title="Reabrir reunião"
-                onClick={()=>onReabrirReuniao(t.id)}><Ic n="undo" s={12} c="var(--icon-muted)"/></button>}
-              {isMaster && reuniao && <button className="cal-rev" style={S.calRev} title="Excluir reunião"
-                onClick={()=>{ if(window.confirm(`Excluir a reunião "${t.title}"?`)) onExcluirReuniao(t.id); }}><Ic n="trash" s={12} c="#C0397E"/></button>}
             </div>); })}
         </div>);
       })}
@@ -1791,7 +1462,6 @@ function LaunchTask({ catalog, members, onLaunch, onOpenCatalog, isMaster }){
   const [linhas,setLinhas]=useState([linhaVazia()]);
   const [assignee,setAssignee]=useState(""); const [desc,setDesc]=useState("");
   const [err,setErr]=useState("");
-  const [pendente,setPendente]=useState(null); // payload aguardando a escolha de contagem
 
   const mudar=(key,campo,valor)=>setLinhas((ls)=>ls.map((l)=>l.key===key?{...l,[campo]:valor}:l));
   const addLinha=()=>setLinhas((ls)=>[...ls,linhaVazia()]);
@@ -1813,26 +1483,22 @@ function LaunchTask({ catalog, members, onLaunch, onOpenCatalog, isMaster }){
   const submit=()=>{
     if(validas.length===0){ setErr("Escolha ao menos uma tarefa cadastrada."); return; }
     if(precisaResp && !assignee){ setErr("Escolha o responsável das tarefas."); return; }
-    setPendente({ itens:validas.map((l)=>({catalogId:l.catalogId,hours:horasDaLinha(l),priority:l.priority,reuniao:l.reuniao,quando:l.quando,convidados:l.reuniao?(l.convidados||[]):[]})),
+    onLaunch({ itens:validas.map((l)=>({catalogId:l.catalogId,hours:horasDaLinha(l),priority:l.priority,reuniao:l.reuniao,quando:l.quando,convidados:l.reuniao?(l.convidados||[]):[]})),
                assignee, desc });
-  };
-  const confirmarContagem=(contarAgora)=>{
-    if(!pendente) return;
-    onLaunch({ ...pendente, contarAgora });
-    setPendente(null); limpar(); setOpen(false);
+    limpar(); setOpen(false);
   };
 
   if(catalog.length===0) return (<div style={S.launchEmpty}>
     Nenhuma tarefa cadastrada.{isMaster && <React.Fragment> <span style={S.linkBtn} onClick={onOpenCatalog}>Cadastrar tarefa</span></React.Fragment>}
   </div>);
-  if(!open) return <button style={S.addRow} onClick={()=>setOpen(true)}><Ic n="plus" s={15} c="var(--text-muted)"/> Lançar tarefa</button>;
+  if(!open) return <button style={S.addRow} onClick={()=>setOpen(true)}><Ic n="plus" s={15} c="#8A8F9E"/> Lançar tarefa</button>;
 
   return (<div style={S.launchBox}>
     {linhas.map((l,i)=>(
       <div key={l.key} style={S.linhaTarefa}>
         <div style={S.linhaTopo}>
           <span style={S.linhaNum}>Tarefa {i+1}</span>
-          {linhas.length>1 && <button style={S.linhaX} onClick={()=>tirarLinha(l.key)} title="Remover esta tarefa"><Ic n="x" s={12} c="var(--text-faint2)"/></button>}
+          {linhas.length>1 && <button style={S.linhaX} onClick={()=>tirarLinha(l.key)} title="Remover esta tarefa"><Ic n="x" s={12} c="#B0B5C0"/></button>}
         </div>
         <select style={S.launchInput} value={l.catalogId} onChange={(e)=>{mudar(l.key,"catalogId",e.target.value); setErr("");}}>
           <option value="">Escolher…</option>
@@ -1840,7 +1506,7 @@ function LaunchTask({ catalog, members, onLaunch, onOpenCatalog, isMaster }){
         </select>
         <label style={{...S.reuniaoTag,...(l.reuniao?S.reuniaoTagOn:{})}}>
           <input type="checkbox" checked={!!l.reuniao} onChange={(e)=>mudar(l.key,"reuniao",e.target.checked)} style={{margin:0}}/>
-          <Ic n="calendar" s={12} c={l.reuniao?"#8B3ABF":"var(--text-muted)"}/> É uma reunião
+          <Ic n="calendar" s={12} c={l.reuniao?"#8B3ABF":"#8A8F9E"}/> É uma reunião
         </label>
         {l.reuniao && (<div style={{marginTop:6}}><div style={S.launchLabel}>Quando</div>
           <input style={S.launchInput} type="datetime-local" value={l.quando} onChange={(e)=>mudar(l.key,"quando",e.target.value)}/>
@@ -1854,7 +1520,7 @@ function LaunchTask({ catalog, members, onLaunch, onOpenCatalog, isMaster }){
                   mudar(l.key,"convidados", marcado?atuais.filter((id)=>id!==m.id):[...atuais,m.id]); }}>
                 {m.name.split(" ")[0]}</button>); })}
           </div>
-          {l.convidados&&l.convidados.length>0 && <div style={{fontSize:10.5,color:"var(--text-muted)",marginTop:3}}>
+          {l.convidados&&l.convidados.length>0 && <div style={{fontSize:10.5,color:"#8A8F9E",marginTop:3}}>
             {l.convidados.length} convidado{l.convidados.length===1?"":"s"} selecionado{l.convidados.length===1?"":"s"}</div>}
         </div>)}
         <div style={{display:"flex",gap:6,marginTop:6}}>
@@ -1871,7 +1537,7 @@ function LaunchTask({ catalog, members, onLaunch, onOpenCatalog, isMaster }){
                 <option value="d">dias</option>
               </select>
             </div>
-            {l.unidade==="d" && +l.tempo>0 && <div style={{fontSize:10.5,color:"var(--text-muted)",marginTop:3}}>= {(+l.tempo*HORAS_POR_DIA)} h de trabalho ({HORAS_POR_DIA}h/dia)</div>}
+            {l.unidade==="d" && +l.tempo>0 && <div style={{fontSize:10.5,color:"#8A8F9E",marginTop:3}}>= {(+l.tempo*HORAS_POR_DIA)} h de trabalho ({HORAS_POR_DIA}h/dia)</div>}
           </div>
           <div style={{flex:1}}><div style={S.launchLabel}>Prioridade</div>
             <select style={{...S.launchInput,color:PRIORITIES[l.priority].color,fontWeight:600}} value={l.priority}
@@ -1905,30 +1571,6 @@ function LaunchTask({ catalog, members, onLaunch, onOpenCatalog, isMaster }){
         <Ic n="check" s={14} c="#fff"/> Lançar{validas.length>1?` ${validas.length} tarefas`:""}</button>
       <button style={S.ghostBtn} onClick={()=>{limpar();setOpen(false);}}>Cancelar</button>
     </div>
-    {pendente && <ContagemModal onEscolher={confirmarContagem} onCancelar={()=>setPendente(null)}/>}
-  </div>);
-}
-
-function ContagemModal({ onEscolher, onCancelar }){
-  return (<div style={S.overlay}>
-    <div style={S.modalPequeno} onClick={(e)=>e.stopPropagation()}>
-      <div style={S.modalHead}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{...S.brandMark,width:34,height:34,fontSize:15,background:"#3B3AC9",boxShadow:"none"}}><Ic n="clock" s={17} c="#fff"/></div>
-          <h2 style={{...S.modalTitle,marginBottom:0}}>Quando começa a contar?</h2>
-        </div>
-        <button type="button" style={S.iconBtn} onClick={onCancelar}><Ic n="x" s={18}/></button>
-      </div>
-      <p style={{fontSize:13.5,color:"var(--text-secondary)",lineHeight:1.5,margin:"4px 0 0"}}>
-        Escolha se a espera desta tarefa conta a partir de agora ou só a partir do próximo dia útil.</p>
-      <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:18}}>
-        <button style={{...S.primaryBtn,justifyContent:"center"}} onClick={()=>onEscolher(true)}>
-          <Ic n="check" s={15} c="#fff"/> Contar a partir de agora</button>
-        <button style={{...S.primaryBtn,justifyContent:"center",background:"var(--text-secondary)"}} onClick={()=>onEscolher(false)}>
-          <Ic n="clock" s={15} c="#fff"/> Contar só no próximo dia útil</button>
-        <button style={S.ghostBtn} onClick={onCancelar}>Cancelar</button>
-      </div>
-    </div>
   </div>);
 }
 
@@ -1939,8 +1581,8 @@ function LineChart({ rows, series, height=260 }){
   const x=(i)=> mL+(n<=1?iw/2:(i/(n-1))*iw); const y=(v)=> mT+ih-(v/maxY)*ih;
   const ticks=[0,.25,.5,.75,1].map((t)=>Math.round(maxY*t)); const step=Math.max(1,Math.ceil(n/7));
   return (<svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height}} preserveAspectRatio="xMidYMid meet">
-    {ticks.map((t,i)=>(<g key={i}><line x1={mL} x2={W-mR} y1={y(t)} y2={y(t)} stroke="var(--border-soft2)"/><text x={mL-6} y={y(t)+3} fontSize="10" fill="var(--text-muted)" textAnchor="end">{t}</text></g>))}
-    {rows.map((r,i)=> i%step===0 && (<text key={i} x={x(i)} y={H-6} fontSize="10" fill="var(--text-muted)" textAnchor="middle">{r.date}</text>))}
+    {ticks.map((t,i)=>(<g key={i}><line x1={mL} x2={W-mR} y1={y(t)} y2={y(t)} stroke="#EDEFF3"/><text x={mL-6} y={y(t)+3} fontSize="10" fill="#8A8F9E" textAnchor="end">{t}</text></g>))}
+    {rows.map((r,i)=> i%step===0 && (<text key={i} x={x(i)} y={H-6} fontSize="10" fill="#8A8F9E" textAnchor="middle">{r.date}</text>))}
     {series.map((s)=>{ const d=rows.map((r,i)=>`${i===0?"M":"L"} ${x(i).toFixed(1)} ${y(r[s.key]||0).toFixed(1)}`).join(" "); const last=rows[n-1]?.[s.key]||0;
       return (<g key={s.key}><path d={d} fill="none" stroke={s.color} strokeWidth="2.5"/><circle cx={x(n-1)} cy={y(last)} r="3.2" fill={s.color}/></g>); })}
   </svg>);
@@ -1949,11 +1591,11 @@ function BarsV({ data, height=260 }){
   const W=600,H=height,mL=30,mR=14,mT=18,mB=26; const iw=W-mL-mR, ih=H-mT-mB;
   const maxY=niceMax(Math.max(1,...data.map((d)=>d.value))); const bw=iw/Math.max(1,data.length); const y=(v)=>mT+ih-(v/maxY)*ih; const ticks=[0,.5,1].map((t)=>Math.round(maxY*t));
   return (<svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height}} preserveAspectRatio="xMidYMid meet">
-    {ticks.map((t,i)=>(<g key={i}><line x1={mL} x2={W-mR} y1={y(t)} y2={y(t)} stroke="var(--border-soft2)"/><text x={mL-6} y={y(t)+3} fontSize="10" fill="var(--text-muted)" textAnchor="end">{t}</text></g>))}
+    {ticks.map((t,i)=>(<g key={i}><line x1={mL} x2={W-mR} y1={y(t)} y2={y(t)} stroke="#EDEFF3"/><text x={mL-6} y={y(t)+3} fontSize="10" fill="#8A8F9E" textAnchor="end">{t}</text></g>))}
     {data.map((d,i)=>{ const bx=mL+i*bw+bw*0.22, bwidth=bw*0.56, by=y(d.value), bh=mT+ih-by;
       return (<g key={i}><rect x={bx} y={by} width={bwidth} height={Math.max(0,bh)} rx="5" fill={d.color}/>
-        <text x={bx+bwidth/2} y={by-5} fontSize="11" fontWeight="700" fill="var(--text-strong)" textAnchor="middle">{d.value}</text>
-        <text x={bx+bwidth/2} y={H-8} fontSize="10.5" fill="var(--text-muted)" textAnchor="middle">{d.name}</text></g>); })}
+        <text x={bx+bwidth/2} y={by-5} fontSize="11" fontWeight="700" fill="#20232E" textAnchor="middle">{d.value}</text>
+        <text x={bx+bwidth/2} y={H-8} fontSize="10.5" fill="#8A8F9E" textAnchor="middle">{d.name}</text></g>); })}
   </svg>);
 }
 function BarsH({ data, height=260, unit="" }){
@@ -1961,9 +1603,9 @@ function BarsH({ data, height=260, unit="" }){
   const maxX=niceMax(Math.max(1,...data.map((d)=>d.value))); const bh=ih/Math.max(1,data.length); const x=(v)=>mL+(v/maxX)*iw;
   return (<svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height}} preserveAspectRatio="xMidYMid meet">
     {data.map((d,i)=>{ const by=mT+i*bh+bh*0.2, bheight=bh*0.6, bw=x(d.value)-mL;
-      return (<g key={i}><text x={mL-8} y={by+bheight/2+3.5} fontSize="10.5" fill="var(--text-muted)" textAnchor="end">{d.name}</text>
+      return (<g key={i}><text x={mL-8} y={by+bheight/2+3.5} fontSize="10.5" fill="#8A8F9E" textAnchor="end">{d.name}</text>
         <rect x={mL} y={by} width={Math.max(0,bw)} height={bheight} rx="5" fill={d.color}/>
-        <text x={x(d.value)+6} y={by+bheight/2+3.5} fontSize="11" fontWeight="700" fill="var(--text-strong)">{d.value}{unit}</text></g>); })}
+        <text x={x(d.value)+6} y={by+bheight/2+3.5} fontSize="11" fontWeight="700" fill="#20232E">{d.value}{unit}</text></g>); })}
   </svg>);
 }
 function StackedBars({ data, segs, height=260 }){
@@ -1971,16 +1613,16 @@ function StackedBars({ data, segs, height=260 }){
   const totals=data.map((d)=>segs.reduce((a,s)=>a+(d.values[s.key]||0),0)); const maxY=niceMax(Math.max(1,...totals)); const bw=iw/Math.max(1,data.length);
   const y=(v)=>mT+ih-(v/maxY)*ih; const ticks=[0,.5,1].map((t)=>Math.round(maxY*t));
   return (<svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height}} preserveAspectRatio="xMidYMid meet">
-    {ticks.map((t,i)=>(<g key={i}><line x1={mL} x2={W-mR} y1={y(t)} y2={y(t)} stroke="var(--border-soft2)"/><text x={mL-6} y={y(t)+3} fontSize="10" fill="var(--text-muted)" textAnchor="end">{t}</text></g>))}
+    {ticks.map((t,i)=>(<g key={i}><line x1={mL} x2={W-mR} y1={y(t)} y2={y(t)} stroke="#EDEFF3"/><text x={mL-6} y={y(t)+3} fontSize="10" fill="#8A8F9E" textAnchor="end">{t}</text></g>))}
     {data.map((d,i)=>{ const bx=mL+i*bw+bw*0.22, bwidth=bw*0.56; let acc=0;
       return (<g key={i}>{segs.map((s,j)=>{ const v=d.values[s.key]||0; if(v<=0)return null; const top=acc+v; const yy=y(top); const hh=y(acc)-y(top); acc=top;
           return <rect key={j} x={bx} y={yy} width={bwidth} height={Math.max(0,hh)} fill={s.color}/>; })}
-        <text x={bx+bwidth/2} y={H-8} fontSize="10.5" fill="var(--text-muted)" textAnchor="middle">{d.name}</text></g>); })}
+        <text x={bx+bwidth/2} y={H-8} fontSize="10.5" fill="#8A8F9E" textAnchor="middle">{d.name}</text></g>); })}
   </svg>);
 }
 function Legend({ items }){
   return (<div style={{display:"flex",gap:14,flexWrap:"wrap",marginTop:10,justifyContent:"center"}}>
-    {items.map((it)=>(<span key={it.label} style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:12,color:"var(--text-secondary)"}}>
+    {items.map((it)=>(<span key={it.label} style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:12,color:"#5A6072"}}>
       <span style={{width:10,height:10,borderRadius:3,background:it.color}}/>{it.label}</span>))}</div>);
 }
 
@@ -2006,9 +1648,9 @@ function SemanaPanel({ tasks, members }){
   return (
     <Panel title="Horas trabalhadas na semana" sub={`${ddmm(dias[0])} a ${ddmm(dias[6])} · horas lançadas no dia em que a tarefa foi concluída`}>
       <div style={{display:"flex",gap:8,marginBottom:12,flexWrap:"wrap"}}>
-        <button style={S.smallBtn} onClick={()=>setOffset(offset-1)}><Ic n="undo" s={13} c="var(--text-secondary)"/> Semana anterior</button>
-        <button style={{...S.smallBtn,...(offset===0?{background:"var(--accent-tint-bg2)",color:"#3B3AC9",borderColor:"var(--accent-tint-border)"}:{})}} onClick={()=>setOffset(0)}>Esta semana</button>
-        <button style={S.smallBtn} onClick={()=>setOffset(offset+1)}>Próxima semana <Ic n="chev" s={13} c="var(--text-secondary)"/></button>
+        <button style={S.smallBtn} onClick={()=>setOffset(offset-1)}><Ic n="undo" s={13} c="#5A6072"/> Semana anterior</button>
+        <button style={{...S.smallBtn,...(offset===0?{background:"#EEF0FB",color:"#3B3AC9",borderColor:"#C7CBFF"}:{})}} onClick={()=>setOffset(0)}>Esta semana</button>
+        <button style={S.smallBtn} onClick={()=>setOffset(offset+1)}>Próxima semana <Ic n="chev" s={13} c="#5A6072"/></button>
       </div>
 
       <div style={{overflowX:"auto"}}>
@@ -2017,7 +1659,7 @@ function SemanaPanel({ tasks, members }){
           <div style={S.semLinha}>
             <div style={S.semNome}></div>
             {dias.map((d,i)=>{ const fds=d.getDay()===0||d.getDay()===6; const eHoje=mesmoDia(d,hoje);
-              return (<div key={i} style={{...S.semDiaHead,...(eHoje?S.semHoje:{}),...(fds?{color:"var(--text-faint2)"}:{})}}>
+              return (<div key={i} style={{...S.semDiaHead,...(eHoje?S.semHoje:{}),...(fds?{color:"#B0B5C0"}:{})}}>
                 <div style={{fontSize:11,fontWeight:700}}>{eHoje?"Hoje":DIAS_SEM[d.getDay()]}</div>
                 <div style={{fontSize:12.5,fontWeight:600}}>{d.getDate()}</div>
               </div>); })}
@@ -2028,13 +1670,13 @@ function SemanaPanel({ tasks, members }){
 
           {/* uma linha por membro */}
           {linhas.map((l)=>(
-            <div key={l.id} style={{...S.semLinha,borderTop:"1px solid var(--border-soft2)",paddingTop:10,marginTop:8}}>
+            <div key={l.id} style={{...S.semLinha,borderTop:"1px solid #EDEFF3",paddingTop:10,marginTop:8}}>
               <div style={S.semNome}>
                 <Avatar m={l} size={24}/>
                 <span style={{fontSize:13,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{l.name}</span>
               </div>
               {dias.map((d,i)=>{ const fds=d.getDay()===0||d.getDay()===6; const v=l.porDia[i];
-                if(fds && !v) return <div key={i} style={{...S.semCel,color:"var(--text-faint3)",background:"transparent"}}>–</div>;
+                if(fds && !v) return <div key={i} style={{...S.semCel,color:"#C2C6D0",background:"transparent"}}>–</div>;
                 return (<div key={i} style={{...S.semCel,...(v>0?S.semCelCheia:{})}} title={`${DIAS_SEM[d.getDay()]} ${ddmm(d)}: ${hm(v)}`}>{v>0?hm(v):"0"}</div>); })}
               <div style={S.semTotal}>{hms(l.total)}</div>
               <div style={S.semTotal}>{hms(capacidade)}<div style={S.semSub}>{capacidade.toFixed(2).replace(".",",")}h/sem.</div></div>
@@ -2044,7 +1686,7 @@ function SemanaPanel({ tasks, members }){
               </div>
             </div>
           ))}
-          {linhas.length===0 && <p style={{color:"var(--text-muted)",fontSize:13,textAlign:"center",padding:16}}>Nenhum membro para mostrar.</p>}
+          {linhas.length===0 && <p style={{color:"#8A8F9E",fontSize:13,textAlign:"center",padding:16}}>Nenhum membro para mostrar.</p>}
         </div>
       </div>
     </Panel>
@@ -2083,9 +1725,9 @@ function ResumoSemanal({ tarefas }){
       <div style={S.rsNav}>
         <button style={S.rsNavBtn} onClick={()=>setOffset(offset-1)}><Ic n="chev" s={13} c="#3B3AC9" style={{transform:"rotate(90deg)"}}/> Anterior</button>
         <div style={{textAlign:"center"}}>
-          <div style={{fontSize:12,fontWeight:800,color:"var(--text-strong)"}}>{ddmm(ini)} — {ddmm(somaDias(ini,6))}</div>
-          <div style={{fontSize:10.5,color:"var(--text-muted)",fontWeight:600}}>{rotuloSemana} · resumo semanal</div>
-          {semanaAtual && <div style={{fontSize:9.5,color:"var(--text-faint)",marginTop:1}}>pendentes contam sempre aqui; concluídas ficam na semana em que foram feitas</div>}
+          <div style={{fontSize:12,fontWeight:800,color:"#20232E"}}>{ddmm(ini)} — {ddmm(somaDias(ini,6))}</div>
+          <div style={{fontSize:10.5,color:"#8A8F9E",fontWeight:600}}>{rotuloSemana} · resumo semanal</div>
+          {semanaAtual && <div style={{fontSize:9.5,color:"#A0A5B2",marginTop:1}}>pendentes contam sempre aqui; concluídas ficam na semana em que foram feitas</div>}
         </div>
         <button style={{...S.rsNavBtn,...(offset>=0?{visibility:"hidden"}:{})}} onClick={()=>setOffset(offset+1)}>Próxima <Ic n="chev" s={13} c="#3B3AC9" style={{transform:"rotate(-90deg)"}}/></button>
       </div>
@@ -2229,7 +1871,7 @@ function IndicadoresProcesso({ tasks, members }){
             <div style={S.indMemberStatRow}><span style={S.indMemberStatLabel}><Ic n="flag" s={12} c="#ABB0BE"/> Protocolado</span><span style={S.indMemberStatVal}>{r.medProtocolo!=null? durMs(r.medProtocolo) : "—"}</span></div>
             <div style={{marginTop:2}}>
               <div style={{display:"flex",justifyContent:"space-between",fontSize:10.5,color:"#ABB0BE",marginBottom:3}}><span>Retrabalho</span><span>{r.pctRetrabalho}%</span></div>
-              <div style={{height:6,borderRadius:3,background:"var(--bg)"}}><div style={{height:"100%",width:`${r.pctRetrabalho}%`,borderRadius:3,background:corRetr}}/></div>
+              <div style={{height:6,borderRadius:3,background:"#EEF0F4"}}><div style={{height:"100%",width:`${r.pctRetrabalho}%`,borderRadius:3,background:corRetr}}/></div>
             </div>
           </div>
         </div>);
@@ -2240,7 +1882,7 @@ function IndicadoresProcesso({ tasks, members }){
 }
 const Kpi=({label,value,accent})=>(<div style={S.kpi}><div style={{...S.kpiBar,background:accent}}/><div><div style={S.kpiVal}>{value}</div><div style={S.kpiLabel}>{label}</div></div></div>);
 const Panel=({title,sub,children})=>(<div style={S.panel}><div style={{marginBottom:10}}><div style={S.panelTitle}>{title}</div>{sub&&<div style={S.panelSub}>{sub}</div>}</div>{children}</div>);
-const Metric=({label,value})=>(<div><div style={{fontSize:18,fontWeight:800,letterSpacing:"-.02em"}}>{value}</div><div style={{fontSize:10.5,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:".05em",fontWeight:600}}>{label}</div></div>);
+const Metric=({label,value})=>(<div><div style={{fontSize:18,fontWeight:800,letterSpacing:"-.02em"}}>{value}</div><div style={{fontSize:10.5,color:"#8A8F9E",textTransform:"uppercase",letterSpacing:".05em",fontWeight:600}}>{label}</div></div>);
 
 // ---------- Modais ----------
 function CatalogModal({ catalog, onAdd, onRemove, onEdit, onClose }){
@@ -2261,10 +1903,10 @@ function CatalogModal({ catalog, onAdd, onRemove, onEdit, onClose }){
     setEditId(null); setTitle(""); setDesc("");
   };
 
-  return (<div style={S.overlay}>
+  return (<div style={S.overlay} onClick={onClose}>
     <div style={S.modal} onClick={(e)=>e.stopPropagation()}>
       <div style={S.modalHead}><h2 style={S.modalTitle}>Cadastro de tarefas</h2><button style={S.iconBtn} onClick={onClose}><Ic n="x" s={18}/></button></div>
-      <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16,...(editando?{border:"1px solid var(--accent-tint-border)",background:"var(--accent-tint-bg)",borderRadius:11,padding:12}:{})}}>
+      <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16,...(editando?{border:"1px solid #C7CBFF",background:"#F7F8FE",borderRadius:11,padding:12}:{})}}>
         {editando && <div style={{fontSize:11.5,fontWeight:800,color:"#3B3AC9",textTransform:"uppercase",letterSpacing:".05em"}}>Editando tarefa</div>}
         <input style={{...S.authInput,margin:0}} placeholder="Nome da tarefa" value={title} onChange={(e)=>{setTitle(e.target.value);setErr("");}} onKeyDown={(e)=>e.key==="Enter"&&submit()}/>
         <textarea style={{...S.authInput,margin:0,minHeight:70,resize:"vertical"}} placeholder="O que precisa ser feito (aparece no cartão da tarefa)" value={desc} onChange={(e)=>setDesc(e.target.value)}/>
@@ -2276,16 +1918,16 @@ function CatalogModal({ catalog, onAdd, onRemove, onEdit, onClose }){
         </div>
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:6}}>
-        {catalog.map((c)=>(<div key={c.id} style={{...S.memberRow,...(editId===c.id?{background:"var(--accent-tint-bg)",borderRadius:9}:{})}}>
-          <span style={{...S.dot,background:"var(--text-faint3)",width:10,height:10}}/>
-          <div style={{flex:1,minWidth:0}}><div style={{fontWeight:600,fontSize:14,color:"var(--text)"}}>{c.title}</div>
-            {c.desc && <div style={{fontSize:12,color:"var(--text-secondary)",marginTop:3,lineHeight:1.4}}>{c.desc}</div>}</div>
-          <button style={S.smallBtn} onClick={()=>iniciarEdicao(c)}><Ic n="key" s={13} c="var(--text-secondary)"/> Editar</button>
+        {catalog.map((c)=>(<div key={c.id} style={{...S.memberRow,...(editId===c.id?{background:"#F7F8FE",borderRadius:9}:{})}}>
+          <span style={{...S.dot,background:"#C2C6D0",width:10,height:10}}/>
+          <div style={{flex:1,minWidth:0}}><div style={{fontWeight:600,fontSize:14,color:"#14161F"}}>{c.title}</div>
+            {c.desc && <div style={{fontSize:12,color:"#5A6072",marginTop:3,lineHeight:1.4}}>{c.desc}</div>}</div>
+          <button style={S.smallBtn} onClick={()=>iniciarEdicao(c)}><Ic n="key" s={13} c="#5A6072"/> Editar</button>
           <button style={{...S.projDel,position:"static",opacity:0.6}} onClick={()=>onRemove(c.id)}><Ic n="trash" s={15} c="#C0397E"/></button>
         </div>))}
-        {catalog.length===0 && <p style={{color:"var(--text-muted)",fontSize:14,textAlign:"center",padding:20}}>Nenhuma tarefa cadastrada ainda.</p>}
+        {catalog.length===0 && <p style={{color:"#8A8F9E",fontSize:14,textAlign:"center",padding:20}}>Nenhuma tarefa cadastrada ainda.</p>}
       </div>
-      <p style={S.hint}><Ic n="list" s={12} c="var(--icon-muted)"/> No quadro, o lançamento acontece só na coluna "A fazer": escolha a tarefa, o tempo e o responsável.</p>
+      <p style={S.hint}><Ic n="list" s={12} c="#737A8C"/> No quadro, o lançamento acontece só na coluna "A fazer": escolha a tarefa, o tempo e o responsável.</p>
     </div>
   </div>);
 }
@@ -2293,7 +1935,7 @@ function TarefasMembroModal({ membro, tasks, projects, onClose }){
   const nomeProjeto=(pid)=> (projects.find((p)=>p.id===pid)||{}).name || "Sem projeto";
   const ordem={ todo:0, doing:1, review:2, protocolado:3, done:4 };
   const lista=[...tasks].sort((a,b)=> (ordem[a.col]??9)-(ordem[b.col]??9) || (b.createdAt||0)-(a.createdAt||0));
-  return (<div style={S.overlay}>
+  return (<div style={S.overlay} onClick={onClose}>
     <div style={S.modal} onClick={(e)=>e.stopPropagation()}>
       <div style={S.modalHead}>
         <div style={{display:"flex",alignItems:"center",gap:9}}>
@@ -2303,16 +1945,16 @@ function TarefasMembroModal({ membro, tasks, projects, onClose }){
         <button style={S.iconBtn} onClick={onClose}><Ic n="x" s={18}/></button>
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:8,maxHeight:"60vh",overflowY:"auto"}}>
-        {lista.map((t)=>{ const col=COL[t.col]||{tint:"var(--text-muted)",name:t.col};
+        {lista.map((t)=>{ const col=COL[t.col]||{tint:"#8A8F9E",name:t.col};
           return (<div key={t.id} style={S.memberRow}>
             <span style={{...S.dot,background:col.tint,width:10,height:10}}/>
             <div style={{flex:1,minWidth:0}}>
-              <div style={{fontWeight:600,fontSize:13.5,color:"var(--text)"}}>{t.title}</div>
-              <div style={{fontSize:11.5,color:"var(--text-muted)",marginTop:2}}>{nomeProjeto(t.project)}</div>
+              <div style={{fontWeight:600,fontSize:13.5,color:"#14161F"}}>{t.title}</div>
+              <div style={{fontSize:11.5,color:"#8A8F9E",marginTop:2}}>{nomeProjeto(t.project)}</div>
             </div>
             <span style={{fontSize:11.5,fontWeight:700,color:col.tint,whiteSpace:"nowrap"}}>{col.name}</span>
           </div>); })}
-        {lista.length===0 && <p style={{color:"var(--text-muted)",fontSize:14,textAlign:"center",padding:20}}>Nenhuma tarefa nesse momento.</p>}
+        {lista.length===0 && <p style={{color:"#8A8F9E",fontSize:14,textAlign:"center",padding:20}}>Nenhuma tarefa nesse momento.</p>}
       </div>
     </div>
   </div>);
@@ -2322,20 +1964,20 @@ function RevisaoModal({ tarefa, onConfirmar, onClose }){
   const enviar=(e)=>{ if(e && e.preventDefault) e.preventDefault();
     const n=(nota || (ref.current&&ref.current.value) || "");
     onConfirmar(n); };
-  return (<div style={S.overlay}>
+  return (<div style={S.overlay} onClick={onClose}>
     <form style={S.modalPequeno} onClick={(e)=>e.stopPropagation()} onSubmit={enviar}>
       <div style={S.modalHead}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <div style={{...S.brandMark,width:34,height:34,fontSize:15,background:"#E0A81F",boxShadow:"none"}}><Ic n="undo" s={17} c="#fff"/></div>
           <div><h2 style={{...S.modalTitle,marginBottom:1}}>Enviar para Revisão Interna</h2>
-            <div style={{fontSize:12,color:"var(--text-muted)"}}>{tarefa?tarefa.title:""}</div></div>
+            <div style={{fontSize:12,color:"#8A8F9E"}}>{tarefa?tarefa.title:""}</div></div>
         </div>
         <button type="button" style={S.iconBtn} onClick={onClose}><Ic n="x" s={18}/></button>
       </div>
       <label style={S.launchLabel}>O que precisa ser consertado?</label>
       <textarea ref={ref} autoFocus style={{...S.authInput,margin:"0 0 4px",minHeight:80,resize:"vertical"}} value={nota}
         onChange={(e)=>setNota(e.target.value)} placeholder="Explique o ajuste (opcional). O membro verá esse texto no cartão."/>
-      <div style={{fontSize:11.5,color:"var(--text-muted)",display:"flex",alignItems:"center",gap:5}}><Ic n="clock" s={12} c="var(--text-muted)"/> A tarefa volta a contar tempo ao ir para revisão.</div>
+      <div style={{fontSize:11.5,color:"#8A8F9E",display:"flex",alignItems:"center",gap:5}}><Ic n="clock" s={12} c="#8A8F9E"/> A tarefa volta a contar tempo ao ir para revisão.</div>
       <div style={{display:"flex",gap:8,marginTop:14}}>
         <button type="submit" style={{...S.primaryBtn,flex:1,justifyContent:"center",background:"#E0A81F"}}><Ic n="undo" s={15} c="#fff"/> Enviar para Revisão Interna</button>
         <button type="button" style={S.ghostBtn} onClick={onClose}>Cancelar</button>
@@ -2345,7 +1987,7 @@ function RevisaoModal({ tarefa, onConfirmar, onClose }){
 }
 
 function ConfirmModal({ titulo, mensagem, confirmarLabel, perigo, onConfirmar, onCancelar }){
-  return (<div style={S.overlay}>
+  return (<div style={S.overlay} onClick={onCancelar}>
     <div style={S.modalPequeno} onClick={(e)=>e.stopPropagation()}>
       <div style={S.modalHead}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -2354,7 +1996,7 @@ function ConfirmModal({ titulo, mensagem, confirmarLabel, perigo, onConfirmar, o
         </div>
         <button type="button" style={S.iconBtn} onClick={onCancelar}><Ic n="x" s={18}/></button>
       </div>
-      <p style={{fontSize:13.5,color:"var(--text-secondary)",lineHeight:1.5,margin:"4px 0 0"}}>{mensagem}</p>
+      <p style={{fontSize:13.5,color:"#4A4F5E",lineHeight:1.5,margin:"4px 0 0"}}>{mensagem}</p>
       <div style={{display:"flex",gap:8,marginTop:18}}>
         <button style={{...S.primaryBtn,flex:1,justifyContent:"center",...(perigo?{background:"#D8442F"}:{})}} onClick={onConfirmar}>
           {perigo && <Ic n="trash" s={15} c="#fff"/>} {confirmarLabel||"Confirmar"}</button>
@@ -2374,13 +2016,13 @@ function NovoProjetoModal({ existentes, onCriar, onClose }){
     if(existentes.some((p)=>p.name.toLowerCase()===n.toLowerCase())){ setErr("Já existe um projeto com esse nome."); return; }
     onCriar(n); onClose();
   };
-  return (<div style={S.overlay}>
+  return (<div style={S.overlay} onClick={onClose}>
     <form style={S.modalPequeno} onClick={(e)=>e.stopPropagation()} onSubmit={criar}>
       <div style={S.modalHead}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <div style={{...S.brandMark,width:34,height:34,fontSize:15}}><Ic n="folder" s={17} c="#fff"/></div>
           <div><h2 style={{...S.modalTitle,marginBottom:1}}>Novo projeto</h2>
-            <div style={{fontSize:12,color:"var(--text-muted)"}}>Dê um nome para organizar as tarefas</div></div>
+            <div style={{fontSize:12,color:"#8A8F9E"}}>Dê um nome para organizar as tarefas</div></div>
         </div>
         <button type="button" style={S.iconBtn} onClick={onClose}><Ic n="x" s={18}/></button>
       </div>
@@ -2397,7 +2039,7 @@ function NovoProjetoModal({ existentes, onCriar, onClose }){
 }
 
 function MensagensModal({ mensagens, membros, isMaster, meuMembroId, onEnviar, onApagar, onClose }){
-  const [para,setPara]=useState(""); const [selecionados,setSelecionados]=useState([]); const [texto,setTexto]=useState("");
+  const [para,setPara]=useState(""); const [texto,setTexto]=useState("");
   const [err,setErr]=useState(""); const [ok,setOk]=useState(""); const [aba,setAba]=useState("recebidas");
   const podeEnviar = isMaster || !!meuMembroId;
   const destinos = membros.filter((m)=>m.id!==meuMembroId);
@@ -2405,53 +2047,29 @@ function MensagensModal({ mensagens, membros, isMaster, meuMembroId, onEnviar, o
   const remetente=(m)=> m.deMembro ? nome(m.deMembro) : "Master";
 
   const enviar=()=>{
-    if(isMaster){
-      const destinatarios = selecionados.length>0 ? destinos.filter((m)=>selecionados.includes(m.id)) : destinos;
-      if(destinatarios.length===0){ setErr("Escolha quem vai receber."); setOk(""); return; }
-      if(!texto.trim()){ setErr("Escreva a mensagem."); setOk(""); return; }
-      if(destinatarios.length===1){
-        onEnviar(destinatarios[0].id,texto); setTexto(""); setErr(""); setOk(`Enviada para ${destinatarios[0].name} — só ele vê.`);
-        return;
-      }
-      // mais de uma pessoa (ou todos): mesmo grupoId, para poder apagar tudo de uma vez
-      const grupoId=uid();
-      destinatarios.forEach((m)=>onEnviar(m.id,texto,grupoId));
-      setTexto(""); setErr("");
-      setOk(destinatarios.length===destinos.length
-        ? `Enviada para toda a equipe (${destinatarios.length} pessoas).`
-        : `Enviada para ${destinatarios.length} pessoas.`);
-      return;
-    }
     if(!para){ setErr("Escolha quem vai receber."); setOk(""); return; }
     if(!texto.trim()){ setErr("Escreva a mensagem."); setOk(""); return; }
+    if(para==="__todos__"){
+      // master manda a mesma mensagem para cada pessoa da equipe (uma cópia para cada)
+      destinos.forEach((m)=>onEnviar(m.id,texto));
+      setTexto(""); setErr(""); setOk(`Enviada para toda a equipe (${destinos.length} ${destinos.length===1?"pessoa":"pessoas"}).`);
+      return;
+    }
     onEnviar(para,texto); setTexto(""); setErr(""); setOk(`Enviada para ${nome(para)} — só ele vê.`);
   };
 
   const recebidas = isMaster ? mensagens : mensagens.filter((m)=>m.paraMembro===meuMembroId);
   const enviadas  = isMaster ? [] : mensagens.filter((m)=>m.deMembro===meuMembroId);
-  const listaBase = (isMaster || aba==="recebidas" ? recebidas : enviadas).slice().sort((a,b)=>b.em-a.em);
-  // no master, agrupa as mensagens de mais de um destinatário (mesmo grupoId) numa única linha
-  let lista=listaBase;
-  if(isMaster){
-    const vistos=new Set(); lista=[];
-    listaBase.forEach((m)=>{
-      if(m.grupoId){
-        if(vistos.has(m.grupoId)) return;
-        vistos.add(m.grupoId);
-        const doGrupo=listaBase.filter((x)=>x.grupoId===m.grupoId);
-        lista.push({ ...m, grupoQtd:doGrupo.length, grupoLidas:doGrupo.filter((x)=>x.lida).length, grupoNomes:doGrupo.map((x)=>nome(x.paraMembro)) });
-      } else lista.push(m);
-    });
-  }
+  const lista = (isMaster || aba==="recebidas" ? recebidas : enviadas).slice().sort((a,b)=>b.em-a.em);
   const podeApagar=(m)=> isMaster || (m.deMembro && m.deMembro===meuMembroId);
 
-  return (<div style={S.overlay}>
+  return (<div style={S.overlay} onClick={onClose}>
     <div style={S.modal} onClick={(e)=>e.stopPropagation()}>
       <div style={S.modalHead}>
         <div>
           <h2 style={S.modalTitle}>{isMaster?"Mensagens da equipe":"Mensagens"}</h2>
-          <div style={{fontSize:12,color:"var(--text-muted)",marginTop:2,display:"flex",alignItems:"center",gap:5}}>
-            <Ic n="lock" s={11} c="var(--text-muted)"/> {isMaster?"Cada mensagem só aparece para quem foi enviada":"Só você e quem receber veem estas mensagens"}
+          <div style={{fontSize:12,color:"#8A8F9E",marginTop:2,display:"flex",alignItems:"center",gap:5}}>
+            <Ic n="lock" s={11} c="#8A8F9E"/> {isMaster?"Cada mensagem só aparece para quem foi enviada":"Só você e quem receber veem estas mensagens"}
           </div>
         </div>
         <button style={S.iconBtn} onClick={onClose}><Ic n="x" s={18}/></button>
@@ -2459,23 +2077,11 @@ function MensagensModal({ mensagens, membros, isMaster, meuMembroId, onEnviar, o
 
       {podeEnviar && (<div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
         <div><div style={S.launchLabel}>Para</div>
-          {isMaster ? (<React.Fragment>
-            <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-              <button type="button" style={{...S.convidadoChip,...(selecionados.length===0?S.convidadoChipOn:{})}}
-                onClick={()=>{setSelecionados([]);setErr("");setOk("");}}>Todos ({destinos.length})</button>
-              {destinos.map((m)=>{ const marcado=selecionados.includes(m.id);
-                return (<button key={m.id} type="button" style={{...S.convidadoChip,...(marcado?S.convidadoChipOn:{})}}
-                  onClick={()=>{ setSelecionados((cs)=> marcado?cs.filter((id)=>id!==m.id):[...cs,m.id]); setErr(""); setOk(""); }}>
-                  {m.name.split(" ")[0]}</button>); })}
-            </div>
-            {selecionados.length>0 && <div style={{fontSize:10.5,color:"var(--text-muted)",marginTop:4}}>
-              {selecionados.length} pessoa{selecionados.length===1?"":"s"} selecionada{selecionados.length===1?"":"s"}</div>}
-          </React.Fragment>) : (
-            <select style={{...S.authInput,margin:0,cursor:"pointer"}} value={para} onChange={(e)=>{setPara(e.target.value);setErr("");setOk("");}}>
-              <option value="">Escolher…</option>
-              {destinos.map((m)=>(<option key={m.id} value={m.id}>{m.name}</option>))}
-            </select>
-          )}</div>
+          <select style={{...S.authInput,margin:0,cursor:"pointer"}} value={para} onChange={(e)=>{setPara(e.target.value);setErr("");setOk("");}}>
+            <option value="">Escolher…</option>
+            {isMaster && destinos.length>0 && <option value="__todos__">Todos da equipe ({destinos.length})</option>}
+            {destinos.map((m)=>(<option key={m.id} value={m.id}>{m.name}</option>))}
+          </select></div>
         <div><div style={S.launchLabel}>Mensagem</div>
           <textarea style={{...S.authInput,margin:0,minHeight:76,resize:"vertical"}} value={texto}
             onChange={(e)=>{setTexto(e.target.value);setErr("");setOk("");}} placeholder="Escreva aqui — só quem receber vai ver."/></div>
@@ -2494,20 +2100,18 @@ function MensagensModal({ mensagens, membros, isMaster, meuMembroId, onEnviar, o
           return (<div key={m.id} style={{...S.msgItem,...(recebida&&!m.lida?S.msgNova:{})}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:5,flexWrap:"wrap"}}>
               {isMaster
-                ? (m.grupoQtd
-                    ? <span style={S.msgPara}><Ic n="users" s={11} c="#8B3ABF"/> {remetente(m)} → {m.grupoQtd===destinos.length ? `Todos da equipe (${m.grupoQtd})` : (m.grupoNomes||[]).join(", ")} <span style={{color:"var(--text-muted)",fontWeight:500}}>· {m.grupoLidas} de {m.grupoQtd} leram</span></span>
-                    : <span style={S.msgPara}><Ic n="mail" s={11} c="#3B3AC9"/> {remetente(m)} → {nome(m.paraMembro)}</span>)
+                ? <span style={S.msgPara}><Ic n="mail" s={11} c="#3B3AC9"/> {remetente(m)} → {nome(m.paraMembro)}</span>
                 : (recebida
                     ? <span style={S.msgPara}><Ic n="mail" s={11} c="#3B3AC9"/> de {remetente(m)}</span>
                     : <span style={{...S.msgPara,color:"#2F9E6E"}}><Ic n="mail" s={11} c="#2F9E6E"/> para {nome(m.paraMembro)}</span>)}
               {recebida && !m.lida && <span style={S.msgNovaTag}>nova</span>}
-              <span style={{fontSize:11,color:"var(--text-faint)",marginLeft:"auto"}}>{hhmm(m.em)} · {ddmm(new Date(m.em))}</span>
-              {podeApagar(m) && <button style={{...S.projDel,position:"static",opacity:.6}} title={m.grupoQtd?"Apagar para todos os destinatários":"Apagar"} onClick={()=>onApagar(m.id)}><Ic n="trash" s={13} c="#C0397E"/></button>}
+              <span style={{fontSize:11,color:"#A0A5B2",marginLeft:"auto"}}>{hhmm(m.em)} · {ddmm(new Date(m.em))}</span>
+              {podeApagar(m) && <button style={{...S.projDel,position:"static",opacity:.6}} onClick={()=>onApagar(m.id)}><Ic n="trash" s={13} c="#C0397E"/></button>}
             </div>
-            <div style={{fontSize:13.5,color:"var(--text-strong)",lineHeight:1.45,whiteSpace:"pre-wrap"}}>{m.texto}</div>
+            <div style={{fontSize:13.5,color:"#20232E",lineHeight:1.45,whiteSpace:"pre-wrap"}}>{m.texto}</div>
           </div>);
         })}
-        {lista.length===0 && <p style={{color:"var(--text-muted)",fontSize:14,textAlign:"center",padding:20}}>
+        {lista.length===0 && <p style={{color:"#8A8F9E",fontSize:14,textAlign:"center",padding:20}}>
           {isMaster?"Nenhuma mensagem trocada ainda.":(aba==="recebidas"?"Nenhuma mensagem para você.":"Você ainda não enviou mensagens.")}</p>}
       </div>
     </div>
@@ -2516,51 +2120,24 @@ function MensagensModal({ mensagens, membros, isMaster, meuMembroId, onEnviar, o
 
 function SwitchUserModal({ users, members, currentUser, onEscolher, onClose }){
   const membroDe=(u)=>members.find((m)=>m.id===u.memberId);
-  const [alvo,setAlvo]=useState(null); const [senha,setSenha]=useState(""); const [err,setErr]=useState("");
-
-  const confirmar=()=>{
-    if(!alvo) return;
-    if(!senha){ setErr("Digite a senha."); return; }
-    if(hashPw(senha)!==alvo.passHash){ setErr("Senha incorreta."); return; }
-    onEscolher(alvo.id);
-  };
-
-  return (<div style={S.overlay}>
+  return (<div style={S.overlay} onClick={onClose}>
     <div style={{...S.modal,maxWidth:360}} onClick={(e)=>e.stopPropagation()}>
       <div style={S.modalHead}><h2 style={S.modalTitle}>Trocar de usuário</h2><button style={S.iconBtn} onClick={onClose}><Ic n="x" s={18}/></button></div>
-      {!alvo ? (<React.Fragment>
-        <div style={{fontSize:12.5,color:"var(--text-muted)",marginBottom:12}}>Escolha quem vai usar o sistema agora — vai pedir a senha da pessoa.</div>
-        <div style={{display:"flex",flexDirection:"column",gap:6,maxHeight:360,overflowY:"auto"}}>
-          {users.map((u)=>{ const m=membroDe(u); const atual=u.id===currentUser.id;
-            return (<button key={u.id} onClick={()=>{ if(!atual){ setAlvo(u); setSenha(""); setErr(""); } }} disabled={atual}
-              style={{display:"flex",alignItems:"center",gap:10,padding:"9px 10px",borderRadius:11,
-                border:atual?"1px solid var(--accent-tint-border)":"1px solid var(--border-soft)",background:atual?"var(--accent-tint-bg)":"var(--surface)",
-                cursor:atual?"default":"pointer",textAlign:"left",width:"100%"}}>
-              {m ? <Avatar m={m} size={30}/> : <span style={{...S.avatarSm,width:30,height:30,background:ROLES[u.role].color}}>{initials(u.username)}</span>}
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:13.5,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{m?m.name:u.username}</div>
-                <span style={{...S.roleBadge,color:ROLES[u.role].color,background:ROLES[u.role].color+"14"}}>{ROLES[u.role].label}</span>
-              </div>
-              {atual && <span style={{fontSize:10.5,color:"var(--text-muted)",fontWeight:700}}>agora</span>}
-            </button>); })}
-        </div>
-      </React.Fragment>) : (<React.Fragment>
-        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
-          {(()=>{ const m=membroDe(alvo); return m ? <Avatar m={m} size={34}/> : <span style={{...S.avatarSm,width:34,height:34,background:ROLES[alvo.role].color}}>{initials(alvo.username)}</span>; })()}
-          <div>
-            <div style={{fontWeight:700,fontSize:14}}>{membroDe(alvo)?.name || alvo.username}</div>
-            <div style={{fontSize:11.5,color:"var(--text-muted)"}}>Digite a senha dessa pessoa para entrar como ela.</div>
-          </div>
-        </div>
-        <input autoFocus type="password" style={{...S.authInput,margin:0}} value={senha}
-          onChange={(e)=>{setSenha(e.target.value);setErr("");}}
-          onKeyDown={(e)=>{ if(e.key==="Enter") confirmar(); }} placeholder="Senha"/>
-        {err && <div style={{...S.authErr,marginTop:10}}>{err}</div>}
-        <div style={{display:"flex",gap:8,marginTop:14}}>
-          <button style={{...S.primaryBtn,flex:1,justifyContent:"center"}} onClick={confirmar}>Entrar</button>
-          <button style={S.ghostBtn} onClick={()=>{setAlvo(null);setSenha("");setErr("");}}>Voltar</button>
-        </div>
-      </React.Fragment>)}
+      <div style={{fontSize:12.5,color:"#8A8F9E",marginBottom:12}}>Escolha quem vai usar o sistema agora.</div>
+      <div style={{display:"flex",flexDirection:"column",gap:6,maxHeight:360,overflowY:"auto"}}>
+        {users.map((u)=>{ const m=membroDe(u); const atual=u.id===currentUser.id;
+          return (<button key={u.id} onClick={()=>!atual&&onEscolher(u.id)} disabled={atual}
+            style={{display:"flex",alignItems:"center",gap:10,padding:"9px 10px",borderRadius:11,
+              border:atual?"1px solid #C7CBFF":"1px solid #E7E9EF",background:atual?"#F7F8FE":"#fff",
+              cursor:atual?"default":"pointer",textAlign:"left",width:"100%"}}>
+            {m ? <Avatar m={m} size={30}/> : <span style={{...S.avatarSm,width:30,height:30,background:ROLES[u.role].color}}>{initials(u.username)}</span>}
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:13.5,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{m?m.name:u.username}</div>
+              <span style={{...S.roleBadge,color:ROLES[u.role].color,background:ROLES[u.role].color+"14"}}>{ROLES[u.role].label}</span>
+            </div>
+            {atual && <span style={{fontSize:10.5,color:"#8A8F9E",fontWeight:700}}>agora</span>}
+          </button>); })}
+      </div>
     </div>
   </div>);
 }
@@ -2597,13 +2174,13 @@ function UsersModal({ users, members, tasks=[], currentUser, onAdd, onReset, onP
     }).catch((e)=>{ setErr(e.message||"Não foi possível cadastrar."); setOk(""); });
   };
 
-  return (<div style={S.overlay}>
+  return (<div style={S.overlay} onClick={onClose}>
     <div style={S.modal} onClick={(e)=>e.stopPropagation()}>
       <div style={S.modalHead}>
         <div>
           <h2 style={S.modalTitle}>Cadastro de usuários</h2>
-          <div style={{fontSize:12,color:"var(--text-muted)",marginTop:2,display:"flex",alignItems:"center",gap:5}}>
-            <Ic n="users" s={11} c="var(--text-muted)"/> Quem é cadastrado aqui já entra na equipe
+          <div style={{fontSize:12,color:"#8A8F9E",marginTop:2,display:"flex",alignItems:"center",gap:5}}>
+            <Ic n="users" s={11} c="#8A8F9E"/> Quem é cadastrado aqui já entra na equipe
           </div>
         </div>
         <button style={S.iconBtn} onClick={onClose}><Ic n="x" s={18}/></button>
@@ -2623,27 +2200,27 @@ function UsersModal({ users, members, tasks=[], currentUser, onAdd, onReset, onP
             {["master","membro"].map((k)=>(
               <button key={k} onClick={()=>setRole(k)}
                 style={{...S.acessoBtn,...(role===k?{borderColor:ROLES[k].color,background:ROLES[k].color+"12",color:ROLES[k].color}:{})}}>
-                <Ic n={k==="master"?"shield":"users"} s={14} c={role===k?ROLES[k].color:"var(--text-muted)"}/> {ROLES[k].label}
+                <Ic n={k==="master"?"shield":"users"} s={14} c={role===k?ROLES[k].color:"#8A8F9E"}/> {ROLES[k].label}
               </button>))}
           </div>
           <div style={S.fileHint}>{role==="master"
             ? "Master vê tudo, lança tarefas, cadastra e acompanha o painel."
             : "Membro vê só as próprias tarefas e as reuniões, sem acesso ao painel."}</div>
         </div>
-        <label style={{...S.reuniaoTag,marginTop:0,...(noPainel?{borderColor:"var(--accent-tint-border)",background:"var(--accent-tint-bg)",color:"#3B3AC9"}:{})}}>
+        <label style={{...S.reuniaoTag,marginTop:0,...(noPainel?{borderColor:"#C7CBFF",background:"#F7F8FE",color:"#3B3AC9"}:{})}}>
           <input type="checkbox" checked={noPainel} onChange={(e)=>setNoPainel(e.target.checked)} style={{margin:0}}/>
-          <Ic n="bar" s={12} c={noPainel?"#3B3AC9":"var(--text-muted)"}/> Aparece nos gráficos do painel
+          <Ic n="bar" s={12} c={noPainel?"#3B3AC9":"#8A8F9E"}/> Aparece nos gráficos do painel
         </label>
         <label style={{...S.reuniaoTag,marginTop:0,...(naEquipe?{borderColor:"#CBE9DA",background:"#F0FAF5",color:"#1F7A55"}:{})}}>
           <input type="checkbox" checked={naEquipe} onChange={(e)=>setNaEquipe(e.target.checked)} style={{margin:0}}/>
-          <Ic n="users" s={12} c={naEquipe?"#1F7A55":"var(--text-muted)"}/> Aparece na lista da equipe (barra lateral)
+          <Ic n="users" s={12} c={naEquipe?"#1F7A55":"#8A8F9E"}/> Aparece na lista da equipe (barra lateral)
         </label>
         {err && <div style={S.authErr}>{err}</div>}
         {ok && <div style={{...S.authErr,background:"#E8F6EF",color:"#1F7A55"}}>{ok}</div>}
         <button style={{...S.primaryBtn,alignSelf:"flex-start"}} onClick={submit}><Ic n="userplus" s={16} c="#fff"/> Cadastrar usuário</button>
       </div>
 
-      <div style={{fontSize:11,fontWeight:800,letterSpacing:".06em",textTransform:"uppercase",color:"var(--text-faint)",marginBottom:8}}>Equipe · {members.length}</div>
+      <div style={{fontSize:11,fontWeight:800,letterSpacing:".06em",textTransform:"uppercase",color:"#A0A5B2",marginBottom:8}}>Equipe · {members.length}</div>
       <div style={{display:"flex",flexDirection:"column",gap:6}}>
         {members.map((m)=>{
           const u=userDe(m.id);
@@ -2652,29 +2229,29 @@ function UsersModal({ users, members, tasks=[], currentUser, onAdd, onReset, onP
           return (<div key={m.id} style={{...S.memberRow,alignItems:"flex-start"}}>
             <Avatar m={m} w={36} h={48} radius={7}/>
             <div style={{flex:1,minWidth:0}}>
-              <div style={{fontWeight:600,fontSize:14,color:"var(--text)",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                {m.name}{isSelf&&<span style={{fontSize:11,color:"var(--text-muted)",fontWeight:500}}>(você)</span>}</div>
+              <div style={{fontWeight:600,fontSize:14,color:"#14161F",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                {m.name}{isSelf&&<span style={{fontSize:11,color:"#8A8F9E",fontWeight:500}}>(você)</span>}</div>
               <div style={{marginTop:3,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
                 {u ? <button style={{...S.roleBadge,color:ROLES[u.role].color,background:ROLES[u.role].color+"14",border:"none",cursor:lastMaster?"not-allowed":"pointer",fontFamily:FONT}}
                        title={lastMaster?"Deve existir ao menos um master":"Clique para trocar o acesso"}
                        onClick={()=>{ if(!lastMaster) onAcesso(u.id, u.role==="master"?"membro":"master"); }}>
                        {ROLES[u.role].label}</button>
-                   : <span style={{...S.roleBadge,color:"var(--text-muted)",background:"var(--border-soft2)"}}>sem login</span>}
-                {u && <span style={{fontSize:11,color:"var(--text-muted)"}}>login: {u.username}</span>}
-                <span style={{fontSize:11,color:"var(--text-muted)"}}>{ativas(m.id)} tarefas ativas</span>
+                   : <span style={{...S.roleBadge,color:"#8A8F9E",background:"#EDEFF3"}}>sem login</span>}
+                {u && <span style={{fontSize:11,color:"#8A8F9E"}}>login: {u.username}</span>}
+                <span style={{fontSize:11,color:"#8A8F9E"}}>{ativas(m.id)} tarefas ativas</span>
                 {u && u.mustChange && <span style={{fontSize:11,color:"#D9843B"}}>trocará a senha ao entrar</span>}
               </div>
               <div style={{display:"flex",gap:6,marginTop:7,flexWrap:"wrap"}}>
-                <button style={S.smallBtn} onClick={()=>escolherFoto(m.id)}><Ic n="userplus" s={13} c="var(--text-secondary)"/> {m.photo?"Trocar foto":"Colocar foto 3x4"}</button>
-                {m.photo && <button style={S.smallBtn} onClick={()=>onPhoto(m.id,null)}><Ic n="x" s={13} c="var(--text-secondary)"/> Tirar foto</button>}
-                <button style={S.smallBtn} onClick={()=>editar(m,u)}><Ic n="key" s={13} c="var(--text-secondary)"/> Editar</button>
-                <button style={{...S.smallBtn,...(m.noPainel!==false?{color:"#3B3AC9",borderColor:"var(--accent-tint-border)",background:"var(--accent-tint-bg)"}:{})}}
+                <button style={S.smallBtn} onClick={()=>escolherFoto(m.id)}><Ic n="userplus" s={13} c="#5A6072"/> {m.photo?"Trocar foto":"Colocar foto 3x4"}</button>
+                {m.photo && <button style={S.smallBtn} onClick={()=>onPhoto(m.id,null)}><Ic n="x" s={13} c="#5A6072"/> Tirar foto</button>}
+                <button style={S.smallBtn} onClick={()=>editar(m,u)}><Ic n="key" s={13} c="#5A6072"/> Editar</button>
+                <button style={{...S.smallBtn,...(m.noPainel!==false?{color:"#3B3AC9",borderColor:"#C7CBFF",background:"#F7F8FE"}:{})}}
                   title={m.noPainel!==false?"Aparece nos gráficos do painel":"Fora dos gráficos do painel"}
-                  onClick={()=>onPainel(m.id)}><Ic n="bar" s={13} c={m.noPainel!==false?"#3B3AC9":"var(--text-muted)"}/> {m.noPainel!==false?"No painel":"Fora do painel"}</button>
+                  onClick={()=>onPainel(m.id)}><Ic n="bar" s={13} c={m.noPainel!==false?"#3B3AC9":"#8A8F9E"}/> {m.noPainel!==false?"No painel":"Fora do painel"}</button>
                 <button style={{...S.smallBtn,...(m.naEquipe!==false?{color:"#1F7A55",borderColor:"#CBE9DA",background:"#F0FAF5"}:{})}}
                   title={m.naEquipe!==false?"Aparece na lista da equipe":"Fora da lista da equipe"}
-                  onClick={()=>onEquipe(m.id)}><Ic n="users" s={13} c={m.naEquipe!==false?"#1F7A55":"var(--text-muted)"}/> {m.naEquipe!==false?"Na equipe":"Fora da equipe"}</button>
-                {u && <button style={S.smallBtn} onClick={()=>setRedefinirUser(u)}><Ic n="lock" s={13} c="var(--text-secondary)"/> Redefinir senha</button>}
+                  onClick={()=>onEquipe(m.id)}><Ic n="users" s={13} c={m.naEquipe!==false?"#1F7A55":"#8A8F9E"}/> {m.naEquipe!==false?"Na equipe":"Fora da equipe"}</button>
+                {u && <button style={S.smallBtn} onClick={()=>setRedefinirUser(u)}><Ic n="lock" s={13} c="#5A6072"/> Redefinir senha</button>}
               </div>
             </div>
             <button style={{...S.projDel,position:"static",opacity:(isSelf||lastMaster)?0.25:0.6,cursor:(isSelf||lastMaster)?"not-allowed":"pointer"}}
@@ -2685,13 +2262,11 @@ function UsersModal({ users, members, tasks=[], currentUser, onAdd, onReset, onP
           </div>); })}
       </div>
       <input ref={arquivoRef} type="file" accept="image/*" style={{display:"none"}} onChange={aoEscolher}/>
-      <p style={S.hint}><Ic n="lock" s={12} c="var(--icon-muted)"/> A foto é recortada em 3x4 automaticamente. Login local — não use senhas reais/sensíveis aqui.</p>
+      <p style={S.hint}><Ic n="lock" s={12} c="#737A8C"/> A foto é recortada em 3x4 automaticamente. Login local — não use senhas reais/sensíveis aqui.</p>
     </div>
-    {redefinirUser && <div style={S.overlay}><div onClick={(e)=>e.stopPropagation()}>
+    {redefinirUser && <div style={S.overlay} onClick={()=>setRedefinirUser(null)}><div onClick={(e)=>e.stopPropagation()}>
       <ChangePasswordCard titulo={`Redefinir senha de ${redefinirUser.username}`} sub="O usuário troca a senha no próximo acesso" salvarLabel="Redefinir senha"
-        onSave={(pw)=>Promise.resolve(onReset(redefinirUser.id,pw)).then(()=>{
-          setRedefinirUser(null); setOk(`Senha de ${redefinirUser.username} redefinida — ele troca no próximo acesso.`);
-        })}
+        onSave={(pw)=>{ onReset(redefinirUser.id,pw); setRedefinirUser(null); setOk(`Senha de ${redefinirUser.username} redefinida — ele troca no próximo acesso.`); }}
         onCancel={()=>setRedefinirUser(null)}/>
     </div></div>}
     {editarAlvo && <EditarPessoaModal alvo={editarAlvo} users={users}
@@ -2725,7 +2300,7 @@ function EditarPessoaModal({ alvo, users, onSalvar, onFechar }){
     }
     onSalvar({ nome, login });
   };
-  return (<div style={S.overlay}>
+  return (<div style={S.overlay} onClick={onFechar}>
     <div style={S.modal} onClick={(e)=>e.stopPropagation()}>
       <div style={S.modalHead}>
         <h2 style={S.modalTitle}>Editar pessoa</h2>
@@ -2735,8 +2310,8 @@ function EditarPessoaModal({ alvo, users, onSalvar, onFechar }){
       <input style={{...S.authInput,margin:0}} autoFocus value={nome} onChange={(e)=>{setNome(e.target.value);setErr("");}} />
       {temLogin && <>
         <div style={{...S.launchLabel,marginTop:10}}>Usuário (login)</div>
-        <input style={{...S.authInput,margin:0,background:"var(--surface-alt)",color:"var(--text-muted)",cursor:"not-allowed"}} value={login} disabled/>
-        <div style={{fontSize:11.5,color:"var(--text-muted)",marginTop:4}}>É com esse login que a pessoa entra na tela de conexão — por segurança, não dá para mudar por aqui depois de criado (evita que a pessoa fique sem conseguir entrar). Para trocar, use "Redefinir senha" ou exclua e cadastre a pessoa de novo com o login certo.</div>
+        <input style={{...S.authInput,margin:0}} value={login} onChange={(e)=>{setLogin(e.target.value);setErr("");}} />
+        <div style={{fontSize:11.5,color:"#8A8F9E",marginTop:4}}>É com esse login que a pessoa entra na tela de conexão.</div>
       </>}
       {err && <div style={{...S.authErr,marginTop:10}}>{err}</div>}
       <div style={{display:"flex",gap:8,marginTop:16}}>
@@ -2749,98 +2324,98 @@ function EditarPessoaModal({ alvo, users, onSalvar, onFechar }){
 
 // ---------- Styles ----------
 const S = {
-  app:{display:"flex",fontFamily:FONT,background:"var(--bg)",color:"var(--text)"},
-  sidebar:{width:250,flexShrink:0,background:"var(--surface)",borderRight:"1px solid var(--border)",padding:"20px 16px",display:"flex",flexDirection:"column"},
+  app:{display:"flex",height:"100vh",fontFamily:FONT,background:"#EEF0F4",color:"#14161F"},
+  sidebar:{width:250,flexShrink:0,background:"#FFFFFF",borderRight:"1px solid #E2E5EC",padding:"20px 16px",display:"flex",flexDirection:"column"},
   brand:{display:"flex",alignItems:"center",gap:11,marginBottom:26},
   brandMark:{width:34,height:34,borderRadius:9,background:"#3B3AC9",color:"#fff",display:"grid",placeItems:"center",fontSize:16,boxShadow:"0 2px 8px rgba(59,58,201,.35)",flexShrink:0},
-  brandName:{fontWeight:800,fontSize:16,letterSpacing:"-.02em"}, brandSub:{fontSize:11,color:"var(--text-muted)",marginTop:-1},
-  sideLabel:{display:"flex",alignItems:"center",justifyContent:"space-between",fontSize:11,fontWeight:700,letterSpacing:".08em",textTransform:"uppercase",color:"var(--text-muted)",marginBottom:8},
-  iconBtn:{border:"none",background:"transparent",color:"var(--icon-muted)",cursor:"pointer",padding:4,borderRadius:6,display:"grid",placeItems:"center"},
-  projRow:{display:"flex",alignItems:"center",gap:9,padding:"8px 9px",borderRadius:9,cursor:"pointer",fontSize:13.5,color:"var(--text-secondary)",position:"relative"},
-  projActive:{background:"var(--accent-tint-bg2)",color:"#3B3AC9",fontWeight:600},
-  projName:{flex:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}, projCount:{fontSize:11,color:"var(--text-faint)",fontWeight:600},
+  brandName:{fontWeight:800,fontSize:16,letterSpacing:"-.02em"}, brandSub:{fontSize:11,color:"#8A8F9E",marginTop:-1},
+  sideLabel:{display:"flex",alignItems:"center",justifyContent:"space-between",fontSize:11,fontWeight:700,letterSpacing:".08em",textTransform:"uppercase",color:"#8A8F9E",marginBottom:8},
+  iconBtn:{border:"none",background:"transparent",color:"#737A8C",cursor:"pointer",padding:4,borderRadius:6,display:"grid",placeItems:"center"},
+  projRow:{display:"flex",alignItems:"center",gap:9,padding:"8px 9px",borderRadius:9,cursor:"pointer",fontSize:13.5,color:"#4A4F5E",position:"relative"},
+  projActive:{background:"#EEF0FB",color:"#3B3AC9",fontWeight:600},
+  projName:{flex:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}, projCount:{fontSize:11,color:"#A0A5B2",fontWeight:600},
   contadores:{display:"inline-flex",alignItems:"center",gap:5,flexShrink:0},
   numAberto:{minWidth:22,textAlign:"center",fontSize:11,fontWeight:800,color:"#2F6BD8",background:"#E9F0FC",borderRadius:20,padding:"2px 7px"},
   numFeito:{minWidth:22,textAlign:"center",fontSize:11,fontWeight:800,color:"#2F9E6E",background:"#E8F6EF",borderRadius:20,padding:"2px 7px"},
-  numZero:{color:"var(--text-faint3)",background:"var(--surface-alt)"},
-  projDel:{border:"none",color:"#C0397E",cursor:"pointer",padding:2,position:"absolute",right:6,background:"var(--surface)",borderRadius:5},
+  numZero:{color:"#C2C6D0",background:"#F2F3F7"},
+  projDel:{border:"none",color:"#C0397E",cursor:"pointer",padding:2,position:"absolute",right:6,background:"#fff",borderRadius:5},
   sideMember:{display:"flex",alignItems:"center",gap:8,padding:"3px 2px"},
-  equipeTabela:{border:"1px solid var(--border-soft)",borderRadius:10,overflow:"hidden"},
-  etCabecalho:{display:"flex",alignItems:"stretch",background:"var(--surface-alt)",borderBottom:"1px solid var(--border-soft)"},
+  equipeTabela:{border:"1px solid #E7E9EF",borderRadius:10,overflow:"hidden"},
+  etCabecalho:{display:"flex",alignItems:"stretch",background:"#F4F5FA",borderBottom:"1px solid #E7E9EF"},
   etColNome:{flex:1,minWidth:0,display:"flex",alignItems:"center",gap:8,padding:"0 8px"},
   etColNum:{width:40,flexShrink:0,color:"#fff",fontSize:9.5,fontWeight:800,letterSpacing:".03em",textTransform:"uppercase",display:"grid",placeItems:"center",padding:"5px 0"},
-  etLinha:{display:"flex",alignItems:"center",borderBottom:"1px solid var(--border-faint)",minHeight:38},
+  etLinha:{display:"flex",alignItems:"center",borderBottom:"1px solid #F0F1F5",minHeight:38},
   etNome:{fontSize:12.5,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"},
-  etCel:{width:40,flexShrink:0,textAlign:"center",fontSize:13,fontWeight:700,borderLeft:"1px solid var(--border-faint)",alignSelf:"stretch",display:"grid",placeItems:"center"},
-  sideFooter:{borderTop:"1px solid var(--border-soft2)",paddingTop:12,marginTop:12},
-  abasLat:{display:"flex",gap:4,background:"var(--surface-tabs)",borderRadius:10,padding:3,marginBottom:10},
-  abaLat:{flex:1,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6,border:"none",background:"transparent",color:"var(--text-secondary)",fontWeight:600,fontSize:12.5,padding:"8px 6px",borderRadius:8,cursor:"pointer",fontFamily:FONT},
-  abaLatOn:{background:"var(--surface)",color:"#3B3AC9",boxShadow:"0 1px 4px rgba(20,22,31,.1)"},
-  sideBtn:{display:"flex",alignItems:"center",gap:8,width:"100%",border:"1px solid var(--border)",background:"var(--surface)",color:"var(--text-secondary)",padding:"9px 11px",borderRadius:9,cursor:"pointer",fontSize:13,fontWeight:600,fontFamily:FONT,marginBottom:8},
+  etCel:{width:40,flexShrink:0,textAlign:"center",fontSize:13,fontWeight:700,borderLeft:"1px solid #F0F1F5",alignSelf:"stretch",display:"grid",placeItems:"center"},
+  sideFooter:{borderTop:"1px solid #EDEFF3",paddingTop:12,marginTop:12},
+  abasLat:{display:"flex",gap:4,background:"#E4E7EE",borderRadius:10,padding:3,marginBottom:10},
+  abaLat:{flex:1,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6,border:"none",background:"transparent",color:"#5A6072",fontWeight:600,fontSize:12.5,padding:"8px 6px",borderRadius:8,cursor:"pointer",fontFamily:FONT},
+  abaLatOn:{background:"#fff",color:"#3B3AC9",boxShadow:"0 1px 4px rgba(20,22,31,.1)"},
+  sideBtn:{display:"flex",alignItems:"center",gap:8,width:"100%",border:"1px solid #E2E5EC",background:"#fff",color:"#4A4F5E",padding:"9px 11px",borderRadius:9,cursor:"pointer",fontSize:13,fontWeight:600,fontFamily:FONT,marginBottom:8},
   badgeMsg:{marginLeft:"auto",background:"#D8442F",color:"#fff",fontSize:10.5,fontWeight:800,minWidth:18,height:18,borderRadius:20,display:"grid",placeItems:"center",padding:"0 5px"},
-  userChip:{display:"flex",alignItems:"center",gap:9,padding:"8px 10px",borderRadius:10,background:"var(--surface-alt)",border:"1px solid var(--border-soft2)"},
+  userChip:{display:"flex",alignItems:"center",gap:9,padding:"8px 10px",borderRadius:10,background:"#F6F7FA",border:"1px solid #EDEFF3"},
   roleBadge:{display:"inline-block",fontSize:10.5,fontWeight:700,padding:"1px 7px",borderRadius:20,marginTop:2},
   avatar:{width:32,height:32,borderRadius:"50%",color:"#fff",fontSize:11,fontWeight:700,display:"grid",placeItems:"center",flexShrink:0},
-  main:{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minHeight:0,minWidth:0},
+  main:{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"},
   resumoQuadro:{display:"flex",gap:8,marginTop:10,flexWrap:"wrap"},
   rsWrap:{marginTop:10},
   rsCards:{display:"flex",gap:8,flexWrap:"wrap",marginTop:8},
-  rsBarra:{height:5,borderRadius:20,background:"var(--border-soft2)",marginTop:6,overflow:"hidden"},
+  rsBarra:{height:5,borderRadius:20,background:"#EDEFF3",marginTop:6,overflow:"hidden"},
   rsNav:{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginTop:8,maxWidth:520},
-  rsNavBtn:{border:"1px solid var(--border)",background:"var(--surface)",borderRadius:8,padding:"5px 10px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4,fontSize:11.5,fontWeight:700,color:"#3B3AC9",fontFamily:FONT},
-  rsHoje:{marginTop:6,border:"1px solid var(--accent-tint-border)",background:"var(--accent-tint-bg)",color:"#3B3AC9",borderRadius:8,padding:"5px 11px",fontSize:11.5,fontWeight:700,cursor:"pointer",fontFamily:FONT,display:"inline-flex",alignItems:"center",gap:6},
-  resumoItem:{flex:"1 1 120px",minWidth:110,border:"1px solid var(--border-soft)",borderRadius:11,padding:"9px 13px",background:"var(--surface)",display:"flex",flexDirection:"column",gap:1},
-  resumoTotal:{background:"var(--surface-alt)",borderColor:"#DCDFEA"},
-  resumoNum:{fontSize:21,fontWeight:800,color:"var(--text-strong)",lineHeight:1.1},
-  resumoRot:{fontSize:11.5,fontWeight:600,color:"var(--text-muted)"},
-  topbar:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"18px 26px",borderBottom:"1px solid var(--border)",background:"var(--bg)",gap:16},
-  h1:{margin:0,fontSize:21,fontWeight:800,letterSpacing:"-.02em"}, sub:{margin:"3px 0 0",fontSize:13,color:"var(--text-muted)",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"},
+  rsNavBtn:{border:"1px solid #E2E5EC",background:"#fff",borderRadius:8,padding:"5px 10px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4,fontSize:11.5,fontWeight:700,color:"#3B3AC9",fontFamily:FONT},
+  rsHoje:{marginTop:6,border:"1px solid #C7CBFF",background:"#F7F8FE",color:"#3B3AC9",borderRadius:8,padding:"5px 11px",fontSize:11.5,fontWeight:700,cursor:"pointer",fontFamily:FONT,display:"inline-flex",alignItems:"center",gap:6},
+  resumoItem:{flex:"1 1 120px",minWidth:110,border:"1px solid #E7E9EF",borderRadius:11,padding:"9px 13px",background:"#fff",display:"flex",flexDirection:"column",gap:1},
+  resumoTotal:{background:"#F4F5FA",borderColor:"#DCDFEA"},
+  resumoNum:{fontSize:21,fontWeight:800,color:"#20232E",lineHeight:1.1},
+  resumoRot:{fontSize:11.5,fontWeight:600,color:"#8A8F9E"},
+  topbar:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"18px 26px",borderBottom:"1px solid #E2E5EC",background:"#EEF0F4",gap:16},
+  h1:{margin:0,fontSize:21,fontWeight:800,letterSpacing:"-.02em"}, sub:{margin:"3px 0 0",fontSize:13,color:"#8A8F9E",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"},
   pendingTag:{display:"inline-flex",alignItems:"center",gap:4,background:"#FCF4E2",color:"#B8860B",fontWeight:700,fontSize:11.5,padding:"2px 9px",borderRadius:20},
-  tabs:{display:"flex",background:"var(--surface-tabs)",borderRadius:10,padding:3},
-  tab:{display:"inline-flex",alignItems:"center",gap:6,border:"none",background:"transparent",color:"var(--text-secondary)",fontWeight:600,fontSize:13,padding:"7px 13px",borderRadius:8,cursor:"pointer",fontFamily:FONT},
-  tabOn:{background:"var(--surface)",color:"#3B3AC9",boxShadow:"0 1px 4px rgba(20,22,31,.1)"},
+  tabs:{display:"flex",background:"#E4E7EE",borderRadius:10,padding:3},
+  tab:{display:"inline-flex",alignItems:"center",gap:6,border:"none",background:"transparent",color:"#5A6072",fontWeight:600,fontSize:13,padding:"7px 13px",borderRadius:8,cursor:"pointer",fontFamily:FONT},
+  tabOn:{background:"#fff",color:"#3B3AC9",boxShadow:"0 1px 4px rgba(20,22,31,.1)"},
   roleNote:{display:"inline-flex",alignItems:"center",gap:5,fontSize:12,color:"#2F9E6E",fontWeight:600},
   warnNote:{display:"inline-flex",alignItems:"center",gap:5,fontSize:12,color:"#D8442F",fontWeight:600},
-  searchWrap:{display:"inline-flex",alignItems:"center",gap:8,background:"var(--surface)",border:"1px solid var(--border)",padding:"8px 12px",borderRadius:10,width:240},
-  search:{border:"none",background:"transparent",fontSize:13.5,flex:1,fontFamily:FONT,color:"var(--text)"},
-  board:{flex:1,display:"flex",gap:16,padding:22,overflowX:"auto",alignItems:"flex-start",minHeight:0},
-  column:{width:288,flexShrink:0,background:"var(--surface-alt)",borderRadius:14,padding:12,maxHeight:"100%",minHeight:0,display:"flex",flexDirection:"column",border:"1px solid var(--border-soft)"},
+  searchWrap:{display:"inline-flex",alignItems:"center",gap:8,background:"#fff",border:"1px solid #E2E5EC",padding:"8px 12px",borderRadius:10,width:240},
+  search:{border:"none",background:"transparent",fontSize:13.5,flex:1,fontFamily:FONT,color:"#14161F"},
+  board:{flex:1,display:"flex",gap:16,padding:22,overflowX:"auto",alignItems:"flex-start"},
+  column:{width:288,flexShrink:0,background:"#F6F7FA",borderRadius:14,padding:12,maxHeight:"100%",display:"flex",flexDirection:"column",border:"1px solid #E7E9EF"},
   colHead:{display:"flex",alignItems:"center",gap:8,padding:"4px 6px 12px"},
   dot:{width:9,height:9,borderRadius:"50%",flexShrink:0},
   colName:{fontWeight:700,fontSize:13.5,flex:1}, colCount:{fontSize:11,fontWeight:700,padding:"1px 8px",borderRadius:20},
-  colEmpty:{fontSize:12,color:"var(--text-faint2)",textAlign:"center",padding:"14px 0",margin:0},
-  doneFiltro:{display:"flex",flexDirection:"column",gap:5,padding:"0 2px 10px",borderBottom:"1px solid var(--border-soft)",marginBottom:9},
-  filtroSel:{width:"100%",border:"1px solid var(--border)",background:"var(--surface)",borderRadius:8,padding:"6px 8px",fontSize:12,fontFamily:FONT,color:"var(--text-secondary)",cursor:"pointer"},
+  colEmpty:{fontSize:12,color:"#B0B5C0",textAlign:"center",padding:"14px 0",margin:0},
+  doneFiltro:{display:"flex",flexDirection:"column",gap:5,padding:"0 2px 10px",borderBottom:"1px solid #E7E9EF",marginBottom:9},
+  filtroSel:{width:"100%",border:"1px solid #E2E5EC",background:"#fff",borderRadius:8,padding:"6px 8px",fontSize:12,fontFamily:FONT,color:"#4A4F5E",cursor:"pointer"},
   doneResumo:{fontSize:11,fontWeight:700,color:"#2F9E6E",background:"#E8F6EF",borderRadius:7,padding:"4px 8px",textAlign:"center"},
   calBox:{display:"flex",flexDirection:"column",flex:1,minHeight:0},
   calNav:{display:"flex",alignItems:"center",gap:6,marginBottom:8},
-  calToggleTodos:{width:"100%",border:"1px solid var(--border-soft)",background:"var(--surface-alt)",color:"var(--text-secondary)",borderRadius:8,padding:"6px",fontSize:11.5,fontWeight:700,cursor:"pointer",fontFamily:FONT,marginBottom:8},
-  calNavBtn:{border:"1px solid var(--border)",background:"var(--surface)",borderRadius:8,padding:"6px 10px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4,fontSize:12,fontWeight:700,color:"#3B3AC9",fontFamily:FONT},
-  calVoltarHoje:{width:"100%",border:"1px solid var(--accent-tint-border)",background:"var(--accent-tint-bg)",color:"#3B3AC9",borderRadius:8,padding:"7px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:FONT,marginBottom:8,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6},
+  calToggleTodos:{width:"100%",border:"1px solid #E7E9EF",background:"#F8F9FB",color:"#5A6072",borderRadius:8,padding:"6px",fontSize:11.5,fontWeight:700,cursor:"pointer",fontFamily:FONT,marginBottom:8},
+  calNavBtn:{border:"1px solid #E2E5EC",background:"#fff",borderRadius:8,padding:"6px 10px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4,fontSize:12,fontWeight:700,color:"#3B3AC9",fontFamily:FONT},
+  calVoltarHoje:{width:"100%",border:"1px solid #C7CBFF",background:"#F7F8FE",color:"#3B3AC9",borderRadius:8,padding:"7px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:FONT,marginBottom:8,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6},
   calPeriodo:{flex:1,textAlign:"center"},
   calHoje:{border:"none",background:"transparent",color:"#3B3AC9",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:FONT,padding:0,marginTop:2},
-  calDia:{border:"1px solid var(--border-soft2)",borderRadius:9,padding:"7px 8px",background:"var(--surface)"},
+  calDia:{border:"1px solid #EDEFF3",borderRadius:9,padding:"7px 8px",background:"#fff"},
   calDiaHoje:{borderColor:"#D9C2F0",background:"#FBF8FE"},
   calDiaTopo:{display:"flex",alignItems:"center",gap:8},
   calDiaTopoAberto:{},
-  calDiaSeta:{width:26,height:26,borderRadius:7,background:"var(--surface-alt)",display:"grid",placeItems:"center",flexShrink:0},
-  calDiaNome:{fontSize:11.5,fontWeight:800,color:"var(--text-secondary)",textTransform:"uppercase",letterSpacing:".04em"},
+  calDiaSeta:{width:26,height:26,borderRadius:7,background:"#F2F3F7",display:"grid",placeItems:"center",flexShrink:0},
+  calDiaNome:{fontSize:11.5,fontWeight:800,color:"#5A6072",textTransform:"uppercase",letterSpacing:".04em"},
   calDiaResumo:{fontSize:11,fontWeight:700,color:"#1F7A55",background:"#E8F6EF",borderRadius:20,padding:"2px 8px"},
-  calDiaVazio:{fontSize:12,color:"var(--text-faint3)"},
-  calItem:{display:"flex",alignItems:"center",gap:6,marginTop:6,background:"var(--surface-alt)",border:"1px solid var(--border-soft2)",borderRadius:8,padding:"5px 7px"},
-  calItemTitulo:{flex:1,minWidth:0,fontSize:12,fontWeight:500,color:"var(--text-strong)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"},
-  calItemHora:{fontSize:10.5,color:"var(--text-faint)",fontWeight:600},
+  calDiaVazio:{fontSize:12,color:"#C2C6D0"},
+  calItem:{display:"flex",alignItems:"center",gap:6,marginTop:6,background:"#F8F9FB",border:"1px solid #EDEFF3",borderRadius:8,padding:"5px 7px"},
+  calItemTitulo:{flex:1,minWidth:0,fontSize:12,fontWeight:500,color:"#20232E",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"},
+  calItemHora:{fontSize:10.5,color:"#A0A5B2",fontWeight:600},
   calItemTempo:{fontSize:10.5,fontWeight:800,color:"#1F7A55"},
   calRev:{border:"1px solid #F0E2BE",background:"#FCF4E2",borderRadius:6,padding:"3px 5px",cursor:"pointer",display:"grid",placeItems:"center",flexShrink:0},
-  calResumoMembros:{marginTop:8,paddingTop:8,borderTop:"1px solid var(--border-soft2)",display:"flex",flexDirection:"column",gap:4},
-  calResumoRot:{fontSize:9.5,fontWeight:800,letterSpacing:".06em",textTransform:"uppercase",color:"var(--text-faint)",marginBottom:2},
+  calResumoMembros:{marginTop:8,paddingTop:8,borderTop:"1px solid #EDEFF3",display:"flex",flexDirection:"column",gap:4},
+  calResumoRot:{fontSize:9.5,fontWeight:800,letterSpacing:".06em",textTransform:"uppercase",color:"#A0A5B2",marginBottom:2},
   calResumoLinha:{display:"flex",alignItems:"center",gap:7},
-  calResumoNome:{flex:1,minWidth:0,fontSize:12,fontWeight:600,color:"var(--text-secondary)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"},
-  calResumoQtd:{fontSize:10.5,fontWeight:700,color:"var(--text-muted)",background:"var(--border-soft2)",borderRadius:20,padding:"1px 7px"},
+  calResumoNome:{flex:1,minWidth:0,fontSize:12,fontWeight:600,color:"#4A4F5E",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"},
+  calResumoQtd:{fontSize:10.5,fontWeight:700,color:"#8A8F9E",background:"#EDEFF3",borderRadius:20,padding:"1px 7px"},
   calResumoTempo:{fontSize:11.5,fontWeight:800,color:"#1F7A55",minWidth:58,textAlign:"right"},
-  calTotal:{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:8,paddingTop:8,borderTop:"1px solid var(--border-soft)",fontSize:11.5,fontWeight:800,color:"var(--text-strong)"},
+  calTotal:{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:8,paddingTop:8,borderTop:"1px solid #E7E9EF",fontSize:11.5,fontWeight:800,color:"#20232E"},
   cardList:{display:"flex",flexDirection:"column",gap:9,overflowY:"auto",flex:1,paddingRight:2},
-  card:{background:"var(--surface)",borderRadius:11,padding:"11px 11px 10px",border:"1px solid var(--border-soft)",position:"relative"},
+  card:{background:"#fff",borderRadius:11,padding:"11px 11px 10px",border:"1px solid #E7E9EF",position:"relative"},
   cardReuniao:{border:"1px solid #D9C2F0",boxShadow:"0 2px 10px rgba(139,58,191,.12)",padding:0,overflow:"hidden"},
   faixaReuniao:{display:"flex",alignItems:"center",gap:6,background:"#8B3ABF",color:"#fff",fontSize:10.5,fontWeight:800,letterSpacing:".08em",padding:"6px 10px"},
   faixaQuando:{marginLeft:"auto",background:"rgba(255,255,255,.22)",padding:"1px 8px",borderRadius:20,fontSize:10.5,letterSpacing:0,fontWeight:700,textTransform:"none"},
@@ -2848,12 +2423,12 @@ const S = {
   cardDone:{background:"#F7FCF9",borderColor:"#DCEFE5"},
   cardPending:{background:"#FFFDF6",borderColor:"#F0E2BE"},
   cardTop:{display:"flex",gap:5,alignItems:"flex-start"},
-  cardTitle:{overflowWrap:"anywhere",wordBreak:"break-word",margin:0,fontSize:13.5,fontWeight:500,lineHeight:1.35,flex:1,color:"var(--text-strong)"},
-  cardDel:{border:"none",background:"transparent",color:"var(--text-faint2)",cursor:"pointer",padding:1,flexShrink:0},
+  cardTitle:{overflowWrap:"anywhere",wordBreak:"break-word",margin:0,fontSize:13.5,fontWeight:500,lineHeight:1.35,flex:1,color:"#20232E"},
+  cardDel:{border:"none",background:"transparent",color:"#B0B5C0",cursor:"pointer",padding:1,flexShrink:0},
   cardFoot:{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:10},
   openFolderBtn:{display:"flex",alignItems:"center",justifyContent:"center",gap:6,flex:1,border:"1px solid",padding:"6px 9px",borderRadius:8,fontSize:11.5,fontWeight:700,cursor:"pointer",fontFamily:FONT},
-  copyBtn:{display:"grid",placeItems:"center",border:"1px solid var(--border)",background:"var(--surface)",borderRadius:8,padding:"6px 9px",cursor:"pointer"},
-  descBox:{fontSize:12,color:"var(--text-secondary)",background:"var(--surface-alt)",border:"1px solid var(--border-soft2)",borderRadius:8,padding:"7px 9px",marginTop:8,lineHeight:1.45,overflowWrap:"anywhere",wordBreak:"break-word",whiteSpace:"pre-wrap"},
+  copyBtn:{display:"grid",placeItems:"center",border:"1px solid #E2E5EC",background:"#fff",borderRadius:8,padding:"6px 9px",cursor:"pointer"},
+  descBox:{fontSize:12,color:"#4A4F5E",background:"#F6F7FA",border:"1px solid #EDEFF3",borderRadius:8,padding:"7px 9px",marginTop:8,lineHeight:1.45,overflowWrap:"anywhere",wordBreak:"break-word",whiteSpace:"pre-wrap"},
   diarioBox:{background:"#F3F8F5",border:"1px solid #DDEEE4",borderRadius:8,padding:"7px 9px",marginTop:8},
   diarioLinha:{display:"flex",alignItems:"flex-start",gap:7,padding:"3px 0",borderTop:"1px solid #E6F0EA"},
   diarioData:{fontSize:10,fontWeight:800,color:"#2F9E6E",background:"#E3F3EA",borderRadius:5,padding:"2px 5px",flexShrink:0,marginTop:1},
@@ -2862,28 +2437,28 @@ const S = {
   fazerTexto:{flex:1,fontSize:12.5,fontWeight:700,color:"#1F8A4C",lineHeight:1.4,overflowWrap:"anywhere",wordBreak:"break-word",whiteSpace:"pre-wrap"},
   diarioAcoes:{display:"inline-flex",gap:2,flexShrink:0},
   diarioMini:{border:"none",background:"transparent",cursor:"pointer",padding:2,borderRadius:5,display:"grid",placeItems:"center"},
-  diarioInput:{flex:1,border:"1px solid #CFE6D9",borderRadius:7,padding:"6px 8px",fontSize:12,fontFamily:FONT,color:"var(--text-strong)",background:"var(--surface)",outline:"none"},
+  diarioInput:{flex:1,border:"1px solid #CFE6D9",borderRadius:7,padding:"6px 8px",fontSize:12,fontFamily:FONT,color:"#20232E",background:"#fff",outline:"none"},
   diarioAdd:{border:"none",background:"#2F9E6E",color:"#fff",borderRadius:7,width:32,flexShrink:0,cursor:"pointer",display:"grid",placeItems:"center"},
-  diarioEdit:{width:"100%",boxSizing:"border-box",border:"1px solid #CFE6D9",borderRadius:6,padding:"5px 7px",fontSize:12,fontFamily:FONT,color:"var(--text-strong)",background:"var(--surface)",minHeight:44,resize:"vertical",outline:"none",lineHeight:1.4},
+  diarioEdit:{width:"100%",boxSizing:"border-box",border:"1px solid #CFE6D9",borderRadius:6,padding:"5px 7px",fontSize:12,fontFamily:FONT,color:"#20232E",background:"#fff",minHeight:44,resize:"vertical",outline:"none",lineHeight:1.4},
   diarioSalvar:{border:"none",background:"#2F9E6E",color:"#fff",borderRadius:6,padding:"4px 10px",fontSize:11.5,fontWeight:700,cursor:"pointer",fontFamily:FONT},
-  diarioCancelar:{border:"1px solid var(--border)",background:"var(--surface)",color:"var(--text-secondary)",borderRadius:6,padding:"4px 10px",fontSize:11.5,fontWeight:600,cursor:"pointer",fontFamily:FONT},
-  descLabel:{display:"block",fontSize:9.5,fontWeight:800,letterSpacing:".06em",textTransform:"uppercase",color:"var(--text-faint)",marginBottom:3},
+  diarioCancelar:{border:"1px solid #E2E5EC",background:"#fff",color:"#5A6072",borderRadius:6,padding:"4px 10px",fontSize:11.5,fontWeight:600,cursor:"pointer",fontFamily:FONT},
+  descLabel:{display:"block",fontSize:9.5,fontWeight:800,letterSpacing:".06em",textTransform:"uppercase",color:"#A0A5B2",marginBottom:3},
   descTexto:{overflowWrap:"anywhere",wordBreak:"break-word",whiteSpace:"pre-wrap"},
-  descEditArea:{width:"100%",boxSizing:"border-box",border:"1px solid var(--accent-tint-border)",borderRadius:7,padding:"6px 8px",fontSize:12,fontFamily:FONT,color:"var(--text-strong)",background:"var(--surface)",minHeight:60,resize:"vertical",lineHeight:1.45,outline:"none"},
+  descEditArea:{width:"100%",boxSizing:"border-box",border:"1px solid #C7CBFF",borderRadius:7,padding:"6px 8px",fontSize:12,fontFamily:FONT,color:"#20232E",background:"#fff",minHeight:60,resize:"vertical",lineHeight:1.45,outline:"none"},
   descSalvar:{display:"inline-flex",alignItems:"center",gap:5,border:"none",background:"#3B3AC9",color:"#fff",borderRadius:7,padding:"5px 11px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:FONT},
-  descCancelar:{border:"1px solid var(--border)",background:"var(--surface)",color:"var(--text-secondary)",borderRadius:7,padding:"5px 11px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:FONT},
-  descDica:{fontSize:10.5,color:"var(--text-faint)",alignSelf:"center",marginLeft:"auto"},
-  descAdd:{display:"flex",alignItems:"center",gap:5,width:"100%",marginTop:8,border:"1px dashed var(--border)",background:"transparent",color:"var(--text-muted)",padding:"6px 9px",borderRadius:8,fontSize:11.5,fontWeight:600,cursor:"pointer",fontFamily:FONT},
+  descCancelar:{border:"1px solid #E2E5EC",background:"#fff",color:"#5A6072",borderRadius:7,padding:"5px 11px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:FONT},
+  descDica:{fontSize:10.5,color:"#A0A5B2",alignSelf:"center",marginLeft:"auto"},
+  descAdd:{display:"flex",alignItems:"center",gap:5,width:"100%",marginTop:8,border:"1px dashed #E2E5EC",background:"transparent",color:"#8A8F9E",padding:"6px 9px",borderRadius:8,fontSize:11.5,fontWeight:600,cursor:"pointer",fontFamily:FONT},
   fixBox:{fontSize:12,color:"#8A6510",background:"#FCF4E2",border:"1px solid #F0E2BE",borderRadius:8,padding:"7px 9px",marginTop:8,lineHeight:1.45,overflowWrap:"anywhere",wordBreak:"break-word",whiteSpace:"pre-wrap"},
   fixLabel:{display:"flex",alignItems:"center",gap:4,fontSize:9.5,fontWeight:800,letterSpacing:".06em",textTransform:"uppercase",color:"#B8860B",marginBottom:2},
   pdfBox:{fontSize:12,color:"#5B3A85",background:"#F5EEFB",border:"1px solid #E4D4F3",borderRadius:8,padding:"8px 9px",marginTop:8},
   pdfLinha:{display:"flex",alignItems:"center",justifyContent:"space-between",gap:6,marginTop:2},
   pdfNome:{display:"flex",alignItems:"center",gap:5,fontSize:12,fontWeight:600,color:"#6B2FA6",textDecoration:"none",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"},
-  pdfBtn:{marginTop:7,border:"1px solid #E4D4F3",background:"var(--surface)",color:"#6B2FA6",fontSize:11.5,fontWeight:700,borderRadius:8,padding:"6px 10px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:5},
-  tempoBox:{marginTop:8,background:"var(--surface-alt)",border:"1px solid var(--border-soft2)",borderRadius:9,padding:"7px 9px",display:"flex",flexDirection:"column",gap:3},
+  pdfBtn:{marginTop:7,border:"1px solid #E4D4F3",background:"#fff",color:"#6B2FA6",fontSize:11.5,fontWeight:700,borderRadius:8,padding:"6px 10px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:5},
+  tempoBox:{marginTop:8,background:"#F8F9FB",border:"1px solid #EDEFF3",borderRadius:9,padding:"7px 9px",display:"flex",flexDirection:"column",gap:3},
   tempoLinha:{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8},
-  tempoRot:{fontSize:10,fontWeight:700,letterSpacing:".04em",textTransform:"uppercase",color:"var(--text-faint)"},
-  tempoVal:{fontSize:12,fontWeight:600,color:"var(--text-secondary)"},
+  tempoRot:{fontSize:10,fontWeight:700,letterSpacing:".04em",textTransform:"uppercase",color:"#A0A5B2"},
+  tempoVal:{fontSize:12,fontWeight:600,color:"#4A4F5E"},
   pulsando:{color:"#2F9E6E",fontSize:9},
   pendingBar:{display:"flex",alignItems:"center",gap:5,fontSize:11,fontWeight:600,color:"#B8860B",background:"#FCF4E2",padding:"4px 8px",borderRadius:7,marginTop:8},
   doneBar:{display:"flex",alignItems:"center",gap:5,fontSize:11,fontWeight:600,color:"#2F9E6E",background:"#E8F6EF",padding:"4px 8px",borderRadius:7,marginTop:8},
@@ -2895,106 +2470,106 @@ const S = {
   doneBtn:{display:"flex",alignItems:"center",justifyContent:"center",gap:6,width:"100%",marginTop:8,border:"none",background:"#2F9E6E",color:"#fff",padding:"7px 10px",borderRadius:8,fontSize:12.5,fontWeight:600,cursor:"pointer",fontFamily:FONT},
   reviewBtn:{display:"flex",alignItems:"center",justifyContent:"center",gap:6,width:"100%",marginTop:8,border:"1px solid #F0E2BE",background:"#FCF4E2",color:"#B8860B",padding:"7px 10px",borderRadius:8,fontSize:12.5,fontWeight:600,cursor:"pointer",fontFamily:FONT},
   rejectBtn:{display:"inline-flex",alignItems:"center",gap:5,border:"1px solid #F0CFCA",background:"#FCEDEA",color:"#C0392B",padding:"7px 11px",borderRadius:8,fontSize:12.5,fontWeight:600,cursor:"pointer",fontFamily:FONT},
-  cancelBtn:{display:"flex",alignItems:"center",justifyContent:"center",gap:5,width:"100%",marginTop:8,border:"1px solid var(--border)",background:"var(--surface)",color:"var(--icon-muted)",padding:"6px 10px",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:FONT},
+  cancelBtn:{display:"flex",alignItems:"center",justifyContent:"center",gap:5,width:"100%",marginTop:8,border:"1px solid #E2E5EC",background:"#fff",color:"#737A8C",padding:"6px 10px",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:FONT},
   folderTag:{display:"inline-flex",alignItems:"center",gap:5,fontSize:10.5,fontWeight:700,padding:"3px 8px",borderRadius:6,border:"1px solid",marginBottom:8,cursor:"pointer",maxWidth:"100%",overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"},
   projetoTag:{display:"inline-flex",alignItems:"center",gap:5,fontSize:10.5,fontWeight:800,padding:"3px 8px",borderRadius:6,border:"1px solid #C7C9F5",background:"#EEF0FF",color:"#3B3AC9",marginBottom:8,marginRight:6,maxWidth:"100%",overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"},
-  folderTagEmpty:{display:"inline-flex",alignItems:"center",gap:5,fontSize:10.5,fontWeight:600,padding:"3px 8px",borderRadius:6,border:"1px dashed var(--border-input)",background:"transparent",color:"var(--text-faint)",marginBottom:8,cursor:"pointer",fontFamily:FONT},
-  folderSelect:{border:"1px solid var(--border)",background:"var(--surface)",borderRadius:10,padding:"8px 11px",fontSize:13,fontFamily:FONT,color:"var(--text-secondary)",cursor:"pointer",maxWidth:210},
-  fileRow:{display:"flex",alignItems:"center",gap:10,width:"100%",border:"1px solid var(--border-soft2)",background:"var(--surface)",borderRadius:9,padding:"8px 10px",cursor:"pointer",fontFamily:FONT},
+  folderTagEmpty:{display:"inline-flex",alignItems:"center",gap:5,fontSize:10.5,fontWeight:600,padding:"3px 8px",borderRadius:6,border:"1px dashed #D3D7E0",background:"transparent",color:"#A0A5B2",marginBottom:8,cursor:"pointer",fontFamily:FONT},
+  folderSelect:{border:"1px solid #E2E5EC",background:"#fff",borderRadius:10,padding:"8px 11px",fontSize:13,fontFamily:FONT,color:"#4A4F5E",cursor:"pointer",maxWidth:210},
+  fileRow:{display:"flex",alignItems:"center",gap:10,width:"100%",border:"1px solid #EDEFF3",background:"#fff",borderRadius:9,padding:"8px 10px",cursor:"pointer",fontFamily:FONT},
   fileIcon:{width:28,height:28,borderRadius:7,display:"grid",placeItems:"center",flexShrink:0},
   fileTag:{fontSize:10,fontWeight:700,color:"#8A6510",background:"#FCF4E2",padding:"2px 7px",borderRadius:20},
-  fileZone:{border:"1px solid var(--border)",borderRadius:11,padding:11,background:"var(--surface-alt)"},
-  fileZoneHead:{display:"flex",alignItems:"center",gap:6,fontSize:11,fontWeight:800,letterSpacing:".05em",textTransform:"uppercase",color:"var(--text-secondary)",marginBottom:8},
-  pickZone:{border:"1px solid var(--border-soft2)",background:"var(--surface-alt)",borderRadius:9,padding:9},
-  fileHint:{fontSize:11,color:"var(--text-muted)",marginTop:5,lineHeight:1.45},
-  masterOnly:{fontSize:9.5,fontWeight:700,color:"#3B3AC9",background:"var(--accent-tint-bg2)",padding:"1px 6px",borderRadius:20,letterSpacing:0,textTransform:"none"},
+  fileZone:{border:"1px solid #E2E5EC",borderRadius:11,padding:11,background:"#FAFBFC"},
+  fileZoneHead:{display:"flex",alignItems:"center",gap:6,fontSize:11,fontWeight:800,letterSpacing:".05em",textTransform:"uppercase",color:"#5A6072",marginBottom:8},
+  pickZone:{border:"1px solid #EDEFF3",background:"#FAFBFC",borderRadius:9,padding:9},
+  fileHint:{fontSize:11,color:"#8A8F9E",marginTop:5,lineHeight:1.45},
+  masterOnly:{fontSize:9.5,fontWeight:700,color:"#3B3AC9",background:"#EEF0FB",padding:"1px 6px",borderRadius:20,letterSpacing:0,textTransform:"none"},
   filePicked:{display:"inline-flex",alignItems:"center",gap:5,fontSize:11.5,fontWeight:600,color:"#2F9E6E",background:"#E8F6EF",padding:"4px 9px",borderRadius:7},
   colorDot:{width:20,height:20,borderRadius:"50%",border:"none",cursor:"pointer",padding:0},
   pill:{display:"inline-flex",alignItems:"center",gap:4,fontSize:11,fontWeight:600,padding:"3px 9px",borderRadius:20,border:"1px solid",cursor:"pointer",fontFamily:FONT},
   todosTag:{display:"inline-flex",alignItems:"center",gap:4,fontSize:10.5,fontWeight:800,color:"#8B3ABF",background:"#F7F0FC",border:"1px solid #E6D3F5",borderRadius:20,padding:"3px 9px"},
   assignBtn:{border:"none",background:"transparent",cursor:"pointer",padding:0},
   avatarSm:{width:24,height:24,borderRadius:"50%",color:"#fff",fontSize:9.5,fontWeight:700,display:"grid",placeItems:"center",flexShrink:0},
-  avatarEmpty:{width:24,height:24,borderRadius:"50%",border:"1.5px dashed var(--text-faint3)",color:"var(--text-faint)",display:"grid",placeItems:"center"},
-  menu:{position:"absolute",top:"100%",right:0,marginTop:4,background:"var(--surface)",borderRadius:10,border:"1px solid var(--border)",boxShadow:"0 8px 28px rgba(20,22,31,.14)",padding:5,zIndex:20,minWidth:170},
-  menuLabel:{fontSize:10.5,fontWeight:700,letterSpacing:".05em",textTransform:"uppercase",color:"var(--text-faint)",padding:"4px 9px 2px"},
-  menuItem:{display:"flex",alignItems:"center",gap:9,width:"100%",border:"none",background:"transparent",padding:"7px 9px",borderRadius:7,cursor:"pointer",fontSize:13,color:"var(--text-strong)",textAlign:"left",fontFamily:FONT},
-  hrChip:{border:"1px solid var(--border)",background:"var(--surface)",borderRadius:7,padding:"4px 9px",fontSize:12,fontWeight:600,cursor:"pointer",color:"var(--text-secondary)",fontFamily:FONT},
+  avatarEmpty:{width:24,height:24,borderRadius:"50%",border:"1.5px dashed #C2C6D0",color:"#A0A5B2",display:"grid",placeItems:"center"},
+  menu:{position:"absolute",top:"100%",right:0,marginTop:4,background:"#fff",borderRadius:10,border:"1px solid #E2E5EC",boxShadow:"0 8px 28px rgba(20,22,31,.14)",padding:5,zIndex:20,minWidth:170},
+  menuLabel:{fontSize:10.5,fontWeight:700,letterSpacing:".05em",textTransform:"uppercase",color:"#A0A5B2",padding:"4px 9px 2px"},
+  menuItem:{display:"flex",alignItems:"center",gap:9,width:"100%",border:"none",background:"transparent",padding:"7px 9px",borderRadius:7,cursor:"pointer",fontSize:13,color:"#20232E",textAlign:"left",fontFamily:FONT},
+  hrChip:{border:"1px solid #E2E5EC",background:"#fff",borderRadius:7,padding:"4px 9px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#5A6072",fontFamily:FONT},
   hrChipOn:{background:"#3B3AC9",color:"#fff",borderColor:"#3B3AC9"},
-  addRow:{display:"flex",alignItems:"center",justifyContent:"center",gap:6,width:"100%",border:"1px dashed var(--border-input)",background:"var(--surface)",color:"var(--icon-muted)",padding:"9px 6px",cursor:"pointer",fontSize:13,fontWeight:600,borderRadius:9,marginTop:8,fontFamily:FONT},
-  reuniaoTag:{display:"flex",alignItems:"center",gap:6,marginTop:6,border:"1px solid var(--border)",background:"var(--surface)",borderRadius:8,padding:"6px 9px",fontSize:12,fontWeight:600,color:"var(--text-secondary)",cursor:"pointer"},
+  addRow:{display:"flex",alignItems:"center",justifyContent:"center",gap:6,width:"100%",border:"1px dashed #D3D7E0",background:"#fff",color:"#737A8C",padding:"9px 6px",cursor:"pointer",fontSize:13,fontWeight:600,borderRadius:9,marginTop:8,fontFamily:FONT},
+  reuniaoTag:{display:"flex",alignItems:"center",gap:6,marginTop:6,border:"1px solid #E2E5EC",background:"#fff",borderRadius:8,padding:"6px 9px",fontSize:12,fontWeight:600,color:"#5A6072",cursor:"pointer"},
   reuniaoTagOn:{borderColor:"#D9C2F0",background:"#F7F0FC",color:"#8B3ABF"},
-  convidadoChip:{border:"1px solid var(--border)",background:"var(--surface)",borderRadius:20,padding:"4px 10px",fontSize:11.5,fontWeight:600,color:"var(--text-secondary)",cursor:"pointer"},
+  convidadoChip:{border:"1px solid #E2E5EC",background:"#fff",borderRadius:20,padding:"4px 10px",fontSize:11.5,fontWeight:600,color:"#5A6072",cursor:"pointer"},
   convidadoChipOn:{borderColor:"#D9C2F0",background:"#8B3ABF",color:"#fff"},
-  linhaTarefa:{border:"1px solid var(--border-soft)",borderRadius:9,padding:9,background:"var(--surface)"},
+  linhaTarefa:{border:"1px solid #E7E9EF",borderRadius:9,padding:9,background:"#fff"},
   linhaTopo:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:5},
   linhaNum:{fontSize:10,fontWeight:800,letterSpacing:".05em",textTransform:"uppercase",color:"#3B3AC9"},
   linhaX:{border:"none",background:"transparent",cursor:"pointer",padding:1},
-  addLinhaBtn:{display:"flex",alignItems:"center",justifyContent:"center",gap:6,width:"100%",border:"1px dashed var(--accent-tint-border)",background:"var(--accent-tint-bg)",color:"#3B3AC9",padding:"7px",borderRadius:9,fontSize:12.5,fontWeight:700,cursor:"pointer",fontFamily:FONT},
+  addLinhaBtn:{display:"flex",alignItems:"center",justifyContent:"center",gap:6,width:"100%",border:"1px dashed #C7CBFF",background:"#F7F8FE",color:"#3B3AC9",padding:"7px",borderRadius:9,fontSize:12.5,fontWeight:700,cursor:"pointer",fontFamily:FONT},
   avisoTodos:{display:"flex",alignItems:"center",justifyContent:"center",gap:6,fontSize:12,fontWeight:700,color:"#8B3ABF",background:"#F7F0FC",border:"1px solid #E6D3F5",borderRadius:8,padding:"8px"},
-  resumoLote:{fontSize:11.5,fontWeight:700,color:"#3B3AC9",background:"var(--accent-tint-bg2)",borderRadius:7,padding:"5px 9px",textAlign:"center"},
-  launchBox:{marginTop:8,display:"flex",flexDirection:"column",gap:7,background:"var(--surface)",border:"1px solid var(--border-soft)",borderRadius:11,padding:11},
-  launchLabel:{fontSize:10.5,fontWeight:700,letterSpacing:".05em",textTransform:"uppercase",color:"var(--text-faint)",marginBottom:3},
-  launchInput:{width:"100%",border:"1px solid var(--border-input)",borderRadius:8,padding:"8px 9px",fontSize:13,fontFamily:FONT,color:"var(--text)",background:"var(--surface)"},
-  launchEmpty:{marginTop:8,fontSize:12,color:"var(--text-muted)",textAlign:"center",lineHeight:1.5,padding:"8px 4px"},
+  resumoLote:{fontSize:11.5,fontWeight:700,color:"#3B3AC9",background:"#EEF0FB",borderRadius:7,padding:"5px 9px",textAlign:"center"},
+  launchBox:{marginTop:8,display:"flex",flexDirection:"column",gap:7,background:"#fff",border:"1px solid #E7E9EF",borderRadius:11,padding:11},
+  launchLabel:{fontSize:10.5,fontWeight:700,letterSpacing:".05em",textTransform:"uppercase",color:"#A0A5B2",marginBottom:3},
+  launchInput:{width:"100%",border:"1px solid #D3D7E0",borderRadius:8,padding:"8px 9px",fontSize:13,fontFamily:FONT,color:"#14161F",background:"#fff"},
+  launchEmpty:{marginTop:8,fontSize:12,color:"#8A8F9E",textAlign:"center",lineHeight:1.5,padding:"8px 4px"},
   linkBtn:{color:"#3B3AC9",fontWeight:700,cursor:"pointer",textDecoration:"underline"},
   primaryBtn:{display:"inline-flex",alignItems:"center",gap:6,background:"#3B3AC9",color:"#fff",border:"none",padding:"9px 15px",borderRadius:9,fontSize:13.5,fontWeight:600,cursor:"pointer",fontFamily:FONT,whiteSpace:"nowrap"},
-  ghostBtn:{border:"none",background:"transparent",color:"var(--icon-muted)",cursor:"pointer",fontSize:13,fontFamily:FONT,padding:"6px 10px"},
-  acessoBtn:{flex:1,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6,border:"1px solid var(--border)",background:"var(--surface)",color:"var(--text-secondary)",borderRadius:9,padding:"9px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:FONT},
-  smallBtn:{display:"inline-flex",alignItems:"center",gap:5,border:"1px solid var(--border)",background:"var(--surface)",color:"var(--text-secondary)",borderRadius:8,padding:"6px 10px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:FONT},
+  ghostBtn:{border:"none",background:"transparent",color:"#737A8C",cursor:"pointer",fontSize:13,fontFamily:FONT,padding:"6px 10px"},
+  acessoBtn:{flex:1,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6,border:"1px solid #E2E5EC",background:"#fff",color:"#5A6072",borderRadius:9,padding:"9px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:FONT},
+  smallBtn:{display:"inline-flex",alignItems:"center",gap:5,border:"1px solid #E2E5EC",background:"#fff",color:"#5A6072",borderRadius:8,padding:"6px 10px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:FONT},
   empty:{flex:1,display:"grid",placeItems:"center",gap:14},
   dash:{flex:1,overflowY:"auto",padding:22,display:"flex",flexDirection:"column",gap:16},
   semLinha:{display:"flex",alignItems:"center",gap:4},
   semNome:{width:160,flexShrink:0,display:"flex",alignItems:"center",gap:8,paddingRight:8},
-  semDiaHead:{flex:1,minWidth:52,textAlign:"center",color:"var(--text-secondary)",padding:"4px 2px",borderRadius:8},
+  semDiaHead:{flex:1,minWidth:52,textAlign:"center",color:"#5A6072",padding:"4px 2px",borderRadius:8},
   semHoje:{background:"#EFEAFB",color:"#6B3FBF"},
-  semTotalHead:{minWidth:110,textAlign:"center",fontSize:12,fontWeight:600,color:"var(--text-secondary)",padding:"0 8px"},
-  semCel:{flex:1,minWidth:52,textAlign:"center",fontSize:12.5,fontWeight:600,color:"var(--text-secondary)",background:"#F2F5F3",borderRadius:8,padding:"9px 2px",margin:"0 2px"},
+  semTotalHead:{minWidth:110,textAlign:"center",fontSize:12,fontWeight:600,color:"#5A6072",padding:"0 8px"},
+  semCel:{flex:1,minWidth:52,textAlign:"center",fontSize:12.5,fontWeight:600,color:"#5A6072",background:"#F2F5F3",borderRadius:8,padding:"9px 2px",margin:"0 2px"},
   semCelCheia:{background:"#DDF1E6",color:"#1F7A55"},
-  semTotal:{minWidth:110,textAlign:"center",fontSize:13.5,fontWeight:800,color:"var(--text-strong)",padding:"0 8px"},
-  semSub:{fontSize:11,fontWeight:500,color:"var(--text-faint)",marginTop:2},
-  semBarra:{height:26,borderRadius:8,background:"var(--border-soft2)",overflow:"hidden"},
+  semTotal:{minWidth:110,textAlign:"center",fontSize:13.5,fontWeight:800,color:"#20232E",padding:"0 8px"},
+  semSub:{fontSize:11,fontWeight:500,color:"#A0A5B2",marginTop:2},
+  semBarra:{height:26,borderRadius:8,background:"#EDEFF3",overflow:"hidden"},
   semBarraFill:{height:"100%",borderRadius:8,transition:"width .2s"},
   kpis:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:14},
-  kpi:{background:"var(--surface)",border:"1px solid var(--border-soft)",borderRadius:14,padding:"16px 18px",display:"flex",gap:12,alignItems:"center"},
-  kpiBar:{width:4,alignSelf:"stretch",borderRadius:4}, kpiVal:{fontSize:26,fontWeight:800,letterSpacing:"-.03em",lineHeight:1}, kpiLabel:{fontSize:12,color:"var(--text-muted)",marginTop:4,fontWeight:500},
+  kpi:{background:"#fff",border:"1px solid #E7E9EF",borderRadius:14,padding:"16px 18px",display:"flex",gap:12,alignItems:"center"},
+  kpiBar:{width:4,alignSelf:"stretch",borderRadius:4}, kpiVal:{fontSize:26,fontWeight:800,letterSpacing:"-.03em",lineHeight:1}, kpiLabel:{fontSize:12,color:"#8A8F9E",marginTop:4,fontWeight:500},
   grid2:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(380px,1fr))",gap:16},
-  panel:{background:"var(--surface)",border:"1px solid var(--border-soft)",borderRadius:14,padding:18},
-  panelTitle:{fontWeight:700,fontSize:15,letterSpacing:"-.01em"}, panelSub:{fontSize:12,color:"var(--text-muted)",marginTop:2},
+  panel:{background:"#fff",border:"1px solid #E7E9EF",borderRadius:14,padding:18},
+  panelTitle:{fontWeight:700,fontSize:15,letterSpacing:"-.01em"}, panelSub:{fontSize:12,color:"#8A8F9E",marginTop:2},
   equipeGrid:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:9},
-  equipeCard:{background:"var(--surface-alt)",border:"1px solid var(--border-soft2)",borderRadius:10,padding:"9px 10px"},
+  equipeCard:{background:"#FAFBFD",border:"1px solid #EDEFF3",borderRadius:10,padding:"9px 10px"},
   equipeCardHead:{display:"flex",alignItems:"center",gap:7,marginBottom:7},
   equipeCardNome:{fontSize:12.5,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"},
   indGrid:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:14,marginTop:4},
-  indCard:{background:"var(--surface-alt)",border:"1px solid var(--border-soft)",borderTop:"3px solid",borderRadius:12,padding:"14px 16px",display:"flex",flexDirection:"column",gap:6},
+  indCard:{background:"#F9FAFC",border:"1px solid #E7E9EF",borderTop:"3px solid",borderRadius:12,padding:"14px 16px",display:"flex",flexDirection:"column",gap:6},
   indHead:{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8},
-  indLabel:{fontSize:11.5,fontWeight:700,color:"var(--text-secondary)",textTransform:"uppercase",letterSpacing:".03em"},
+  indLabel:{fontSize:11.5,fontWeight:700,color:"#5A6072",textTransform:"uppercase",letterSpacing:".03em"},
   indVal:{fontSize:28,fontWeight:800,letterSpacing:"-.03em",lineHeight:1.1},
   indExtra:{fontSize:12.5,fontWeight:700,color:"#3B3AC9"},
-  indDesc:{fontSize:12,color:"var(--text-muted)",lineHeight:1.4},
+  indDesc:{fontSize:12,color:"#8A8F9E",lineHeight:1.4},
   indCardGrid:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:12},
-  indMemberCard:{background:"var(--surface-alt)",border:"1px solid var(--border-soft2)",borderRadius:12,padding:"14px 15px"},
+  indMemberCard:{background:"#FAFBFD",border:"1px solid #EDEFF3",borderRadius:12,padding:"14px 15px"},
   indMemberStatRow:{display:"flex",alignItems:"center",justifyContent:"space-between",fontSize:12},
-  indMemberStatLabel:{display:"flex",alignItems:"center",gap:5,color:"var(--text-muted)"},
+  indMemberStatLabel:{display:"flex",alignItems:"center",gap:5,color:"#8A8F9E"},
   indMemberStatVal:{fontWeight:700},
   memberGrid:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:12},
-  statCard:{border:"1px solid var(--border-soft2)",borderRadius:12,padding:14,background:"var(--surface-alt)"},
-  overlay:{position:"fixed",inset:0,background:"var(--overlay)",display:"grid",placeItems:"center",zIndex:50,padding:20},
-  modalPequeno:{background:"var(--surface)",borderRadius:16,padding:22,width:"min(94vw,420px)",boxShadow:"0 24px 60px rgba(20,22,31,.28)",display:"flex",flexDirection:"column"},
-  modal:{background:"var(--surface)",borderRadius:16,padding:24,width:520,maxWidth:"100%",boxShadow:"0 24px 60px rgba(20,22,31,.3)",maxHeight:"88vh",overflowY:"auto"},
+  statCard:{border:"1px solid #EDEFF3",borderRadius:12,padding:14,background:"#FAFBFC"},
+  overlay:{position:"fixed",inset:0,background:"rgba(20,22,31,.45)",display:"grid",placeItems:"center",zIndex:50,padding:20},
+  modalPequeno:{background:"#fff",borderRadius:16,padding:22,width:"min(94vw,420px)",boxShadow:"0 24px 60px rgba(20,22,31,.28)",display:"flex",flexDirection:"column"},
+  modal:{background:"#fff",borderRadius:16,padding:24,width:520,maxWidth:"100%",boxShadow:"0 24px 60px rgba(20,22,31,.3)",maxHeight:"88vh",overflowY:"auto"},
   modalHead:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}, modalTitle:{margin:0,fontSize:18,fontWeight:800},
-  msgItem:{border:"1px solid var(--border-soft2)",borderRadius:11,padding:"10px 12px",background:"var(--surface)"},
-  msgNova:{borderColor:"var(--accent-tint-border)",background:"var(--accent-tint-bg)"},
-  msgNovaTag:{fontSize:10,fontWeight:800,color:"#3B3AC9",background:"var(--accent-tint-bg2)",padding:"1px 7px",borderRadius:20,textTransform:"uppercase",letterSpacing:".05em"},
+  msgItem:{border:"1px solid #EDEFF3",borderRadius:11,padding:"10px 12px",background:"#fff"},
+  msgNova:{borderColor:"#C7CBFF",background:"#F7F8FE"},
+  msgNovaTag:{fontSize:10,fontWeight:800,color:"#3B3AC9",background:"#EEF0FB",padding:"1px 7px",borderRadius:20,textTransform:"uppercase",letterSpacing:".05em"},
   msgPara:{display:"inline-flex",alignItems:"center",gap:4,fontSize:11.5,fontWeight:700,color:"#3B3AC9"},
-  memberRow:{display:"flex",alignItems:"center",gap:12,padding:"9px 11px",borderRadius:11,border:"1px solid var(--border-soft2)"},
-  hint:{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"var(--text-muted)",marginTop:16,marginBottom:0,lineHeight:1.4},
-  authWrap:{display:"grid",placeItems:"center",background:"linear-gradient(135deg,var(--bg),var(--auth-gradient-2))",fontFamily:FONT,padding:20},
-  authCard:{background:"var(--surface)",borderRadius:18,padding:"32px 30px",width:370,maxWidth:"100%",boxShadow:"0 20px 60px rgba(20,22,31,.18)"},
+  memberRow:{display:"flex",alignItems:"center",gap:12,padding:"9px 11px",borderRadius:11,border:"1px solid #EDEFF3"},
+  hint:{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"#8A8F9E",marginTop:16,marginBottom:0,lineHeight:1.4},
+  authWrap:{height:"100vh",display:"grid",placeItems:"center",background:"linear-gradient(135deg,#EEF0F4,#E4E6F5)",fontFamily:FONT,padding:20},
+  authCard:{background:"#fff",borderRadius:18,padding:"32px 30px",width:370,maxWidth:"100%",boxShadow:"0 20px 60px rgba(20,22,31,.18)"},
   authTitle:{margin:"0 0 18px",fontSize:19,fontWeight:800},
-  authLabel:{display:"block",fontSize:12,fontWeight:600,color:"var(--text-secondary)",marginBottom:5,marginTop:12},
-  authInput:{width:"100%",border:"1px solid var(--border-input)",borderRadius:9,padding:"10px 12px",fontSize:14,fontFamily:FONT,color:"var(--text)",margin:0,background:"var(--surface)"},
+  authLabel:{display:"block",fontSize:12,fontWeight:600,color:"#5A6072",marginBottom:5,marginTop:12},
+  authInput:{width:"100%",border:"1px solid #D3D7E0",borderRadius:9,padding:"10px 12px",fontSize:14,fontFamily:FONT,color:"#14161F",margin:0,background:"#fff"},
   authErr:{background:"#FCECEA",color:"#C0392B",fontSize:12.5,fontWeight:500,padding:"8px 11px",borderRadius:8,marginTop:12},
-  authHint:{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"var(--text-muted)",marginTop:16,marginBottom:0,lineHeight:1.5},
+  authHint:{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"#8A8F9E",marginTop:16,marginBottom:0,lineHeight:1.5},
 };
 
 // ---------- Tela de conexão + carregamento da nuvem ----------
@@ -3061,29 +2636,28 @@ function Root(){
   if(fase==="pronto") return <App inicial={inicial} aoSair={sair} usuarioConectado={conectado}/>;
 
   if(fase==="carregando") return (
-    <div className="tela-cheia" style={S.authWrap}><div style={{textAlign:"center"}}>
+    <div style={S.authWrap}><div style={{textAlign:"center"}}>
       <div className="spin" style={{margin:"0 auto 14px"}}/>
-      <div style={{color:"var(--text-secondary)",fontFamily:FONT}}>Carregando os dados da equipe…</div>
+      <div style={{color:"#5A6072",fontFamily:FONT}}>Carregando os dados da equipe…</div>
     </div></div>);
 
   // login de conexão (mesmo do servidor)
   return (
-    <div className="tela-cheia" style={S.authWrap}>
-      <form onSubmit={entrar} style={{background:"var(--surface)",borderRadius:16,padding:26,width:"min(94vw,380px)",boxShadow:"0 20px 50px rgba(20,22,31,.22)",fontFamily:FONT}}>
+    <div style={S.authWrap}>
+      <form onSubmit={entrar} style={{background:"#fff",borderRadius:16,padding:26,width:"min(94vw,380px)",boxShadow:"0 20px 50px rgba(20,22,31,.22)",fontFamily:FONT}}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
           <div style={S.brandMark}>◆</div>
-          <div style={{flex:1}}><div style={{fontWeight:700,fontSize:15}}>Equipe</div><div style={{fontSize:11.5,color:"var(--text-muted)"}}>gestão de trabalho</div></div>
-          <ThemeToggle/>
+          <div><div style={{fontWeight:700,fontSize:15}}>Equipe</div><div style={{fontSize:11.5,color:"#8A8F9E"}}>gestão de trabalho</div></div>
         </div>
-        <label style={{fontSize:12,fontWeight:700,color:"var(--text-secondary)",display:"block",marginBottom:4}}>Usuário</label>
+        <label style={{fontSize:12,fontWeight:700,color:"#5A6072",display:"block",marginBottom:4}}>Usuário</label>
         <input ref={refU} style={S.authInput} autoFocus autoComplete="username" value={usuario} onChange={(e)=>setUsuario(e.target.value)} placeholder="seu login"/>
-        <label style={{fontSize:12,fontWeight:700,color:"var(--text-secondary)",display:"block",margin:"12px 0 4px"}}>Senha</label>
+        <label style={{fontSize:12,fontWeight:700,color:"#5A6072",display:"block",margin:"12px 0 4px"}}>Senha</label>
         <input ref={refS} style={S.authInput} type="password" autoComplete="current-password" value={senha} onChange={(e)=>setSenha(e.target.value)} placeholder="sua senha"/>
         {erro && <div style={{background:"#FCEDEA",color:"#C0392B",borderRadius:8,padding:"8px 11px",fontSize:13,marginTop:10}}>{erro}</div>}
-        {fase==="erro" && <button type="button" onClick={carregarTudo} style={{...S.authInput,cursor:"pointer",marginTop:10,fontWeight:700,color:"#3B3AC9",background:"var(--accent-tint-bg)"}}>Tentar carregar de novo</button>}
+        {fase==="erro" && <button type="button" onClick={carregarTudo} style={{...S.authInput,cursor:"pointer",marginTop:10,fontWeight:700,color:"#3B3AC9",background:"#F7F8FE"}}>Tentar carregar de novo</button>}
         <button type="submit" disabled={ocupado} style={{width:"100%",border:"none",background:"#3B3AC9",color:"#fff",borderRadius:9,padding:12,fontSize:14,fontWeight:700,cursor:"pointer",marginTop:14,fontFamily:FONT}}>
           {ocupado?"Entrando…":"Entrar"}</button>
-        <div style={{fontSize:11,color:"var(--text-faint)",marginTop:12,textAlign:"center"}}>Primeiro acesso: admin / admin</div>
+        <div style={{fontSize:11,color:"#A0A5B2",marginTop:12,textAlign:"center"}}>Primeiro acesso: admin / admin</div>
       </form>
     </div>);
 }
