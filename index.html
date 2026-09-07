@@ -748,6 +748,11 @@ function NovidadeModal({ novidade, onFechar, naoMostrar, onToggleNaoMostrar }){
 
 function App({ inicial, aoSair, usuarioConectado }){
   const [state,setState]=useState(()=> inicial || prepararDados(store.get(), usuarioConectado) );
+  // Qual aba/quadro está aberto é navegação PESSOAL deste navegador — não fica no estado
+  // compartilhado da nuvem, senão um master trocando de aba "arrasta" a tela dos outros masters.
+  const [activeProjectLocal,setActiveProjectLocal]=useState(()=> (inicial||store.get()||{}).activeProject ?? null);
+  const [viewLocal,setViewLocal]=useState("board");
+  const [viewFinanceiroLocal,setViewFinanceiroLocal]=useState("board");
   const [novidadeNaoMostrar,setNovidadeNaoMostrar]=useState(false);
   const [novidadeAberta,setNovidadeAberta]=useState(()=>{
     try{
@@ -977,8 +982,8 @@ function App({ inicial, aoSair, usuarioConectado }){
   const MODO_PROPOSTAS="__propostas__";
   // Guarda qual projeto/reuniões estava aberto antes de entrar na Gestão Financeira ou em Propostas,
   // pra voltar exatamente pra lá ao clicar de novo em "Gestão de Trabalho".
-  const ultimoProjetoRef=useRef((state.activeProject!==MODO_FINANCEIRO && state.activeProject!==MODO_PROPOSTAS)?state.activeProject:null);
-  useEffect(()=>{ if(state.activeProject!==MODO_FINANCEIRO && state.activeProject!==MODO_PROPOSTAS) ultimoProjetoRef.current=state.activeProject; },[state.activeProject]);
+  const ultimoProjetoRef=useRef((activeProjectLocal!==MODO_FINANCEIRO && activeProjectLocal!==MODO_PROPOSTAS)?activeProjectLocal:null);
+  useEffect(()=>{ if(activeProjectLocal!==MODO_FINANCEIRO && activeProjectLocal!==MODO_PROPOSTAS) ultimoProjetoRef.current=activeProjectLocal; },[activeProjectLocal]);
   // URL local (blob) que serve o Gerador de Propostas embutido dentro do próprio app.
   const propostaAppUrl = useMemo(()=>{
     try{
@@ -1018,18 +1023,18 @@ function App({ inicial, aoSair, usuarioConectado }){
     });
   };
 
-  const emReunioes = state.activeProject===MODO_REUNIOES;
-  const emFinanceiro = isPrivileged && state.activeProject===MODO_FINANCEIRO;
-  const emPropostas = isPrivileged && state.activeProject===MODO_PROPOSTAS;
-  const voltarGestaoTrabalho=()=>patch((s)=>({...s,activeProject:ultimoProjetoRef.current ?? (s.projects[0]?.id ?? MODO_REUNIOES)}));
+  const emReunioes = activeProjectLocal===MODO_REUNIOES;
+  const emFinanceiro = isPrivileged && activeProjectLocal===MODO_FINANCEIRO;
+  const emPropostas = isPrivileged && activeProjectLocal===MODO_PROPOSTAS;
+  const voltarGestaoTrabalho=()=>setActiveProjectLocal(ultimoProjetoRef.current ?? (state.projects[0]?.id ?? MODO_REUNIOES));
 
-  const project=state.projects.find((p)=>p.id===state.activeProject);
+  const project=state.projects.find((p)=>p.id===activeProjectLocal);
   const memberById=(id)=>state.members.find((m)=>m.id===id);
   const catalog=state.taskCatalog||[];
-  const trabalhos=[...new Set(state.tasks.filter((t)=>t.project===state.activeProject&&t.folderName).map((t)=>t.folderName))].sort((a,b)=>a.localeCompare(b,"pt"));
+  const trabalhos=[...new Set(state.tasks.filter((t)=>t.project===activeProjectLocal&&t.folderName).map((t)=>t.folderName))].sort((a,b)=>a.localeCompare(b,"pt"));
 
   // visibilidade: master/gerente veem tudo; membro vê só as próprias
-  const allProjTasks=emReunioes ? state.tasks.filter((t)=>t.tipo==="reuniao") : state.tasks.filter((t)=>t.project===state.activeProject);
+  const allProjTasks=emReunioes ? state.tasks.filter((t)=>t.tipo==="reuniao") : state.tasks.filter((t)=>t.project===activeProjectLocal);
   const podeVerReuniao=(t)=> !t.convidados || t.convidados.length===0 || (myMemberId && t.convidados.includes(myMemberId));
   const visibleTasks=isPrivileged?allProjTasks:allProjTasks.filter((t)=> t.tipo==="reuniao"
     ? podeVerReuniao(t)
@@ -1064,10 +1069,11 @@ function App({ inicial, aoSair, usuarioConectado }){
 
   const addProject=()=>setShowNewProj(true);
   const criarProjeto=(nome)=>{ const id=uid();
-    patch((s)=>{s.projects=[...s.projects,{id,name:nome.trim()}];s.activeProject=id;return s;}); };
+    patch((s)=>{s.projects=[...s.projects,{id,name:nome.trim()}];return s;}); setActiveProjectLocal(id); };
   const removeProject=(id)=>{ const proj=state.projects.find((p)=>p.id===id); setConfirmarExcluir(proj||{id}); };
   const excluirProjetoDeFato=(id)=>{
-    patch((s)=>{s.projects=s.projects.filter((p)=>p.id!==id);s.tasks=s.tasks.filter((t)=>t.project!==id);if(s.activeProject===id)s.activeProject=s.projects[0]?.id??null;return s;});
+    patch((s)=>{s.projects=s.projects.filter((p)=>p.id!==id);s.tasks=s.tasks.filter((t)=>t.project!==id);return s;});
+    if(activeProjectLocal===id) setActiveProjectLocal(state.projects.find((p)=>p.id!==id)?.id ?? null);
     setConfirmarExcluir(null); };
 
   const confirmarReuniao=(taskId,membroId)=>{ if(!membroId)return;
@@ -1115,7 +1121,7 @@ function App({ inicial, aoSair, usuarioConectado }){
       const inicioContagem = contarAgora===false ? proximoDiaUtilInicio(agora) : agora;
       const novas=(itens||[]).map((it)=>{
         const item=(s.taskCatalog||[]).find((c)=>c.id===it.catalogId); if(!item) return null;
-        return { id:uid(), project:s.activeProject, col:"todo", title:item.title,
+        return { id:uid(), project:activeProjectLocal, col:"todo", title:item.title,
           tipo:it.reuniao?"reuniao":"tarefa", quando:it.quando||"", confirmados:[], criadoPor:myMemberId||null,
           convidados:it.reuniao?(it.convidados&&it.convidados.length?it.convidados:[]):[],
           priority:it.priority||"media", hours:Math.max(0,+it.hours||0), assignee:it.reuniao?null:(assignee||null),
@@ -1263,9 +1269,9 @@ function App({ inicial, aoSair, usuarioConectado }){
           {isPrivileged && (<div style={{...S.abasLat,marginBottom:14}}>
             <button style={{...S.abaLat,...((!emFinanceiro&&!emPropostas)?S.abaLatOn:{})}} onClick={voltarGestaoTrabalho}>
               <Ic n="grid" s={14} c={(!emFinanceiro&&!emPropostas)?"#3B3AC9":"var(--text-secondary)"}/> Equipe</button>
-            <button style={{...S.abaLat,...(emPropostas?S.abaLatOn:{})}} onClick={()=>patch((s)=>({...s,activeProject:MODO_PROPOSTAS}))}>
+            <button style={{...S.abaLat,...(emPropostas?S.abaLatOn:{})}} onClick={()=>setActiveProjectLocal(MODO_PROPOSTAS)}>
               <Ic n="list" s={13} c={emPropostas?"#3B3AC9":"var(--text-secondary)"}/> Proposta</button>
-            <button style={{...S.abaLat,...(emFinanceiro?S.abaLatOn:{})}} onClick={()=>patch((s)=>({...s,activeProject:MODO_FINANCEIRO}))}>
+            <button style={{...S.abaLat,...(emFinanceiro?S.abaLatOn:{})}} onClick={()=>setActiveProjectLocal(MODO_FINANCEIRO)}>
               <Ic n="cash" s={14} c={emFinanceiro?"#3B3AC9":"var(--text-secondary)"}/> Financeiro</button>
           </div>)}
 
@@ -1278,16 +1284,16 @@ function App({ inicial, aoSair, usuarioConectado }){
             {isPrivileged && <button style={S.iconBtn} onClick={addProject} title="Novo projeto"><Ic n="plus" s={15}/></button>}</div>
           {(()=>{ const totalReun=state.tasks.filter((t)=>t.tipo==="reuniao").length;
             const abertasReun=state.tasks.filter((t)=>t.tipo==="reuniao"&&t.col!=="done").length;
-            const ativa=state.activeProject===MODO_REUNIOES;
-            return (<div className="proj" style={{...S.projRow,marginBottom:6,...(ativa?S.projActiveReun:S.projReun)}} onClick={()=>patch((s)=>({...s,activeProject:MODO_REUNIOES}))}>
+            const ativa=activeProjectLocal===MODO_REUNIOES;
+            return (<div className="proj" style={{...S.projRow,marginBottom:6,...(ativa?S.projActiveReun:S.projReun)}} onClick={()=>setActiveProjectLocal(MODO_REUNIOES)}>
               <Ic n="users" s={15} c={ativa?"#6B3FBF":"#8A5FD6"} style={{flexShrink:0}}/>
               <span style={{...S.projName,fontWeight:700,color:ativa?"#6B3FBF":"#5A4B7A"}}>Reuniões</span>
               <span style={{...S.numAberto,color:"#6B3FBF",background:"#EFE9FB",...(abertasReun>0?{}:S.numZero)}} title="Reuniões a fazer">{abertasReun}</span>
             </div>); })()}
           {projAberto ? (<div style={{display:"flex",flexDirection:"column",gap:2}}>
-            {state.projects.map((p)=>{ const active=p.id===state.activeProject;
+            {state.projects.map((p)=>{ const active=p.id===activeProjectLocal;
               const aberto=emAbertoProj(p.id); const feito=concluidoProj(p.id);
-              return (<div key={p.id} className="proj" style={{...S.projRow,...(active?S.projActive:{})}} onClick={()=>patch((s)=>({...s,activeProject:p.id}))}>
+              return (<div key={p.id} className="proj" style={{...S.projRow,...(active?S.projActive:{})}} onClick={()=>setActiveProjectLocal(p.id)}>
                 <Ic n="folder" s={15} style={{opacity:active?1:0.55,flexShrink:0}}/>
                 <span style={S.projName}>{p.name}</span>
                 <span style={S.contadores}>
@@ -1306,15 +1312,15 @@ function App({ inicial, aoSair, usuarioConectado }){
         <div style={S.sideFooter}>
           {isPrivileged && !emPropostas && (<div style={S.abasLat}>
             {emFinanceiro ? (<React.Fragment>
-              <button style={{...S.abaLat,...((state.viewFinanceiro||"board")==="board"?S.abaLatOn:{})}} onClick={()=>patch((s)=>({...s,viewFinanceiro:"board"}))}>
-                <Ic n="grid" s={14} c={(state.viewFinanceiro||"board")==="board"?"#3B3AC9":"var(--text-secondary)"}/> Quadro</button>
-              <button style={{...S.abaLat,...(state.viewFinanceiro==="dash"?S.abaLatOn:{})}} onClick={()=>patch((s)=>({...s,viewFinanceiro:"dash"}))}>
-                <Ic n="bar" s={14} c={state.viewFinanceiro==="dash"?"#3B3AC9":"var(--text-secondary)"}/> Painel</button>
+              <button style={{...S.abaLat,...((viewFinanceiroLocal||"board")==="board"?S.abaLatOn:{})}} onClick={()=>setViewFinanceiroLocal("board")}>
+                <Ic n="grid" s={14} c={(viewFinanceiroLocal||"board")==="board"?"#3B3AC9":"var(--text-secondary)"}/> Quadro</button>
+              <button style={{...S.abaLat,...(viewFinanceiroLocal==="dash"?S.abaLatOn:{})}} onClick={()=>setViewFinanceiroLocal("dash")}>
+                <Ic n="bar" s={14} c={viewFinanceiroLocal==="dash"?"#3B3AC9":"var(--text-secondary)"}/> Painel</button>
             </React.Fragment>) : (<React.Fragment>
-              <button style={{...S.abaLat,...(state.view==="board"?S.abaLatOn:{})}} onClick={()=>patch((s)=>({...s,view:"board"}))}>
-                <Ic n="grid" s={14} c={state.view==="board"?"#3B3AC9":"var(--text-secondary)"}/> Quadro</button>
-              <button style={{...S.abaLat,...(state.view==="dash"?S.abaLatOn:{})}} onClick={()=>patch((s)=>({...s,view:"dash"}))}>
-                <Ic n="bar" s={14} c={state.view==="dash"?"#3B3AC9":"var(--text-secondary)"}/> Painel</button>
+              <button style={{...S.abaLat,...(viewLocal==="board"?S.abaLatOn:{})}} onClick={()=>setViewLocal("board")}>
+                <Ic n="grid" s={14} c={viewLocal==="board"?"#3B3AC9":"var(--text-secondary)"}/> Quadro</button>
+              <button style={{...S.abaLat,...(viewLocal==="dash"?S.abaLatOn:{})}} onClick={()=>setViewLocal("dash")}>
+                <Ic n="bar" s={14} c={viewLocal==="dash"?"#3B3AC9":"var(--text-secondary)"}/> Painel</button>
             </React.Fragment>)}
           </div>)}
           {isPrivileged && (<div style={{position:"relative"}} ref={refMenuRelatorio}>
@@ -1378,7 +1384,7 @@ function App({ inicial, aoSair, usuarioConectado }){
         )}
 
         {emFinanceiro ? (
-          (state.viewFinanceiro||"board")==="board" ? (
+          (viewFinanceiroLocal||"board")==="board" ? (
             <FinanceiroBoard cards={state.financeiro||[]} catalog={catalog} onAdd={addFinCard} onUpdate={updateFinCard} onRemove={removeFinCard}
               drag={dragFin} setDrag={setDragFin} dragOver={dragOverFin} setDragOver={setDragOverFin} onDrop={(col)=>{ if(dragFin) moveFinCard(dragFin,col); setDragFin(null); setDragOverFin(null); }}/>
           ) : (
@@ -1396,7 +1402,7 @@ function App({ inicial, aoSair, usuarioConectado }){
         ) : (!project && !emReunioes) ? (
           <div style={S.empty}><p style={{margin:0,color:"var(--icon-muted)"}}>Nenhum projeto ainda.</p>
             {isPrivileged && <button style={S.primaryBtn} onClick={addProject}><Ic n="plus" s={16} c="#fff"/> Criar projeto</button>}</div>
-        ) : (state.view!=="dash" || !isPrivileged) ? (
+        ) : (viewLocal!=="dash" || !isPrivileged) ? (
           <React.Fragment>
             {(()=>{ const membrosEquipe=state.members.filter((m)=>m.naEquipe!==false); return membrosEquipe.length>0 && (
               <div style={{padding:"14px 26px 0"}}>
