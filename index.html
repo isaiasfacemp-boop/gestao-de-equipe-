@@ -161,7 +161,6 @@ const COLUMNS = [
 ];
 const COL = Object.fromEntries(COLUMNS.map((c)=>[c.id,c]));
 const FIN_COLUMNS = [
-  { id:"para_orcamento",       name:"PARA ORÇAMENTO",         tint:"#8A8F9E", bg:"#F0F1F5" },
   { id:"orcamento_enviado",    name:"ORÇAMENTO ENVIADO",      tint:"#2F6BD8", bg:"#E9F0FC" },
   { id:"contrato",             name:"CONTRATO",               tint:"#8B3ABF", bg:"#F3EAFB" },
   { id:"cobranca_assinatura",  name:"COBRANÇA DE ASSINATURA", tint:"#0E8F9E", bg:"#E1F2F4" },
@@ -631,6 +630,9 @@ function prepararDados(saved, usuarioConectado){
   if(!saved.users) saved.users=[];
   if(!saved.projects) saved.projects=[];
   if(!saved.financeiro) saved.financeiro=[];
+  // migração: a coluna "PARA ORÇAMENTO" foi removida do quadro Financeiro — cartões que
+  // ainda estavam nela passam para "ORÇAMENTO ENVIADO" pra não sumirem do quadro.
+  saved.financeiro=saved.financeiro.map((c)=> c.col==="para_orcamento" ? {...c, col:"orcamento_enviado"} : c);
   if(!saved.session) saved.session={currentUserId:null};
   // dá login inicial aos membros sem conta (uma vez)
   if(!saved.loginsIniciais){
