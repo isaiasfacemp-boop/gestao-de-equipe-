@@ -883,6 +883,45 @@ function App({ inicial, aoSair, usuarioConectado }){
   },[state.messages, state.tasks, state.session, state.users]);
   const patch=(fn)=>setState((s)=>fn({...s}));
 
+  // Quando uma proposta é salva na aba "Proposta" (Gerador de Propostas embutido), ele avisa
+  // aqui via postMessage. A gente cria automaticamente um cartão no Financeiro, já em
+  // "ORÇAMENTO ENVIADO", com o cliente, os serviços (itens) e os valores de pagamento nas notas —
+  // isso acontece em segundo plano, sem trocar de aba, pra não interromper a confirmação/PDF
+  // que o Gerador de Propostas mostra logo depois de salvar.
+  // (Fica antes de qualquer retorno antecipado da tela de login, pra manter a quantidade de
+  // hooks sempre igual entre renderizações.)
+  useEffect(()=>{
+    function aoReceberMensagem(e){
+      const d=e.data;
+      if(!d) return;
+      if(d.type==="jg2-preparar-impressao"){
+        // A aba Proposta avisou que vai imprimir/gerar PDF: troca o título da página (é o que o
+        // navegador usa para sugerir o nome do arquivo) e volta ao normal assim que a janela
+        // recebe foco de novo (a caixa de salvar do PDF fechou).
+        try{
+          if(!document._tituloOriginal) document._tituloOriginal=document.title;
+          document.title=d.titulo||document.title;
+          const restaurar=()=>{ document.title=document._tituloOriginal; window.removeEventListener("focus",restaurar); };
+          window.addEventListener("focus",restaurar);
+        }catch(err){}
+        return;
+      }
+      if(d.type!=="jg2-proposta-salva") return;
+      const itens=(d.itens||[]).map((it)=>({ id:uid(), descricao:it.descricao||"", valor:it.valor||0 }));
+      const valorTotal=itens.reduce((a,i)=>a+(i.valor||0),0);
+      const notasParts=[];
+      if(d.vista) notasParts.push(`À vista: ${d.vista}`);
+      if(d.parc && d.parc.val) notasParts.push(`Parcelado: ${d.parc.val}${d.parc.qtd?` em ${d.parc.qtd}x`:""}`);
+      const notas=notasParts.join(" · ");
+      patch((s)=>{
+        s.financeiro=[...(s.financeiro||[]),{ id:uid(), col:"orcamento_enviado", title:(d.cliente||d.nome||"Proposta").trim(), notas, itens, valor:valorTotal, createdAt:Date.now() }];
+        return s;
+      });
+    }
+    window.addEventListener("message", aoReceberMensagem);
+    return ()=>window.removeEventListener("message", aoReceberMensagem);
+  }, []);
+
   const currentUser=state.users.find((u)=>u.id===state.session.currentUserId);
 
   const login=(id)=>patch((s)=>{ s.session={currentUserId:id}; return s; });
@@ -926,6 +965,32 @@ function App({ inicial, aoSair, usuarioConectado }){
     });
   };
 
+  // Feriado nacional de hoje (se houver). Calculado sempre, antes de qualquer retorno antecipado
+  // (tela de login/definir senha), pra não mudar a quantidade de hooks entre renderizações.
+  const nomeFeriadoHoje=useMemo(()=>feriadoDeHoje(),[]);
+  const chaveHoje=useMemo(()=>chaveDataFeriado(new Date()),[]);
+
+  // Nomes dos "modos" especiais de navegação (Financeiro, Proposta, Reuniões) — usados em vários
+  // pontos abaixo, inclusive em hooks, então ficam definidos aqui em cima também.
+  const MODO_REUNIOES="__reunioes__";
+  const MODO_FINANCEIRO="__financeiro__";
+  const MODO_PROPOSTAS="__propostas__";
+  // Guarda qual projeto/reuniões estava aberto antes de entrar na Gestão Financeira ou em Propostas,
+  // pra voltar exatamente pra lá ao clicar de novo em "Gestão de Trabalho".
+  const ultimoProjetoRef=useRef((state.activeProject!==MODO_FINANCEIRO && state.activeProject!==MODO_PROPOSTAS)?state.activeProject:null);
+  useEffect(()=>{ if(state.activeProject!==MODO_FINANCEIRO && state.activeProject!==MODO_PROPOSTAS) ultimoProjetoRef.current=state.activeProject; },[state.activeProject]);
+  // URL local (blob) que serve o Gerador de Propostas embutido dentro do próprio app.
+  const propostaAppUrl = useMemo(()=>{
+    try{
+      if(!window.PROPOSTA_APP_B64) return null;
+      const bin = atob(window.PROPOSTA_APP_B64);
+      const bytes = new Uint8Array(bin.length);
+      for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+      const blob = new Blob([bytes], {type:"text/html;charset=utf-8"});
+      return URL.createObjectURL(blob);
+    }catch(e){ return null; }
+  }, []);
+
   // Login unificado: quem entrou pela tela de conexão vira o usuário do app.
   // Casa pelo login (username), exatamente — nunca cai no master por engano/erro de digitação.
   if(!currentUser){
@@ -944,9 +1009,7 @@ function App({ inicial, aoSair, usuarioConectado }){
   const isPrivileged=currentUser.role==="master"||currentUser.role==="gerente";
   const myMemberId=currentUser.memberId;
 
-  // Feriado nacional de hoje (se houver) e se a equipe já confirmou que está trabalhando mesmo assim.
-  const nomeFeriadoHoje=useMemo(()=>feriadoDeHoje(),[]);
-  const chaveHoje=useMemo(()=>chaveDataFeriado(new Date()),[]);
+  // Se hoje é feriado, verifica se a equipe já confirmou que está trabalhando mesmo assim.
   const trabalhoNoFeriado=nomeFeriadoHoje ? (state.feriadosTrabalhados||{})[chaveHoje] : null;
   const confirmarTrabalhoFeriado=()=>{
     patch((s)=>{
@@ -955,29 +1018,11 @@ function App({ inicial, aoSair, usuarioConectado }){
     });
   };
 
-  const MODO_REUNIOES="__reunioes__";
-  const MODO_FINANCEIRO="__financeiro__";
-  const MODO_PROPOSTAS="__propostas__";
   const emReunioes = state.activeProject===MODO_REUNIOES;
   const emFinanceiro = isPrivileged && state.activeProject===MODO_FINANCEIRO;
   const emPropostas = isPrivileged && state.activeProject===MODO_PROPOSTAS;
-  // Guarda qual projeto/reuniões estava aberto antes de entrar na Gestão Financeira ou em Propostas,
-  // pra voltar exatamente pra lá ao clicar de novo em "Gestão de Trabalho".
-  const ultimoProjetoRef=useRef((state.activeProject!==MODO_FINANCEIRO && state.activeProject!==MODO_PROPOSTAS)?state.activeProject:null);
-  useEffect(()=>{ if(state.activeProject!==MODO_FINANCEIRO && state.activeProject!==MODO_PROPOSTAS) ultimoProjetoRef.current=state.activeProject; },[state.activeProject]);
   const voltarGestaoTrabalho=()=>patch((s)=>({...s,activeProject:ultimoProjetoRef.current ?? (s.projects[0]?.id ?? MODO_REUNIOES)}));
 
-  // URL local (blob) que serve o Gerador de Propostas embutido dentro do próprio app.
-  const propostaAppUrl = useMemo(()=>{
-    try{
-      if(!window.PROPOSTA_APP_B64) return null;
-      const bin = atob(window.PROPOSTA_APP_B64);
-      const bytes = new Uint8Array(bin.length);
-      for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
-      const blob = new Blob([bytes], {type:"text/html;charset=utf-8"});
-      return URL.createObjectURL(blob);
-    }catch(e){ return null; }
-  }, []);
   const project=state.projects.find((p)=>p.id===state.activeProject);
   const memberById=(id)=>state.members.find((m)=>m.id===id);
   const catalog=state.taskCatalog||[];
@@ -1110,42 +1155,6 @@ function App({ inicial, aoSair, usuarioConectado }){
   const moveFinCard=(id,col)=>updateFinCard(id,{col});
   const removeFinCard=(id)=>patch((s)=>{ s.financeiro=(s.financeiro||[]).filter((c)=>c.id!==id); return s; });
 
-  // Quando uma proposta é salva na aba "Proposta" (Gerador de Propostas embutido), ele avisa
-  // aqui via postMessage. A gente cria automaticamente um cartão no Financeiro, já em
-  // "ORÇAMENTO ENVIADO", com o cliente, os serviços (itens) e os valores de pagamento nas notas —
-  // isso acontece em segundo plano, sem trocar de aba, pra não interromper a confirmação/PDF
-  // que o Gerador de Propostas mostra logo depois de salvar.
-  useEffect(()=>{
-    function aoReceberMensagem(e){
-      const d=e.data;
-      if(!d) return;
-      if(d.type==="jg2-preparar-impressao"){
-        // A aba Proposta avisou que vai imprimir/gerar PDF: troca o título da página (é o que o
-        // navegador usa para sugerir o nome do arquivo) e volta ao normal assim que a janela
-        // recebe foco de novo (a caixa de salvar do PDF fechou).
-        try{
-          if(!document._tituloOriginal) document._tituloOriginal=document.title;
-          document.title=d.titulo||document.title;
-          const restaurar=()=>{ document.title=document._tituloOriginal; window.removeEventListener("focus",restaurar); };
-          window.addEventListener("focus",restaurar);
-        }catch(err){}
-        return;
-      }
-      if(d.type!=="jg2-proposta-salva") return;
-      const itens=(d.itens||[]).map((it)=>({ id:uid(), descricao:it.descricao||"", valor:it.valor||0 }));
-      const valorTotal=itens.reduce((a,i)=>a+(i.valor||0),0);
-      const notasParts=[];
-      if(d.vista) notasParts.push(`À vista: ${d.vista}`);
-      if(d.parc && d.parc.val) notasParts.push(`Parcelado: ${d.parc.val}${d.parc.qtd?` em ${d.parc.qtd}x`:""}`);
-      const notas=notasParts.join(" · ");
-      patch((s)=>{
-        s.financeiro=[...(s.financeiro||[]),{ id:uid(), col:"orcamento_enviado", title:(d.cliente||d.nome||"Proposta").trim(), notas, itens, valor:valorTotal, createdAt:Date.now() }];
-        return s;
-      });
-    }
-    window.addEventListener("message", aoReceberMensagem);
-    return ()=>window.removeEventListener("message", aoReceberMensagem);
-  }, []);
 
   // fluxo: A fazer -> (aceitar) Em andamento -> (concluir) Concluído -> (master) Revisão -> (concluir) Concluído
   // Ao aceitar uma tarefa nova, qualquer outra tarefa do mesmo membro que esteja com o relógio rodando
