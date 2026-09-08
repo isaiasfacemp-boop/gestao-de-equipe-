@@ -168,6 +168,7 @@ const FIN_COLUMNS = [
   { id:"cobranca_protocolo",   name:"COBRANÇA DE PROTOCOLO",  tint:"#D9843B", bg:"#FBEEE1" },
   { id:"cobranca_final",       name:"COBRANÇA FINAL",         tint:"#D8442F", bg:"#FCEDEA" },
   { id:"arquivado_fin",        name:"ARQUIVADO",              tint:"#1F7A4C", bg:"#E3F3EA" },
+  { id:"nao_autorizado_fin",   name:"NÃO AUTORIZADO",         tint:"#6B7280", bg:"#EEF0F4" },
 ];
 const FIN_COL = Object.fromEntries(FIN_COLUMNS.map((c)=>[c.id,c]));
 const PRIORITIES = { alta:{label:"Alta",color:"#D8442F"}, media:{label:"Média",color:"#D9843B"}, baixa:{label:"Baixa",color:"#5B8C4F"} };
@@ -1249,6 +1250,8 @@ function App({ inicial, aoSair, usuarioConectado }){
   const concluidoProj=(pid)=>state.tasks.filter((t)=>t.project===pid && t.col==="done" && (isPrivileged || (t.tipo==="reuniao"?podeVerReuniao(t):t.assignee===myMemberId))).length;
   const emAbertoMembro=(mid)=>state.tasks.filter((t)=>t.assignee===mid && t.col!=="done").length;
   const concluidoMembro=(mid)=>state.tasks.filter((t)=>t.assignee===mid && t.col==="done").length;
+  const porColunaMembro=(mid)=>{ const doMembro=state.tasks.filter((t)=>t.assignee===mid);
+    return Object.fromEntries(COLUMNS.map((c)=>[c.id, doMembro.filter((t)=>t.col===c.id).length])); };
 
   const onDrop=(col)=>{
     if(drag){ const task=state.tasks.find((t)=>t.id===drag);
@@ -1409,7 +1412,7 @@ function App({ inicial, aoSair, usuarioConectado }){
                 <div style={S.panel}>
                   <div style={{marginBottom:10}}><div style={S.panelTitle}>Equipe · {membrosEquipe.length}</div></div>
                   <div style={S.equipeGrid}>
-                    {membrosEquipe.map((m)=>{ const fazer=emAbertoMembro(m.id); const feito=concluidoMembro(m.id);
+                    {membrosEquipe.map((m)=>{ const porCol=porColunaMembro(m.id);
                       const podeAbrir = isPrivileged || m.id===myMemberId;
                       return (<div key={m.id} style={{...S.equipeCard,cursor:podeAbrir?"pointer":"default"}}
                         title={podeAbrir?`Ver tarefas de ${m.name}`:undefined}
@@ -1418,9 +1421,11 @@ function App({ inicial, aoSair, usuarioConectado }){
                           <Avatar m={m} size={20}/>
                           <span style={S.equipeCardNome}>{m.name}{m.id===myMemberId && <span style={{fontSize:9.5,color:"var(--text-muted)",marginLeft:4}}>você</span>}</span>
                         </div>
-                        <div style={{display:"flex",gap:10,fontSize:11}}>
-                          <span style={{color:fazer>0?"#D8442F":"var(--text-faint3)",fontWeight:700}}>Fazer {fazer}</span>
-                          <span style={{color:feito>0?"#2F9E6E":"var(--text-faint3)",fontWeight:700}}>Feito {feito}</span>
+                        <div style={{display:"flex",flexWrap:"wrap",gap:"4px 9px"}}>
+                          {COLUMNS.map((c)=>{ const n=porCol[c.id]||0;
+                            return (<span key={c.id} style={{fontSize:10.5,color:n>0?c.tint:"var(--text-faint3)",fontWeight:700,whiteSpace:"nowrap"}}>
+                              {c.name} {n}
+                            </span>); })}
                         </div>
                       </div>); })}
                   </div>
@@ -1636,16 +1641,19 @@ function FinanceiroDashboard({ cards }){
   const noAno=(ts)=>{ if(!ts) return false; return new Date(ts).getFullYear()===anoAtual; };
   const somaValor=(lista)=>lista.reduce((a,c)=>a+(c.valor||0),0);
 
+  // Cartões marcados como "Não autorizado" saem da conta: não contam em nenhum dos totais/gráfico abaixo.
+  const cardsValidos=cards.filter((c)=>c.col!=="nao_autorizado_fin");
+
   // Recebido no mês: cartões que chegaram em Arquivado (considerado "pago/fechado") este mês.
-  const recebidoMes=somaValor(cards.filter((c)=>c.arquivadoEm && noMes(c.arquivadoEm)));
+  const recebidoMes=somaValor(cardsValidos.filter((c)=>c.arquivadoEm && noMes(c.arquivadoEm)));
   // A receber no ano: já entraram em Em andamento (ou depois) este ano, mas ainda não arquivaram —
   // ou seja, valor contratado este ano que ainda está em aberto pra receber.
-  const aReceberAno=somaValor(cards.filter((c)=>c.emAndamentoDesde && noAno(c.emAndamentoDesde) && !c.arquivadoEm));
+  const aReceberAno=somaValor(cardsValidos.filter((c)=>c.emAndamentoDesde && noAno(c.emAndamentoDesde) && !c.arquivadoEm));
   // Faturado no ano: soma de tudo que já foi arquivado (recebido) dentro deste ano.
-  const faturadoAno=somaValor(cards.filter((c)=>c.arquivadoEm && noAno(c.arquivadoEm)));
+  const faturadoAno=somaValor(cardsValidos.filter((c)=>c.arquivadoEm && noAno(c.arquivadoEm)));
   // Em carteira: soma de todo valor que já passou de "Em andamento" e ainda não foi arquivado,
   // não importa o ano (visão geral do que está em aberto agora).
-  const emCarteira=somaValor(cards.filter((c)=>c.emAndamentoDesde && !c.arquivadoEm));
+  const emCarteira=somaValor(cardsValidos.filter((c)=>c.emAndamentoDesde && !c.arquivadoEm));
 
   const maxContagem=Math.max(1,...FIN_COLUMNS.map((col)=>cards.filter((c)=>c.col===col.id).length));
 
@@ -1659,6 +1667,7 @@ function FinanceiroDashboard({ cards }){
     <div style={{fontSize:11.5,color:"var(--text-muted)",lineHeight:1.5,background:"var(--surface-alt)",border:"1px solid var(--border-soft)",borderRadius:10,padding:"10px 13px"}}>
       <b>Como esses números são calculados:</b> o valor de um cartão só entra nas contas a partir do momento em que ele chega em <b>Em andamento</b> — antes disso é considerado só orçamento, não conta.
       Quando o cartão chega em <b>Arquivado</b>, o valor dele é tratado como recebido/fechado (entra em "Recebido" e "Faturado"). Enquanto não chega lá, ele conta como "A receber" e "Em carteira".
+      Cartões movidos para <b>Não autorizado</b> saem da conta: o valor deles não entra em nenhum dos números acima.
     </div>
     <div style={S.grid2}>
       {FIN_COLUMNS.map((col)=>{
@@ -3458,7 +3467,7 @@ const S = {
   grid2:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(380px,1fr))",gap:16},
   panel:{background:"var(--surface)",border:"1px solid var(--border-soft)",borderRadius:14,padding:18},
   panelTitle:{fontWeight:700,fontSize:15,letterSpacing:"-.01em"}, panelSub:{fontSize:12,color:"var(--text-muted)",marginTop:2},
-  equipeGrid:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:9},
+  equipeGrid:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:9},
   equipeCard:{background:"var(--surface-alt)",border:"1px solid var(--border-soft2)",borderRadius:10,padding:"9px 10px"},
   equipeCardHead:{display:"flex",alignItems:"center",gap:7,marginBottom:7},
   equipeCardNome:{fontSize:12.5,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"},
