@@ -232,8 +232,24 @@ function feriadoDeHoje(){
   return feriadosDoAno(hoje.getFullYear())[chaveDataFeriado(hoje)] || null;
 }
 
+// Dias em que a equipe confirmou que trabalhou mesmo sendo feriado (chave "AAAA-MM-DD" -> {por,em}).
+// Mantido atualizado pelo App a cada render (ver useApp/App) para que as funções de tempo útil,
+// que ficam fora do componente, enxerguem essas confirmações sem precisar receber tudo por parâmetro.
+let FERIADOS_TRABALHADOS = {};
+// Um dia é "útil" se for de segunda a sexta e não for feriado — a menos que a equipe tenha
+// confirmado que trabalhou naquele feriado (ver "Estamos trabalhando hoje").
+const ehDiaUtil = (d)=>{
+  const diaSemana=d.getDay();
+  if(diaSemana===0 || diaSemana===6) return false;
+  const chave=chaveDataFeriado(d);
+  const feriado=feriadosDoAno(d.getFullYear())[chave];
+  if(feriado && !FERIADOS_TRABALHADOS[chave]) return false;
+  return true;
+};
+
 // ---------- Tempo útil (só conta dentro do expediente) ----------
-// Expediente: seg a sex, 8h-12h e 13h30-17h30. Fora disso (noite, almoço, fim de semana) não soma.
+// Expediente: seg a sex (exceto feriados não confirmados), 8h-12h e 13h30-17h30.
+// Fora disso (noite, almoço, fim de semana, feriado) não soma.
 const JANELAS_EXPEDIENTE = [[8,0,12,0],[13,30,17,30]];
 const msUteis = (inicioTs, fimTs)=>{
   if(!inicioTs || !fimTs || fimTs<=inicioTs) return 0;
@@ -241,8 +257,7 @@ const msUteis = (inicioTs, fimTs)=>{
   const cursor=new Date(inicioTs); cursor.setHours(0,0,0,0);
   const fimDia=new Date(fimTs); fimDia.setHours(0,0,0,0);
   while(cursor.getTime()<=fimDia.getTime()){
-    const diaSemana=cursor.getDay();
-    if(diaSemana>=1 && diaSemana<=5){
+    if(ehDiaUtil(cursor)){
       for(const [h1,m1,h2,m2] of JANELAS_EXPEDIENTE){
         const janIni=new Date(cursor); janIni.setHours(h1,m1,0,0);
         const janFim=new Date(cursor); janFim.setHours(h2,m2,0,0);
@@ -258,7 +273,7 @@ const msUteis = (inicioTs, fimTs)=>{
 const proximoDiaUtilInicio = (ts)=>{
   const [h0,m0]=JANELAS_EXPEDIENTE[0];
   const d=new Date(ts); d.setDate(d.getDate()+1); d.setHours(h0,m0,0,0);
-  while(d.getDay()===0 || d.getDay()===6){ d.setDate(d.getDate()+1); }
+  while(!ehDiaUtil(d)){ d.setDate(d.getDate()+1); }
   return d.getTime();
 };
 const quandoTexto = (iso)=>{ if(!iso) return "";
@@ -749,6 +764,9 @@ function NovidadeModal({ novidade, onFechar, naoMostrar, onToggleNaoMostrar }){
 
 function App({ inicial, aoSair, usuarioConectado }){
   const [state,setState]=useState(()=> inicial || prepararDados(store.get(), usuarioConectado) );
+  // Mantém a lista de feriados trabalhados acessível para as funções de tempo útil (msUteis etc.),
+  // que ficam fora do componente e não recebem o estado por parâmetro.
+  FERIADOS_TRABALHADOS = state.feriadosTrabalhados || {};
   // Qual aba/quadro está aberto é navegação PESSOAL deste navegador — não fica no estado
   // compartilhado da nuvem, senão um master trocando de aba "arrasta" a tela dos outros masters.
   const [activeProjectLocal,setActiveProjectLocal]=useState(()=> (inicial||store.get()||{}).activeProject ?? null);
@@ -1365,7 +1383,7 @@ function App({ inicial, aoSair, usuarioConectado }){
             {emPropostas && <div style={{fontSize:12.5,color:"#3B3AC9",fontWeight:600,marginTop:2}}>Gerador de Propostas JG2 · visível só para master e gerente</div>}
             {emReunioes && <div style={{fontSize:12.5,color:"#8A5FD6",fontWeight:600,marginTop:2}}>Reuniões de todos os projetos</div>}
             {isPrivileged && !emReunioes && !emFinanceiro && !emPropostas && <div style={{fontSize:12.5,color:"#3B3AC9",fontWeight:600,marginTop:2}}>Resumo de todos os projetos</div>}
-            {isPrivileged && !emReunioes && !emFinanceiro && !emPropostas && <ResumoSemanal tarefas={resumoTarefas}/>}
+            {isPrivileged && !emReunioes && !emFinanceiro && !emPropostas && <ResumoSemanal tarefas={resumoTarefas} projects={state.projects} members={state.members}/>}
           </div>
           <ThemeToggle style={{marginLeft:16}}/>
         </header>
@@ -2527,8 +2545,9 @@ function SemanaPanel({ tasks, members }){
   );
 }
 
-function ResumoSemanal({ tarefas }){
+function ResumoSemanal({ tarefas, projects, members }){
   const [offset,setOffset]=useState(0);
+  const [selecionado,setSelecionado]=useState(null); // null=fechado, "all" ou id da coluna
   const ini=inicioSemana(offset); const fim=somaDias(ini,7);
   const semanaAtual=offset===0; // a semana real de hoje
   // Concluídas ficam na semana em que foram concluídas.
@@ -2542,15 +2561,18 @@ function ResumoSemanal({ tarefas }){
   const total=daSemana.length;
   const maxCol=Math.max(1,...COLUMNS.map((c)=>conta(c.id)));
   const rotuloSemana = offset===0?"Esta semana":offset===-1?"Semana passada":offset<0?`${-offset} semanas atrás`:offset===1?"Próxima semana":`${offset} semanas à frente`;
+  const tarefasModal = selecionado==null ? [] : selecionado==="all" ? daSemana : daSemana.filter((t)=>t.col===selecionado);
+  const tituloModal = selecionado==null ? "" : selecionado==="all" ? "Todas as tarefas" : (COL[selecionado]||{}).name || "";
+  const tintModal = selecionado==null || selecionado==="all" ? "#3B3AC9" : (COL[selecionado]||{}).tint;
 
   return (<div style={S.rsWrap}>
       <div style={S.rsCards}>
-        <div style={{...S.resumoItem,...S.resumoTotal}}>
+        <div style={{...S.resumoItem,...S.resumoTotal,cursor:"pointer"}} title="Ver todas as tarefas" onClick={()=>setSelecionado("all")}>
           <span style={S.resumoNum}>{total}</span>
           <span style={S.resumoRot}>Todas as tarefas</span>
         </div>
         {COLUMNS.map((c)=>{ const q=conta(c.id);
-          return (<div key={c.id} style={{...S.resumoItem,borderColor:c.tint+"33"}}>
+          return (<div key={c.id} style={{...S.resumoItem,borderColor:c.tint+"33",cursor:"pointer"}} title={`Ver tarefas em ${c.name}`} onClick={()=>setSelecionado(c.id)}>
             <span style={{...S.resumoNum,color:c.tint}}>{q}</span>
             <span style={S.resumoRot}>{c.name}</span>
             <div style={S.rsBarra}><div style={{width:(q/maxCol*100)+"%",height:"100%",background:c.tint,borderRadius:20,transition:"width .2s"}}/></div>
@@ -2566,6 +2588,38 @@ function ResumoSemanal({ tarefas }){
         <button style={{...S.rsNavBtn,...(offset>=0?{visibility:"hidden"}:{})}} onClick={()=>setOffset(offset+1)}>Próxima <Ic n="chev" s={13} c="#3B3AC9" style={{transform:"rotate(-90deg)"}}/></button>
       </div>
       {offset!==0 && <button style={S.rsHoje} onClick={()=>setOffset(0)}><Ic n="calendar" s={12} c="#3B3AC9"/> Voltar para esta semana</button>}
+      {selecionado!=null && <ResumoTarefasModal titulo={tituloModal} tint={tintModal} tarefas={tarefasModal}
+        projects={projects||[]} members={members||[]} onClose={()=>setSelecionado(null)}/>}
+  </div>);
+}
+function ResumoTarefasModal({ titulo, tint, tarefas, projects, members, onClose }){
+  const nomeProjeto=(pid)=> (projects.find((p)=>p.id===pid)||{}).name || "Sem projeto";
+  const membroPorId=(mid)=> members.find((m)=>m.id===mid);
+  const ordem={ todo:0, doing:1, review:2, protocolado:3, done:4 };
+  const lista=[...tarefas].sort((a,b)=> (ordem[a.col]??9)-(ordem[b.col]??9) || (b.createdAt||0)-(a.createdAt||0));
+  return (<div style={S.overlay} onClick={onClose}>
+    <div style={S.modal} onClick={(e)=>e.stopPropagation()}>
+      <div style={S.modalHead}>
+        <div style={{display:"flex",alignItems:"center",gap:9}}>
+          <span style={{...S.dot,background:tint,width:12,height:12}}/>
+          <h2 style={S.modalTitle}>{titulo} · {lista.length}</h2>
+        </div>
+        <button style={S.iconBtn} onClick={onClose}><Ic n="x" s={18}/></button>
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:8,maxHeight:"60vh",overflowY:"auto"}}>
+        {lista.map((t)=>{ const col=COL[t.col]||{tint:"var(--text-muted)",name:t.col}; const m=membroPorId(t.assignee);
+          return (<div key={t.id} style={S.memberRow}>
+            <span style={{...S.dot,background:col.tint,width:10,height:10}}/>
+            {m && <Avatar m={m} size={24}/>}
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontWeight:600,fontSize:13.5,color:"var(--text)"}}>{t.title}</div>
+              <div style={{fontSize:11.5,color:"var(--text-muted)",marginTop:2}}>{nomeProjeto(t.project)}{m?` · ${m.name}`:""}</div>
+            </div>
+            <span style={{fontSize:11.5,fontWeight:700,color:col.tint,whiteSpace:"nowrap"}}>{col.name}</span>
+          </div>); })}
+        {lista.length===0 && <p style={{color:"var(--text-muted)",fontSize:14,textAlign:"center",padding:20}}>Nenhuma tarefa nesse momento.</p>}
+      </div>
+    </div>
   </div>);
 }
 
