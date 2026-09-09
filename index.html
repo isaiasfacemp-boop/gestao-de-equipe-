@@ -1046,6 +1046,10 @@ function App({ inicial, aoSair, usuarioConectado }){
       return URL.createObjectURL(blob);
     }catch(e){ return null; }
   }, []);
+  // Hooks da "minha foto" (colocar/trocar a própria foto 3x4) — ficam aqui, na zona segura,
+  // pelo mesmo motivo do comentário acima: não podem vir depois de um retorno antecipado.
+  const minhaFotoInputRef=useRef(null);
+  const [erroMinhaFoto,setErroMinhaFoto]=useState("");
 
   // Login unificado: quem entrou pela tela de conexão vira o usuário do app.
   // Casa pelo login (username), exatamente — nunca cai no master por engano/erro de digitação.
@@ -1163,8 +1167,7 @@ function App({ inicial, aoSair, usuarioConectado }){
   const setMemberPhoto=(id,foto)=>patch((s)=>{ s.members=s.members.map((m)=>m.id===id?{...m,photo:foto||null}:m); return s; });
   // Qualquer pessoa logada (não só o master) pode colocar/trocar a própria foto 3x4 —
   // assim o master não precisa fazer isso por cada um ao cadastrar.
-  const minhaFotoInputRef=useRef(null);
-  const [erroMinhaFoto,setErroMinhaFoto]=useState("");
+  // (os hooks minhaFotoInputRef/erroMinhaFoto ficam lá em cima, antes dos retornos antecipados)
   const escolherMinhaFoto=()=>{ setErroMinhaFoto(""); if(minhaFotoInputRef.current){ minhaFotoInputRef.current.value=""; minhaFotoInputRef.current.click(); } };
   const aoEscolherMinhaFoto=async(e)=>{
     const f=e.target.files&&e.target.files[0]; if(!f) return;
