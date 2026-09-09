@@ -191,7 +191,13 @@ const durMs = (ms)=>{ if(!ms||ms<0) return "0m"; const min=Math.floor(ms/60000);
   if(min<1) return "menos de 1 min"; const H=Math.floor(min/60), M=min%60;
   if(H>=24){ const D=Math.floor(H/24); return `${D}d ${H%24}h`; }
   return H?`${H}h ${M}m`:`${M}m`; };
-const tempoReal = (t)=>{ const rodando=t.runningSince?Date.now()-t.runningSince:0; return (t.workedMs||0)+rodando; };
+// tempoReal soma o que já ficou arquivado no histórico por etapa (t.fases) + o que está
+// acumulado/rodando na etapa atual — sempre em horário comercial (ver msUteis, mais abaixo).
+const tempoReal = (t)=>{
+  const fechado=(t.fases||[]).reduce((a,f)=>a+(f.ms||0),0);
+  const aberto=t.runningSince? msUteis(t.runningSince,Date.now()) : 0;
+  return fechado+(t.workedMs||0)+aberto;
+};
 const horasReais = (t)=>{ const ms=tempoReal(t); return ms>0 ? ms/3600000 : (t.hours||0); };
 
 // ---------- Feriados nacionais (Brasil) ----------
@@ -270,6 +276,63 @@ const msUteis = (inicioTs, fimTs)=>{
   }
   return total;
 };
+// ---------- Histórico de tempo por etapa da tarefa ----------
+// Cada vez que a tarefa troca de coluna (Em andamento / Revisão Interna / Protocolado), o
+// cronômetro daquela visita é arquivado aqui (t.fases) e zera pra próxima etapa — assim o
+// histórico mostra cada passagem separada, em vez de um total só que ia acumulando junto.
+const FASE_POR_COL = { doing:"andamento", review:"revisao", protocolado:"protocolado" };
+const FASE_INFO = {
+  andamento:{ label:"Em andamento", cor:"#2F6BD8" },
+  revisao:{ label:"Revisão interna", cor:"#E0A81F" },
+  protocolado:{ label:"Protocolado", cor:"#8B3ABF" },
+};
+function arquivarFase(t, agora, retrabalhoAtual){
+  const faseAntiga=FASE_POR_COL[t.col];
+  if(!faseAntiga || (!t.workedMs && !t.runningSince)) return t.fases||[];
+  const ms=(t.workedMs||0)+(t.runningSince? msUteis(t.runningSince,agora) : 0);
+  const entrada={ fase:faseAntiga, ms, fim:agora };
+  if(faseAntiga==="revisao") entrada.retrabalho=!!retrabalhoAtual;
+  return [...(t.fases||[]), entrada];
+}
+// Lista pra exibir no cartão: cada visita já arquivada + a etapa atual (rodando ou pausada).
+// "conta:false" na Revisão Interna quando ela veio direto de Em andamento (1ª revisão) — não
+// entra no total do prazo, só no histórico.
+function historicoTarefa(t){
+  const itens=[]; let jaTeveAndamento=false;
+  (t.fases||[]).forEach((f)=>{
+    const info=FASE_INFO[f.fase]; if(!info) return;
+    let sub="";
+    if(f.fase==="revisao") sub=f.retrabalho?"veio de Protocolado, conta como retrabalho":"1ª revisão, não conta";
+    else if(f.fase==="andamento" && jaTeveAndamento) sub="retomada";
+    if(f.fase==="andamento") jaTeveAndamento=true;
+    itens.push({ label:info.label, sub, cor:info.cor, ms:f.ms, conta:f.fase!=="revisao"||!!f.retrabalho });
+  });
+  const faseAberta=FASE_POR_COL[t.col];
+  if(faseAberta && (t.workedMs>0 || t.runningSince)){
+    const info=FASE_INFO[faseAberta];
+    const ms=(t.workedMs||0)+(t.runningSince? msUteis(t.runningSince,Date.now()) : 0);
+    let sub="";
+    if(faseAberta==="revisao") sub=t.retrabalhoAtual?"veio de Protocolado, conta como retrabalho":"1ª revisão, não conta";
+    else if(faseAberta==="andamento" && jaTeveAndamento) sub="retomada";
+    itens.push({ label:info.label, sub, cor:info.cor, ms, conta:faseAberta!=="revisao"||!!t.retrabalhoAtual, atual:!!t.runningSince });
+  }
+  return itens;
+}
+// Total só faz sentido comparar com o prazo quando a tarefa está concluída (todas as etapas
+// já fechadas em t.fases). Aceite entra direto (createdAt -> acceptedAt), sem passar por fases.
+function totalPrazoTarefa(t){
+  const itens=historicoTarefa(t);
+  const aceiteMs=t.acceptedAt? msUteis(t.createdAt||t.acceptedAt, t.acceptedAt) : 0;
+  const porCategoria={ aceite:aceiteMs, andamento:0, revisao:0, protocolado:0 };
+  itens.forEach((i)=>{ if(!i.conta) return;
+    if(i.label==="Em andamento") porCategoria.andamento+=i.ms;
+    else if(i.label==="Revisão interna") porCategoria.revisao+=i.ms;
+    else if(i.label==="Protocolado") porCategoria.protocolado+=i.ms;
+  });
+  const total=porCategoria.aceite+porCategoria.andamento+porCategoria.revisao+porCategoria.protocolado;
+  const prazoMs=(t.hours||0)*3600000;
+  return { porCategoria, total, prazoMs, diffMs:total-prazoMs };
+}
 const proximoDiaUtilInicio = (ts)=>{
   const [h0,m0]=JANELAS_EXPEDIENTE[0];
   const d=new Date(ts); d.setDate(d.getDate()+1); d.setHours(h0,m0,0,0);
@@ -532,6 +595,29 @@ function gerarRelatorioEquipePdf(tasks, members, projects){
         theme:"grid", styles:{fontSize:9}, headStyles:{fillColor:[47,158,110]}, margin:{left:14,right:14},
       });
     }
+  }
+
+  // Prazo x realizado — total gasto (horário comercial) comparado com o prazo pedido,
+  // só tarefas concluídas com prazo definido.
+  const comPrazo=fluxo.filter((t)=>t.col==="done" && t.hours>0).map((t)=>{
+    const r=totalPrazoTarefa(t);
+    return { titulo:t.title, prazo:hm(t.hours), realizado:durMs(r.total), diffMs:r.diffMs,
+      diferenca:`${r.diffMs>0?"+":"-"}${durMs(Math.abs(r.diffMs))} ${r.diffMs>0?"a mais":"a menos"}` };
+  });
+  if(comPrazo.length){
+    doc.autoTable({
+      startY:doc.lastAutoTable.finalY+10,
+      head:[["Tarefa","Prazo","Realizado","Diferença"]],
+      body:comPrazo.map((r)=>[r.titulo,r.prazo,r.realizado,r.diferenca]),
+      theme:"grid", styles:{fontSize:9}, headStyles:{fillColor:[139,58,191]}, margin:{left:14,right:14},
+      didParseCell:(data)=>{
+        if(data.section==="body" && data.column.index===3){
+          const passou=comPrazo[data.row.index].diffMs>0;
+          data.cell.styles.textColor=passou?[163,45,45]:[59,109,17];
+          data.cell.styles.fontStyle="bold";
+        }
+      },
+    });
   }
 
   // Rodapé com paginação
@@ -921,7 +1007,7 @@ function App({ inicial, aoSair, usuarioConectado }){
         // a pessoa está na reunião, não trabalhando na tarefa. O tempo já rodado fica guardado
         // e a tarefa fica "Pausada", esperando a pessoa retomar depois com "Continuar tarefa".
         if(t.tipo!=="reuniao" && t.runningSince && afetados.has(t.assignee)){
-          const soma=(t.workedMs||0)+(agora-t.runningSince);
+          const soma=(t.workedMs||0)+msUteis(t.runningSince,agora);
           const nota={ id:uid(), data:agora, texto:"Pausada automaticamente: início de reunião" };
           return {...t, workedMs:soma, runningSince:null, diario:[...(t.diario||[]),nota]};
         }
@@ -1239,9 +1325,9 @@ function App({ inicial, aoSair, usuarioConectado }){
       const alvo=s.tasks.find((x)=>x.id===id); if(!alvo) return s;
       const memberId=alvo.assignee;
       s.tasks=s.tasks.map((t)=>{
-        if(t.id===id) return {...t, col:"doing", acceptedAt:t.acceptedAt??agora, runningSince:agora, completedAt:null};
+        if(t.id===id) return {...t, col:"doing", acceptedAt:t.acceptedAt??agora, workedMs:0, runningSince:agora, completedAt:null};
         if(memberId && t.assignee===memberId && t.runningSince){
-          const soma=(t.workedMs||0)+(agora-t.runningSince);
+          const soma=(t.workedMs||0)+msUteis(t.runningSince,agora);
           return {...t, workedMs:soma, runningSince:null};
         }
         return t;
@@ -1258,7 +1344,7 @@ function App({ inicial, aoSair, usuarioConectado }){
       s.tasks=s.tasks.map((t)=>{
         if(t.id===id) return {...t, runningSince:agora};
         if(memberId && t.assignee===memberId && t.runningSince){
-          const soma=(t.workedMs||0)+(agora-t.runningSince);
+          const soma=(t.workedMs||0)+msUteis(t.runningSince,agora);
           return {...t, workedMs:soma, runningSince:null};
         }
         return t;
@@ -1267,47 +1353,61 @@ function App({ inicial, aoSair, usuarioConectado }){
     });
   };
   // Pausar manualmente uma tarefa "Em andamento" a qualquer momento (emergência, imprevisto etc.).
-  // Só para o cronômetro e guarda o tempo já trabalhado — a tarefa continua "Em andamento",
-  // esperando a pessoa retomar depois com "Continuar tarefa". Guarda o motivo da pausa no histórico.
+  // Só para o cronômetro (contando só horário comercial) e guarda o tempo já trabalhado — a tarefa
+  // continua "Em andamento", esperando a pessoa retomar depois com "Continuar tarefa". Guarda o
+  // motivo da pausa no histórico.
   const pauseTask=(id,motivo)=>{ const t=state.tasks.find((x)=>x.id===id); if(!t||!t.runningSince) return;
-    const agora=Date.now(); const soma=(t.workedMs||0)+(agora-t.runningSince);
+    const agora=Date.now(); const soma=(t.workedMs||0)+msUteis(t.runningSince,agora);
     const pausas=[...(t.pausas||[]),{ motivo:(motivo||"").trim(), em:agora }];
     updateTask(id,{workedMs:soma,runningSince:null,pausas}); };
+  // Concluir: arquiva a etapa que estava aberta (Em andamento/Revisão/Protocolado) no histórico
+  // antes de fechar a tarefa — é isso que fecha t.fases pra dar pra comparar com o prazo depois.
   const completeTask=(id)=>{ const t=state.tasks.find((x)=>x.id===id); const agora=Date.now();
-    const soma=(t.workedMs||0)+(t.runningSince?agora-t.runningSince:0);
-    updateTask(id,{col:"done",needsFix:false,fixNote:"",workedMs:soma,runningSince:null,
+    const fases=arquivarFase(t,agora,t.retrabalhoAtual);
+    updateTask(id,{col:"done",needsFix:false,fixNote:"",fases,workedMs:0,runningSince:null,
       acceptedAt:t.acceptedAt??agora,completedAt:agora}); };
   // Reabrir uma reunião já concluída (só o Master): volta para "A fazer", mantendo quem já confirmou.
   const reabrirReuniao=(id)=>updateTask(id,{col:"todo",completedAt:null});
   const sendToReview=(id)=>setRevisaoDe(id);
-  // Envio Em andamento -> Revisão (1ª revisão do trabalho): não conta como retrabalho.
+  // Envio Em andamento -> Revisão (1ª revisão do trabalho): não conta como retrabalho no total do prazo.
   const confirmarRevisao=(id,note)=>{
-    updateTask(id,{col:"review",needsFix:true,fixNote:(note||"").trim(),runningSince:Date.now(),completedAt:null});
+    const t=state.tasks.find((x)=>x.id===id); const agora=Date.now();
+    const fases=arquivarFase(t,agora,false);
+    updateTask(id,{col:"review",needsFix:true,fixNote:(note||"").trim(),fases,workedMs:0,runningSince:agora,completedAt:null,retrabalhoAtual:false});
     setRevisaoDe(null);
   };
-  const backToDoing=(id)=>updateTask(id,{col:"doing",needsFix:false,fixNote:"",runningSince:Date.now(),completedAt:null});
+  const backToDoing=(id)=>{ const t=state.tasks.find((x)=>x.id===id); const agora=Date.now();
+    const fases=arquivarFase(t,agora,t.retrabalhoAtual);
+    updateTask(id,{col:"doing",needsFix:false,fixNote:"",fases,workedMs:0,runningSince:agora,completedAt:null}); };
   // Correção pronta na Revisão Interna vai para Protocolado (não direto ao Concluído).
   const toProtocolado=(id)=>{ const t=state.tasks.find((x)=>x.id===id); const agora=Date.now();
-    const soma=(t.workedMs||0)+(t.runningSince?agora-t.runningSince:0);
-    updateTask(id,{col:"protocolado",needsFix:false,fixNote:"",workedMs:soma,runningSince:null,completedAt:null,protocoladoAt:t.protocoladoAt??agora}); };
-  // De Protocolado: pode voltar para a Revisão Interna...
-  const backToReview=(id)=>{ const t=state.tasks.find((x)=>x.id===id);
-    updateTask(id,{col:"review",needsFix:true,runningSince:Date.now(),completedAt:null,reworkCount:(t?.reworkCount||0)+1}); };
+    const fases=arquivarFase(t,agora,t.retrabalhoAtual);
+    updateTask(id,{col:"protocolado",needsFix:false,fixNote:"",fases,workedMs:0,runningSince:agora,completedAt:null,protocoladoAt:t.protocoladoAt??agora}); };
+  // De Protocolado: pode voltar para a Revisão Interna — essa revisão conta como retrabalho no total.
+  const backToReview=(id)=>{ const t=state.tasks.find((x)=>x.id===id); const agora=Date.now();
+    const fases=arquivarFase(t,agora,null);
+    updateTask(id,{col:"review",needsFix:true,fases,workedMs:0,runningSince:agora,completedAt:null,retrabalhoAtual:true,reworkCount:(t?.reworkCount||0)+1}); };
   // Em andamento -> Revisão Interna (envio normal, sem marcar "conserto")
-  const doingToReview=(id)=>updateTask(id,{col:"review",needsFix:false,fixNote:"",runningSince:Date.now(),completedAt:null});
+  const doingToReview=(id)=>{ const t=state.tasks.find((x)=>x.id===id); const agora=Date.now();
+    const fases=arquivarFase(t,agora,false);
+    updateTask(id,{col:"review",needsFix:false,fixNote:"",fases,workedMs:0,runningSince:agora,completedAt:null,retrabalhoAtual:false}); };
   // Protocolado -> Em andamento
-  const protocoladoToDoing=(id)=>updateTask(id,{col:"doing",needsFix:false,fixNote:"",runningSince:Date.now(),completedAt:null});
-  // Repassar a tarefa para um colega: congela o tempo trabalhado até aqui (fica no histórico
-  // da pessoa que saiu) e zera o cronômetro para quem está entrando — sem misturar os tempos.
+  const protocoladoToDoing=(id)=>{ const t=state.tasks.find((x)=>x.id===id); const agora=Date.now();
+    const fases=arquivarFase(t,agora,null);
+    updateTask(id,{col:"doing",needsFix:false,fixNote:"",fases,workedMs:0,runningSince:agora,completedAt:null}); };
+  // Repassar a tarefa para um colega: arquiva no histórico o pedaço que a pessoa que saiu fez
+  // (fica registrado de quem é) e zera o cronômetro pra quem está entrando — sem misturar os tempos.
   const repassarTarefa=(id,novoMembroId)=>{
     const t=state.tasks.find((x)=>x.id===id); if(!t || t.assignee===novoMembroId) return;
     const agora=Date.now(); const rodando=!!t.runningSince;
-    const meuTempo=(t.workedMs||0)+(rodando?agora-t.runningSince:0);
+    const meuTempo=(t.workedMs||0)+(rodando?msUteis(t.runningSince,agora):0);
+    const fases=arquivarFase(t,agora,t.retrabalhoAtual);
     const deNome=(memberById(t.assignee)||{}).name; const paraNome=(memberById(novoMembroId)||{}).name||"—";
     const nota={ id:uid(), data:agora, texto:`Repassada${deNome?` por ${deNome}`:""} para ${paraNome}${meuTempo>0?` · tempo até aqui: ${durMs(meuTempo)}`:""}` };
     updateTask(id,{
       assignee:novoMembroId,
       workLog:[...(t.workLog||[]),{memberId:t.assignee,ms:meuTempo,ate:agora}],
+      fases,
       workedMs:0, runningSince:rodando?agora:null,
       diario:[...(t.diario||[]),nota],
     });
@@ -1919,8 +2019,8 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
         <Ic n="calendar" s={13} c="#fff"/> REUNIÃO
         {task.quando && <span style={S.faixaQuando}>{quandoTexto(task.quando)}</span>}
       </div>)}
-      {ehReuniao && task.criadoPor && (()=>{ const criador=members.find((m)=>m.id===task.criadoPor);
-        return criador ? <div style={{fontSize:11,color:"var(--text-muted)",padding:"6px 11px 0"}}>Marcada por {criador.name}</div> : null; })()}
+      {task.criadoPor && (()=>{ const criador=members.find((m)=>m.id===task.criadoPor);
+        return criador ? <div style={{fontSize:11,color:"var(--text-muted)",padding:"6px 11px 0"}}>{ehReuniao?"Marcada por":"Lançada por"} {criador.name}</div> : null; })()}
       {!ehReuniao && projetoNome && <div style={S.projetoTag} title={"Projeto: "+projetoNome}>
         <Ic n="folder" s={11} c="#3B3AC9"/> {projetoNome}</div>}
       {task.folderName && !editTrab && <div style={{...S.folderTag,color:corTrab,background:corTrab+"14",borderColor:corTrab+"33"}}
@@ -2030,26 +2130,50 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
           </div>}
         </div>);
       })()}
-            {(task.createdAt || task.acceptedAt || task.workedMs || task.runningSince) && (
+            {(task.createdAt || task.acceptedAt || (task.fases&&task.fases.length) || task.workedMs || task.runningSince) && (()=>{
+        const concluida=task.col==="done";
+        const itensHist=historicoTarefa(task);
+        const resumo=concluida?totalPrazoTarefa(task):null;
+        return (
         <div style={{...S.tempoBox,...(ehReuniao?{margin:"8px 11px 0"}:{})}}>
           {task.createdAt && <div style={S.tempoLinha}>
             <span style={S.tempoRot}>Enviada</span><span style={S.tempoVal}>{hhmm(task.createdAt)} · {ddmm(new Date(task.createdAt))}</span></div>}
           {task.acceptedAt ? (<div style={S.tempoLinha}>
-            <span style={S.tempoRot}>Resposta</span>
+            <span style={S.tempoRot}>Aceite</span>
             <span style={{...S.tempoVal,color:"#2F6BD8"}}>{durMs(msUteis(task.createdAt||task.acceptedAt, task.acceptedAt))}</span></div>)
            : (task.col==="todo" && task.createdAt && <div style={S.tempoLinha}>
             <span style={S.tempoRot}>Aguardando</span>
             <span style={{...S.tempoVal,color:"#D8442F"}}>{durMs(msUteis(task.createdAt, Date.now()))}</span></div>)}
-          {(task.workedMs>0 || task.runningSince) && <div style={S.tempoLinha}>
-            <span style={S.tempoRot}>{task.runningSince?"Contando":(task.col==="doing"?"Pausada":"Tempo real")}</span>
-            <span style={{...S.tempoVal,color:task.runningSince?"#2F9E6E":"var(--text-strong)",fontWeight:800}}>
-              {task.runningSince && <span style={S.pulsando}>●</span>} {durMs(tempoReal(task))}</span></div>}
+          {itensHist.map((it,i)=>(
+            <div key={i} style={{...S.tempoLinha,opacity:it.conta?1:.55}}>
+              <span style={{...S.tempoRot,display:"flex",alignItems:"center",gap:5,textTransform:"none",letterSpacing:0,fontWeight:600,fontSize:11.5,color:"var(--text)"}}>
+                <span style={{width:6,height:6,borderRadius:"50%",background:it.cor,flexShrink:0}}/>
+                {it.label}
+                {it.sub && <span style={{color:"var(--text-faint)",fontWeight:400,fontSize:10.5}}> · {it.sub}</span>}
+              </span>
+              <span style={{...S.tempoVal,color:it.atual?"#2F9E6E":"var(--text-strong)",fontWeight:it.atual?800:600}}>
+                {it.atual && <span style={S.pulsando}>●</span>} {durMs(it.ms)}</span>
+            </div>
+          ))}
           {!task.runningSince && task.col==="doing" && task.pausas && task.pausas.length>0 && task.pausas[task.pausas.length-1].motivo && (
             <div style={{fontSize:11,color:"var(--text-muted)",marginTop:2}}><Ic n="hourglass" s={10} c="var(--text-faint)" style={{verticalAlign:-1,marginRight:3}}/> {task.pausas[task.pausas.length-1].motivo}</div>
           )}
-          {task.hours>0 && <div style={S.tempoLinha}>
+          {task.hours>0 && !concluida && <div style={S.tempoLinha}>
             <span style={S.tempoRot}>Previsto</span><span style={S.tempoVal}>{hm(task.hours)}</span></div>}
-        </div>)}
+          {concluida && resumo && (
+            <div style={{marginTop:6,paddingTop:8,borderTop:"1px solid var(--border-soft2)"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
+                <span style={S.tempoRot}>Total geral</span>
+                <span style={{fontSize:13,fontWeight:800,color:"var(--text-strong)"}}>{durMs(resumo.total)}</span>
+              </div>
+              {task.hours>0 && (<div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginTop:4}}>
+                <span style={S.tempoRot}>{resumo.diffMs>0?"Passou do prazo":"Dentro do prazo"}</span>
+                <span style={{fontSize:12,fontWeight:800,color:resumo.diffMs>0?"#D8442F":"#2F9E6E"}}>
+                  {resumo.diffMs>0?"+":"-"}{durMs(Math.abs(resumo.diffMs))} {resumo.diffMs>0?"a mais":"a menos"}</span>
+              </div>)}
+            </div>
+          )}
+        </div>); })()}
       {fixing && <div style={S.fixBox}><span style={S.fixLabel}><Ic n="undo" s={11} c="#B8860B"/> O que consertar</span>
         {task.fixNote || "O master devolveu esta tarefa para ajuste."}</div>}
       {!ehReuniao && (inProtocolado || task.protocoladoPdf) && (()=>{
@@ -2148,7 +2272,7 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
         </div>}
       </DropMenu>)}
       {menu==="asg" && (<DropMenu pos={menuPos}>
-        <button style={S.menuItem} onClick={()=>{onUpdate({assignee:null,workedMs:tempoReal(task),runningSince:null});setMenu(null);}}><span style={S.avatarEmpty}><Ic n="circle" s={11} c="var(--text-faint)"/></span> Ninguém</button>
+        <button style={S.menuItem} onClick={()=>{ const agora=Date.now(); const fases=arquivarFase(task,agora,task.retrabalhoAtual); onUpdate({assignee:null,fases,workedMs:0,runningSince:null});setMenu(null);}}><span style={S.avatarEmpty}><Ic n="circle" s={11} c="var(--text-faint)"/></span> Ninguém</button>
         {members.filter((m)=>m.id!==task.assignee).map((m)=>(<button key={m.id} style={S.menuItem} onClick={()=>{onRepassar(m.id);setMenu(null);}}><Avatar m={m} size={24}/> {m.name}</button>))}
       </DropMenu>)}
       {menu==="rep" && <RepassarModal members={members} task={task} onClose={()=>setMenu(null)}
@@ -2714,6 +2838,7 @@ function Dashboard({ tasks, members }){
       <Kpi label="Em aberto" value={tasks.filter((t)=>t.col!=="done").length} accent={COL.todo.tint}/>
     </div>
     <IndicadoresProcesso tasks={tasks} members={members}/>
+    <PrazoPanel tasks={tasks}/>
     <SemanaPanel tasks={tasks} members={members}/>
     <div style={S.grid2}>
       <Panel title="Evolução de conclusões por membro" sub="Acumulado — últimos 14 dias"><LineChart rows={evolution} series={memberSeries}/><Legend items={memberSeries}/></Panel>
@@ -2734,6 +2859,43 @@ function Dashboard({ tasks, members }){
       </div>
     </Panel>
   </div>);
+}
+// Compara o total gasto (horário comercial) com o prazo pedido — só tarefas concluídas com
+// prazo definido. Fica só no painel do master/gerente (Dashboard já é exclusivo deles).
+function PrazoPanel({ tasks }){
+  const dados=useMemo(()=>{
+    const concluidas=tasks.filter((t)=>t.tipo!=="reuniao" && t.col==="done" && t.hours>0);
+    const linhas=concluidas.map((t)=>({ id:t.id, titulo:t.title, ...totalPrazoTarefa(t) }));
+    const noPrazo=linhas.filter((l)=>l.diffMs<=0);
+    const foraPrazo=linhas.filter((l)=>l.diffMs>0);
+    const mediaAbs=(arr)=> arr.length? arr.reduce((a,l)=>a+Math.abs(l.diffMs),0)/arr.length : null;
+    const destaques=[...linhas].sort((a,b)=>Math.abs(b.diffMs)-Math.abs(a.diffMs)).slice(0,8);
+    return { destaques, noPrazo:noPrazo.length, foraPrazo:foraPrazo.length,
+      mediaAtraso:mediaAbs(foraPrazo), mediaFolga:mediaAbs(noPrazo) };
+  },[tasks]);
+  if(dados.noPrazo+dados.foraPrazo===0) return null;
+  return (<Panel title="Prazo das tarefas" sub="Total gasto (horário comercial) comparado com o prazo pedido — só tarefas concluídas">
+    <div style={S.indGrid}>
+      <div style={{...S.indCard,borderTopColor:COL.done.tint}}>
+        <div style={S.indHead}><span style={S.indLabel}>No prazo</span></div>
+        <div style={{...S.indVal,color:"#2F9E6E"}}>{dados.noPrazo}</div></div>
+      <div style={{...S.indCard,borderTopColor:COL.todo.tint}}>
+        <div style={S.indHead}><span style={S.indLabel}>Fora do prazo</span></div>
+        <div style={{...S.indVal,color:"#D8442F"}}>{dados.foraPrazo}</div></div>
+      <div style={{...S.indCard,borderTopColor:COL.todo.tint}}>
+        <div style={S.indHead}><span style={S.indLabel}>Média de atraso</span></div>
+        <div style={{...S.indVal,color:"#D8442F"}}>{dados.mediaAtraso!=null?`+${durMs(dados.mediaAtraso)}`:"—"}</div></div>
+      <div style={{...S.indCard,borderTopColor:COL.done.tint}}>
+        <div style={S.indHead}><span style={S.indLabel}>Média de folga</span></div>
+        <div style={{...S.indVal,color:"#2F9E6E"}}>{dados.mediaFolga!=null?`-${durMs(dados.mediaFolga)}`:"—"}</div></div>
+    </div>
+    <div style={{display:"flex",flexDirection:"column",gap:6,marginTop:12}}>
+      {dados.destaques.map((l)=>(<div key={l.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 10px",background:"var(--surface-alt)",borderRadius:8}}>
+        <span style={{fontSize:12.5,color:"var(--text)"}}>{l.titulo}</span>
+        <span style={{fontSize:12.5,fontWeight:700,color:l.diffMs>0?"#D8442F":"#2F9E6E"}}>{l.diffMs>0?"+":"-"}{durMs(Math.abs(l.diffMs))}</span>
+      </div>))}
+    </div>
+  </Panel>);
 }
 function IndicadoresProcesso({ tasks, members }){
   const stats=useMemo(()=>{
