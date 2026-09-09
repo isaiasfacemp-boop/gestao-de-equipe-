@@ -189,7 +189,8 @@ const ddmm = (d)=> `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()
 const hhmm = (ts)=>{ const d=new Date(ts); return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; };
 const durMs = (ms)=>{ if(!ms||ms<0) return "0m"; const min=Math.floor(ms/60000);
   if(min<1) return "menos de 1 min"; const H=Math.floor(min/60), M=min%60;
-  if(H>=24){ const D=Math.floor(H/24); return `${D}d ${H%24}h`; }
+  if(H>=CAPACIDADE_DIA){ const D=Math.floor(H/CAPACIDADE_DIA), hr=H%CAPACIDADE_DIA;
+    return `${D}d${hr?` ${hr}h`:""}${M?` ${M}m`:""}`; }
   return H?`${H}h ${M}m`:`${M}m`; };
 // tempoReal soma o que já ficou arquivado no histórico por etapa (t.fases) + o que está
 // acumulado/rodando na etapa atual — sempre em horário comercial (ver msUteis, mais abaixo).
@@ -1413,6 +1414,8 @@ function App({ inicial, aoSair, usuarioConectado }){
     });
   };
 
+  const aFazerProj=(pid)=>state.tasks.filter((t)=>t.project===pid && t.col==="todo" && (isPrivileged || (t.tipo==="reuniao"?podeVerReuniao(t):t.assignee===myMemberId))).length;
+  const andamentoProj=(pid)=>state.tasks.filter((t)=>t.project===pid && (t.col==="doing"||t.col==="review"||t.col==="protocolado") && (isPrivileged || (t.tipo==="reuniao"?podeVerReuniao(t):t.assignee===myMemberId))).length;
   const emAbertoProj=(pid)=>state.tasks.filter((t)=>t.project===pid && t.col!=="done" && (isPrivileged || (t.tipo==="reuniao"?podeVerReuniao(t):t.assignee===myMemberId))).length;
   const concluidoProj=(pid)=>state.tasks.filter((t)=>t.project===pid && t.col==="done" && (isPrivileged || (t.tipo==="reuniao"?podeVerReuniao(t):t.assignee===myMemberId))).length;
   const emAbertoMembro=(mid)=>state.tasks.filter((t)=>t.assignee===mid && t.col!=="done").length;
@@ -1462,12 +1465,13 @@ function App({ inicial, aoSair, usuarioConectado }){
             </div>); })()}
           {projAberto ? (<div style={{display:"flex",flexDirection:"column",gap:2}}>
             {state.projects.map((p)=>{ const active=p.id===activeProjectLocal;
-              const aberto=emAbertoProj(p.id); const feito=concluidoProj(p.id);
+              const aFazer=aFazerProj(p.id); const andamento=andamentoProj(p.id); const feito=concluidoProj(p.id);
               return (<div key={p.id} className="proj" style={{...S.projRow,...(active?S.projActive:{})}} onClick={()=>setActiveProjectLocal(p.id)}>
                 <Ic n="folder" s={15} style={{opacity:active?1:0.55,flexShrink:0}}/>
                 <span style={S.projName}>{p.name}</span>
                 <span style={S.contadores}>
-                  <span style={{...S.numAberto,...(aberto>0?{}:S.numZero)}} title="Em aberto (a fazer, em andamento, revisão)">{aberto}</span>
+                  <span style={{...S.numFazer,...(aFazer>0?{}:S.numZero)}} title="A fazer (aguardando aceitar)">{aFazer}</span>
+                  <span style={{...S.numAberto,...(andamento>0?{}:S.numZero)}} title="Em andamento (inclui Revisão e Protocolado)">{andamento}</span>
                   <span style={{...S.numFeito,...(feito>0?{}:S.numZero)}} title="Concluídas">{feito}</span>
                 </span>
                 {isPrivileged && <button className="proj-del" style={S.projDel} onClick={(e)=>{e.stopPropagation();removeProject(p.id);}}><Ic n="trash" s={13}/></button>}
@@ -3590,6 +3594,7 @@ const S = {
   projActive:{background:"var(--accent-tint-bg2)",color:"#3B3AC9",fontWeight:600},
   projName:{flex:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}, projCount:{fontSize:11,color:"var(--text-faint)",fontWeight:600},
   contadores:{display:"inline-flex",alignItems:"center",gap:5,flexShrink:0},
+  numFazer:{minWidth:22,textAlign:"center",fontSize:11,fontWeight:800,color:"#D8442F",background:"#FCEDEA",borderRadius:20,padding:"2px 7px"},
   numAberto:{minWidth:22,textAlign:"center",fontSize:11,fontWeight:800,color:"#2F6BD8",background:"#E9F0FC",borderRadius:20,padding:"2px 7px"},
   numFeito:{minWidth:22,textAlign:"center",fontSize:11,fontWeight:800,color:"#2F9E6E",background:"#E8F6EF",borderRadius:20,padding:"2px 7px"},
   numZero:{color:"var(--text-faint3)",background:"var(--surface-alt)"},
