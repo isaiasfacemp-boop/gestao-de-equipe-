@@ -1649,7 +1649,7 @@ function App({ inicial, aoSair, usuarioConectado }){
                       onReabrirReuniao={reabrirReuniao} onExcluirReuniao={removeTask}/>
                   ) : (
                   <div style={S.cardList}>
-                    {items.map((t)=>(<Card key={t.id} task={t} member={memberById(t.assignee)} members={state.members} projects={state.projects} catalog={catalog} meuMembroId={myMemberId} projetoNome={(state.projects.find((p)=>p.id===t.project)||{}).name||""} onConfirmar={()=>confirmarReuniao(t.id,myMemberId)}
+                    {items.map((t)=>(<Card key={t.id} task={t} member={memberById(t.assignee)} members={state.members} projects={state.projects} catalog={catalog} meuMembroId={myMemberId} projetoNome={(state.projects.find((p)=>p.id===t.project)||{}).name||""} onConfirmar={()=>confirmarReuniao(t.id,myMemberId)} currentUser={currentUser}
                       canEdit={canEdit(t)} canDrag={canDrag(t)} canAct={canAct(t)} isPrivileged={isPrivileged} isMaster={isMaster} mine={isMine(t)}
                       onDragStart={()=>setDrag(t.id)} onDragEnd={()=>{setDrag(null);setDragOver(null);}}
                       onUpdate={(f)=>updateTask(t.id,f)} onRemove={()=>removeTask(t.id)}
@@ -1674,10 +1674,10 @@ function App({ inicial, aoSair, usuarioConectado }){
         onConfirmar={(note)=>confirmarRevisao(revisaoDe,note)} onClose={()=>setRevisaoDe(null)}/>}
       {pausandoTarefa && <PausarModal tarefa={state.tasks.find((t)=>t.id===pausandoTarefa)}
         onConfirmar={(motivo)=>{ pauseTask(pausandoTarefa,motivo); setPausandoTarefa(null); }} onClose={()=>setPausandoTarefa(null)}/>}
-      {confirmarExcluir && <ConfirmModal
+      {confirmarExcluir && <ConfirmSenhaModal
         titulo="Excluir projeto"
-        mensagem={`Excluir "${confirmarExcluir.name||"este projeto"}" e todas as suas tarefas? Esta ação não pode ser desfeita.`}
-        confirmarLabel="Excluir projeto" perigo
+        mensagem={`Digite sua senha para excluir "${confirmarExcluir.name||"este projeto"}" e todas as suas tarefas. Esta ação não pode ser desfeita.`}
+        confirmarLabel="Excluir projeto" currentUser={currentUser}
         onConfirmar={()=>excluirProjetoDeFato(confirmarExcluir.id)}
         onCancelar={()=>setConfirmarExcluir(null)}/>}
       {confirmarConcluir && (()=>{
@@ -1987,8 +1987,9 @@ function RepassarModal({ members, task, onEscolher, onClose }){
 }
 
 // ---------- Task card ----------
-function Card({ task, member, members, projects, catalog, meuMembroId, projetoNome, onConfirmar, canEdit, canDrag, canAct, isPrivileged, isMaster, mine,
+function Card({ task, member, members, projects, catalog, meuMembroId, projetoNome, onConfirmar, canEdit, canDrag, canAct, isPrivileged, isMaster, mine, currentUser,
                 onDragStart, onDragEnd, onUpdate, onRemove, onAccept, onComplete, onResume, onPause, onSendToReview, onBackToDoing, onToProtocolado, onBackToReview, onDoingToReview, onProtocoladoToDoing, onRepassar, onEditLock }){
+  const [confirmarExcluirTarefa,setConfirmarExcluirTarefa]=useState(false);
   const [menu,setMenu]=useState(null); const [menuPos,setMenuPos]=useState(null); const ref=useRef();
   const [editDesc,setEditDesc]=useState(false); const [rascunho,setRascunho]=useState("");
   const [novaNota,setNovaNota]=useState(""); const [editNota,setEditNota]=useState(null); const [notaTexto,setNotaTexto]=useState("");
@@ -2054,7 +2055,7 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
             title={canEdit&&isPrivileged?"Clique para editar a tarefa":undefined}
             onClick={()=>{ if(canEdit&&isPrivileged){ setTituloTexto(task.title); setEditTitulo(true); } }}>{task.title}</p>)}
         {canEdit && isMaster && <button className="card-del" style={S.cardDel} title="Editar tarefa" onClick={()=>setEditTudo(true)}><Ic n="edit" s={13}/></button>}
-        {canEdit && isPrivileged && <button className="card-del" style={S.cardDel} onClick={onRemove}><Ic n="x" s={13}/></button>}
+        {canEdit && isPrivileged && <button className="card-del" style={S.cardDel} title="Excluir tarefa" onClick={()=>setConfirmarExcluirTarefa(true)}><Ic n="x" s={13}/></button>}
       </div>
 
       {(()=>{
@@ -2283,6 +2284,12 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
         onEscolher={(mid)=>{ onRepassar(mid); setMenu(null); }}/>}
       {editTudo && <EditarTarefaModal task={task} projects={projects||[]} members={members} catalog={catalog||[]}
         onSalvar={(campos)=>{ onUpdate(campos); setEditTudo(false); }} onFechar={()=>setEditTudo(false)}/>}
+      {confirmarExcluirTarefa && <ConfirmSenhaModal
+        titulo={ehReuniao?"Excluir reunião":"Excluir tarefa"}
+        mensagem={`Digite sua senha para excluir "${task.title}". Esta ação não pode ser desfeita.`}
+        confirmarLabel={ehReuniao?"Excluir reunião":"Excluir tarefa"} currentUser={currentUser}
+        onConfirmar={()=>{ setConfirmarExcluirTarefa(false); onRemove(); }}
+        onCancelar={()=>setConfirmarExcluirTarefa(false)}/>}
     </div>
   );
 }
