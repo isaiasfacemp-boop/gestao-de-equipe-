@@ -733,16 +733,28 @@ function atualizarNotificacao(total){
 
 // ---------- Aviso de novidades ----------
 // Toda vez que você atualizar o sistema e quiser avisar a equipe, troque a "versao" abaixo
-// (qualquer texto novo já serve, ex: data de hoje) e escreva o que mudou em "texto".
+// (qualquer texto novo já serve, ex: data de hoje), escreva o que mudou em "texto" e coloque
+// a data de hoje em "dataPublicacao" (formato AAAA-MM-DD). O aviso só passa a aparecer para
+// os cadastrados a partir do DIA SEGUINTE a essa data — assim você tem um dia de folga pra
+// testar a alteração em produção antes da equipe ver o aviso.
 // O aviso é por pessoa (login), não por aparelho: guardado na nuvem em state.novidadesVistas,
 // então funciona mesmo se a pessoa trocar de celular/computador ou compartilhar o mesmo aparelho
-// com outra conta. Cada um só deixa de ver de novo se marcar a caixinha "Não mostrar novamente".
+// com outra conta. Cada um só deixa de ver de novo se marcar a caixinha "Não mostrar novamente"
+// (aí some pra sempre até a próxima vez que você trocar a "versao").
 const NOVIDADE = {
   versao: "2026-09-05-2",
+  dataPublicacao: "2026-09-05", // dia em que a alteração foi feita — aviso aparece a partir do dia seguinte
   titulo: "Novidades no sistema",
   texto: "• Modo claro e escuro (botão no topo)\n• Tela de confirmação antes de concluir uma tarefa\n• Selo vermelho no ícone do app quando chega mensagem ou tarefa nova\n• Editar tudo de uma tarefa de uma vez (só master), incluindo trocar o projeto\n• Mandar mensagem para várias pessoas ao mesmo tempo",
   imagem: "" // opcional: cole aqui o link de uma imagem/print para mostrar junto
 };
+// Só considera o aviso "valendo" a partir do dia seguinte à dataPublicacao (ver comentário acima).
+const novidadeJaPodeAparecer = (()=>{
+  if(!NOVIDADE.dataPublicacao) return true;
+  const d=new Date(NOVIDADE.dataPublicacao+"T00:00:00"); if(isNaN(d)) return true;
+  d.setDate(d.getDate()+1);
+  return Date.now()>=d.getTime();
+})();
 function NovidadeModal({ novidade, onFechar, naoMostrar, onToggleNaoMostrar }){
   return (<div style={S.overlay}>
     <div style={{...S.modal,maxWidth:420}} onClick={(e)=>e.stopPropagation()}>
@@ -775,6 +787,7 @@ function App({ inicial, aoSair, usuarioConectado }){
   const [novidadeNaoMostrar,setNovidadeNaoMostrar]=useState(false);
   const [novidadeAberta,setNovidadeAberta]=useState(()=>{
     try{
+      if(!novidadeJaPodeAparecer) return false;
       const vistas=(inicial||store.get()||{}).novidadesVistas||{};
       return vistas[usuarioConectado]!==NOVIDADE.versao;
     }catch(e){ return false; }
@@ -830,29 +843,48 @@ function App({ inicial, aoSair, usuarioConectado }){
   const salvarRef=useRef(null); const primeiraRef=useRef(true);
   const salvandoRef=useRef(false);        // há um salvamento em andamento (rede)
   const mudouLocalRef=useRef(0);          // marca do último momento em que o usuário mexeu
+  // Se uma gravação falhar (rede caiu, sinal fraco etc.), NÃO pode desistir em silêncio:
+  // enquanto salvarFalhouRef estiver true, a sincronização com a nuvem fica travada (o efeito
+  // abaixo não deixa uma leitura antiga da nuvem apagar o que ainda não foi salvo) e o app
+  // continua tentando salvar de novo sozinho, de tempos em tempos, até conseguir.
+  const salvarFalhouRef=useRef(false);
+  const tentativaFalhaRef=useRef(null);
+  const [erroSincronizacao,setErroSincronizacao]=useState(false);
+  const tentarSalvar=(dados)=>{
+    salvandoRef.current=true;
+    store.salvar(dados).then(()=>{
+      salvarFalhouRef.current=false;
+      setErroSincronizacao(false);
+    }).catch(()=>{
+      salvarFalhouRef.current=true;
+      setErroSincronizacao(true);
+      if(tentativaFalhaRef.current) clearTimeout(tentativaFalhaRef.current);
+      // tenta de novo com o estado mais atual (pode ter mudado enquanto a gravação falhava)
+      tentativaFalhaRef.current=setTimeout(()=>tentarSalvar(store.get()), 6000);
+    }).finally(()=>{ salvarRef.current=null; salvandoRef.current=false; });
+  };
   useEffect(()=>{
     store.set(state);
     if(primeiraRef.current){ primeiraRef.current=false; return; } // não salva logo ao carregar
     mudouLocalRef.current=Date.now();
     if(salvarRef.current) clearTimeout(salvarRef.current);
-    salvarRef.current=setTimeout(()=>{
-      salvandoRef.current=true;
-      store.salvar(state).catch(()=>{}).finally(()=>{ salvarRef.current=null; salvandoRef.current=false; });
-    }, 600);
+    if(tentativaFalhaRef.current){ clearTimeout(tentativaFalhaRef.current); tentativaFalhaRef.current=null; }
+    salvarRef.current=setTimeout(()=>{ tentarSalvar(state); }, 600);
     return ()=>{ if(salvarRef.current) clearTimeout(salvarRef.current); };
   },[state]);
   // Sincroniza: busca o estado da nuvem a cada 5s (todos veem as mudanças dos outros).
   useEffect(()=>{
     const i=setInterval(async ()=>{
       try{
-        // não busca se há mudança local recente, salvamento pendente ou em andamento —
-        // evita que uma leitura antiga da nuvem apague o que você acabou de fazer.
-        if(salvarRef.current || salvandoRef.current) return;
+        // não busca se há mudança local recente, salvamento pendente/em andamento, ou se a
+        // última tentativa de salvar falhou (senão a leitura antiga da nuvem apaga o que
+        // você acabou de fazer e que ainda não foi salvo de fato) —
+        if(salvarRef.current || salvandoRef.current || salvarFalhouRef.current) return;
         if(Date.now()-mudouLocalRef.current < 4000) return;
         const pedidoEm=Date.now();
         const nuvem=await store.carregar();
         // se o usuário mexeu enquanto a busca acontecia, descarta este resultado (está velho)
-        if(mudouLocalRef.current > pedidoEm || salvarRef.current || salvandoRef.current) return;
+        if(mudouLocalRef.current > pedidoEm || salvarRef.current || salvandoRef.current || salvarFalhouRef.current) return;
         if(nuvem){
           setState((atual)=>{
             const ses=atual.session;
@@ -1049,6 +1081,7 @@ function App({ inicial, aoSair, usuarioConectado }){
 
   const project=state.projects.find((p)=>p.id===activeProjectLocal);
   const memberById=(id)=>state.members.find((m)=>m.id===id);
+  const meuMembro=memberById(myMemberId);
   const catalog=state.taskCatalog||[];
   const trabalhos=[...new Set(state.tasks.filter((t)=>t.project===activeProjectLocal&&t.folderName).map((t)=>t.folderName))].sort((a,b)=>a.localeCompare(b,"pt"));
 
@@ -1128,6 +1161,16 @@ function App({ inicial, aoSair, usuarioConectado }){
     return s; });
 
   const setMemberPhoto=(id,foto)=>patch((s)=>{ s.members=s.members.map((m)=>m.id===id?{...m,photo:foto||null}:m); return s; });
+  // Qualquer pessoa logada (não só o master) pode colocar/trocar a própria foto 3x4 —
+  // assim o master não precisa fazer isso por cada um ao cadastrar.
+  const minhaFotoInputRef=useRef(null);
+  const [erroMinhaFoto,setErroMinhaFoto]=useState("");
+  const escolherMinhaFoto=()=>{ setErroMinhaFoto(""); if(minhaFotoInputRef.current){ minhaFotoInputRef.current.value=""; minhaFotoInputRef.current.click(); } };
+  const aoEscolherMinhaFoto=async(e)=>{
+    const f=e.target.files&&e.target.files[0]; if(!f) return;
+    try{ const dados=await lerFoto3x4(f); setMemberPhoto(myMemberId,dados); }
+    catch(err){ setErroMinhaFoto(err.message||"Não foi possível usar essa foto."); }
+  };
 
   const addCatalogItem=(title,desc)=>patch((s)=>{ s.taskCatalog=[...(s.taskCatalog||[]),{id:uid(),title:title.trim(),desc:(desc||"").trim()}]; return s; });
   const removeCatalogItem=(id)=>patch((s)=>{ s.taskCatalog=(s.taskCatalog||[]).filter((c)=>c.id!==id); return s; });
@@ -1360,15 +1403,20 @@ function App({ inicial, aoSair, usuarioConectado }){
           </button>)}
           {isMaster && <button style={S.sideBtn} onClick={()=>setShowCatalog(true)}><Ic n="list" s={15} c="var(--text-secondary)"/> Cadastrar tarefa</button>}
           {isMaster && <button style={S.sideBtn} onClick={()=>setShowUsers(true)}><Ic n="userplus" s={15} c="var(--text-secondary)"/> Cadastrar usuário</button>}
+          {erroMinhaFoto && <div style={{...S.authErr,margin:"0 0 8px",padding:"6px 9px",fontSize:11.5}}>{erroMinhaFoto}</div>}
           <div style={S.userChip}>
-            <span style={{...S.avatarSm,background:ROLES[currentUser.role].color}}>{initials(currentUser.username)}</span>
+            {meuMembro
+              ? <Avatar m={meuMembro} size={30}/>
+              : <span style={{...S.avatarSm,background:ROLES[currentUser.role].color}}>{initials(currentUser.username)}</span>}
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:13,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{currentUser.username}</div>
               <span style={{...S.roleBadge,color:ROLES[currentUser.role].color,background:ROLES[currentUser.role].color+"14"}}>{ROLES[currentUser.role].label}</span>
             </div>
+            {myMemberId && <button style={S.iconBtn} title={meuMembro&&meuMembro.photo?"Trocar minha foto":"Colocar minha foto"} onClick={escolherMinhaFoto}><Ic n="userplus" s={16}/></button>}
             {isPrivileged && <button style={S.iconBtn} title="Trocar de usuário" onClick={()=>setShowSwitch(true)}><Ic n="users" s={16}/></button>}
             <button style={S.iconBtn} title="Sair" onClick={()=>{ logout(); if(aoSair) aoSair(); }}><Ic n="logout" s={16}/></button>
           </div>
+          <input ref={minhaFotoInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={aoEscolherMinhaFoto}/>
         </div>
       </aside>
       {showSwitch && <SwitchUserModal users={state.users} members={state.members} currentUser={currentUser}
@@ -1387,6 +1435,16 @@ function App({ inicial, aoSair, usuarioConectado }){
           </div>
           <ThemeToggle style={{marginLeft:16}}/>
         </header>
+
+        {erroSincronizacao && (
+          <div style={{margin:"0 26px 14px",padding:"12px 16px",borderRadius:12,border:"1px solid #E8A9A9",background:"#FBEAEA",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+            <Ic n="info" s={16} c="#B23B3B"/>
+            <div style={{flex:1,minWidth:200}}>
+              <div style={{fontWeight:700,fontSize:13,color:"#8A2E2E"}}>Não foi possível salvar as últimas alterações</div>
+              <div style={{fontSize:12,color:"#8A2E2E"}}>Sem conexão com o servidor agora. Nada foi perdido — está guardado neste aparelho e vamos tentar salvar de novo automaticamente. Evite fechar esta aba até a mensagem desaparecer.</div>
+            </div>
+          </div>
+        )}
 
         {nomeFeriadoHoje && !emFinanceiro && !emPropostas && (
           <div style={{margin:"0 26px 14px",padding:"12px 16px",borderRadius:12,border:"1px solid #F0D28A",background:"#FCF4E2",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
