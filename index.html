@@ -3299,7 +3299,7 @@ function UsersModal({ users, members, tasks=[], currentUser, onAdd, onReset, onP
         </label>
         {role==="membro" && (<label style={{...S.reuniaoTag,marginTop:0,...(podeLancar?{borderColor:"#D9C2F0",background:"#F7F0FC",color:"#8B3ABF"}:{})}}>
           <input type="checkbox" checked={podeLancar} onChange={(e)=>setPodeLancar(e.target.checked)} style={{margin:0}}/>
-          <Ic n="list" s={12} c={podeLancar?"#8B3ABF":"var(--text-muted)"}/> Autorizado a lançar tarefas "A fazer" (só para si mesmo)
+          <Ic n="list" s={12} c={podeLancar?"#8B3ABF":"var(--text-muted)"}/> Autorizado a lançar tarefas "A fazer" (escolhe pra quem da equipe)
         </label>)}
         {err && <div style={S.authErr}>{err}</div>}
         {ok && <div style={{...S.authErr,background:"#E8F6EF",color:"#1F7A55"}}>{ok}</div>}
@@ -3338,7 +3338,7 @@ function UsersModal({ users, members, tasks=[], currentUser, onAdd, onReset, onP
                   title={m.naEquipe!==false?"Aparece na lista da equipe":"Fora da lista da equipe"}
                   onClick={()=>onEquipe(m.id)}><Ic n="users" s={13} c={m.naEquipe!==false?"#1F7A55":"var(--text-muted)"}/> {m.naEquipe!==false?"Na equipe":"Fora da equipe"}</button>
                 {(!u || u.role!=="master") && <button style={{...S.smallBtn,...(m.podeLancar?{color:"#8B3ABF",borderColor:"#D9C2F0",background:"#F7F0FC"}:{})}}
-                  title={m.podeLancar?"Autorizado a lançar tarefas para si mesmo":"Só master/gerente lança tarefas para esta pessoa"}
+                  title={m.podeLancar?"Autorizado a lançar tarefas para qualquer pessoa da equipe":"Só master/gerente lança tarefas para esta pessoa"}
                   onClick={()=>onPodeLancar(m.id)}><Ic n="list" s={13} c={m.podeLancar?"#8B3ABF":"var(--text-muted)"}/> {m.podeLancar?"Pode lançar tarefas":"Não pode lançar"}</button>}
                 {u && <button style={S.smallBtn} onClick={()=>setRedefinirUser(u)}><Ic n="lock" s={13} c="var(--text-secondary)"/> Redefinir senha</button>}
               </div>
