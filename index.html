@@ -989,7 +989,7 @@ function App({ inicial, aoSair, usuarioConectado }){
       patch((s)=>{ s.users=s.users.map((u)=>u.id===s.session.currentUserId?{...u,passHash:hashPw(pw),mustChange:false}:u); return s; });
     });
   };
-  const addUser=(nome,username,password,role,noPainel,naEquipe)=>{
+  const addUser=(nome,username,password,role,noPainel,naEquipe,podeLancar)=>{
     const login=(username||"").trim().toLowerCase();
     // cria o login na tela de conexão (servidor). Se falhar, avisa e não cadastra local.
     return apiCall("cadastrarUsuario",{ user:login, senha:password, master: role==="master" })
@@ -998,7 +998,7 @@ function App({ inicial, aoSair, usuarioConectado }){
           const nomeLimpo=(nome||username).trim();
           let membro=s.members.find((m)=>m.name.toLowerCase()===nomeLimpo.toLowerCase());
           if(!membro){
-            membro={ id:uid(), name:nomeLimpo, color:AVATAR_COLORS[s.members.length%AVATAR_COLORS.length], noPainel:noPainel!==false, naEquipe:naEquipe!==false };
+            membro={ id:uid(), name:nomeLimpo, color:AVATAR_COLORS[s.members.length%AVATAR_COLORS.length], noPainel:noPainel!==false, naEquipe:naEquipe!==false, podeLancar:!!podeLancar };
             s.members=[...s.members,membro];
           }
           s.users=[...s.users,{ id:uid(), username:login, passHash:hashPw(password), role, memberId:membro.id, mustChange:true }];
@@ -1152,6 +1152,9 @@ function App({ inicial, aoSair, usuarioConectado }){
 
   const alternarPainel=(memberId)=>patch((s)=>{ s.members=s.members.map((m)=>m.id===memberId?{...m,noPainel:m.noPainel===false}:m); return s; });
   const alternarEquipe=(memberId)=>patch((s)=>{ s.members=s.members.map((m)=>m.id===memberId?{...m,naEquipe:m.naEquipe===false}:m); return s; });
+  // Autorização (dada pelo master) para o próprio membro lançar tarefas "A fazer" — sem isso,
+  // só master/gerente lançam. Fica no cadastro do membro, não no login.
+  const alternarPodeLancar=(memberId)=>patch((s)=>{ s.members=s.members.map((m)=>m.id===memberId?{...m,podeLancar:!m.podeLancar}:m); return s; });
   const renomearPessoa=(memberId,nome)=>{ if(!nome||!nome.trim())return;
     patch((s)=>{ s.members=s.members.map((m)=>m.id===memberId?{...m,name:nome.trim()}:m); return s; }); };
   const alterarLogin=(userId,username)=>{ if(!username||!username.trim())return;
@@ -1553,7 +1556,8 @@ function App({ inicial, aoSair, usuarioConectado }){
                       onRepassar={(mid)=>repassarTarefa(t.id,mid)} onEditLock={marcarEdicao}/>))}
                     {items.length===0 && <p style={S.colEmpty}>Nenhuma tarefa</p>}
                   </div>)}
-                  {col.id==="todo" && isPrivileged && <LaunchTask catalog={catalog} members={state.members} onLaunch={launchMany} onOpenCatalog={()=>setShowCatalog(true)} isMaster={isMaster}/>}
+                  {col.id==="todo" && (isPrivileged || (meuMembro&&meuMembro.podeLancar)) && <LaunchTask catalog={catalog} members={state.members} onLaunch={launchMany} onOpenCatalog={()=>setShowCatalog(true)} isMaster={isMaster}
+                    permiteReuniao={isPrivileged}/>}
                 </section>); })}
             </div>
           </React.Fragment>
@@ -1592,7 +1596,7 @@ function App({ inicial, aoSair, usuarioConectado }){
         tasks={state.tasks.filter((t)=>t.assignee===membroTarefas && t.tipo!=="reuniao")} onClose={()=>setMembroTarefas(null)}/>}
       {showUsers && <UsersModal users={state.users} members={state.members} tasks={state.tasks} currentUser={currentUser}
         onAdd={addUser} onReset={resetUserPassword} onPhoto={setMemberPhoto} onRenomear={renomearPessoa}
-        onLogin={alterarLogin} onAcesso={alterarAcesso} onPainel={alternarPainel} onEquipe={alternarEquipe} onRemoverPessoa={removerPessoa} onClose={()=>setShowUsers(false)}/>}
+        onLogin={alterarLogin} onAcesso={alterarAcesso} onPainel={alternarPainel} onEquipe={alternarEquipe} onPodeLancar={alternarPodeLancar} onRemoverPessoa={removerPessoa} onClose={()=>setShowUsers(false)}/>}
     </div>
   );
 }
@@ -2343,7 +2347,7 @@ function ConcluidoCalendario({ tarefas, membros, membroFiltro, onMembroFiltro, i
   </div>);
 }
 
-function LaunchTask({ catalog, members, onLaunch, onOpenCatalog, isMaster }){
+function LaunchTask({ catalog, members, onLaunch, onOpenCatalog, isMaster, permiteReuniao=true }){
   const [open,setOpen]=useState(false);
   const HORAS_POR_DIA=8;
   const linhaVazia=()=>({ key:uid(), catalogId:"", tempo:"", unidade:"h", priority:"media", reuniao:false, quando:"", convidados:[] });
@@ -2397,7 +2401,7 @@ function LaunchTask({ catalog, members, onLaunch, onOpenCatalog, isMaster }){
           <option value="">Escolher…</option>
           {catalog.map((c)=>(<option key={c.id} value={c.id}>{c.title}</option>))}
         </select>
-        <label style={{...S.reuniaoTag,...(l.reuniao?S.reuniaoTagOn:{})}}>
+        {permiteReuniao && (<React.Fragment><label style={{...S.reuniaoTag,...(l.reuniao?S.reuniaoTagOn:{})}}>
           <input type="checkbox" checked={!!l.reuniao} onChange={(e)=>mudar(l.key,"reuniao",e.target.checked)} style={{margin:0}}/>
           <Ic n="calendar" s={12} c={l.reuniao?"#8B3ABF":"var(--text-muted)"}/> É uma reunião
         </label>
@@ -2415,7 +2419,7 @@ function LaunchTask({ catalog, members, onLaunch, onOpenCatalog, isMaster }){
           </div>
           {l.convidados&&l.convidados.length>0 && <div style={{fontSize:10.5,color:"var(--text-muted)",marginTop:3}}>
             {l.convidados.length} convidado{l.convidados.length===1?"":"s"} selecionado{l.convidados.length===1?"":"s"}</div>}
-        </div>)}
+        </div>)}</React.Fragment>)}
         <div style={{display:"flex",gap:6,marginTop:6}}>
           <div style={{flex:1.1}}><div style={S.launchLabel}>Tempo previsto</div>
             <div style={{display:"flex",gap:5}}>
@@ -3219,9 +3223,10 @@ function SwitchUserModal({ users, members, currentUser, onEscolher, onClose }){
   </div>);
 }
 
-function UsersModal({ users, members, tasks=[], currentUser, onAdd, onReset, onPhoto, onRenomear, onLogin, onAcesso, onPainel, onEquipe, onRemoverPessoa, onClose }){
+function UsersModal({ users, members, tasks=[], currentUser, onAdd, onReset, onPhoto, onRenomear, onLogin, onAcesso, onPainel, onEquipe, onPodeLancar, onRemoverPessoa, onClose }){
   const [nome,setNome]=useState(""); const [username,setUsername]=useState("");
   const [password,setPassword]=useState(""); const [role,setRole]=useState("membro"); const [noPainel,setNoPainel]=useState(true); const [naEquipe,setNaEquipe]=useState(true);
+  const [podeLancar,setPodeLancar]=useState(false);
   const [err,setErr]=useState(""); const [ok,setOk]=useState("");
   const arquivoRef=useRef(); const alvoRef=useRef(null);
   const masters=users.filter((u)=>u.role==="master").length;
@@ -3244,10 +3249,10 @@ function UsersModal({ users, members, tasks=[], currentUser, onAdd, onReset, onP
     if(password.length<4){ setErr("A senha deve ter ao menos 4 caracteres."); setOk(""); return; }
     if(users.some((u)=>u.username.toLowerCase()===username.trim().toLowerCase())){ setErr("Já existe um usuário com esse login."); setOk(""); return; }
     const nomeGuardado=nome.trim(), papelGuardado=role;
-    const r=onAdd(nome,username,password,role,noPainel,naEquipe);
+    const r=onAdd(nome,username,password,role,noPainel,naEquipe,podeLancar);
     Promise.resolve(r).then(()=>{
       setErr(""); setOk(`${nomeGuardado} entrou na equipe como ${ROLES[papelGuardado].label.toLowerCase()} e vai trocar a senha no primeiro acesso.`);
-      setNome(""); setUsername(""); setPassword(""); setRole("membro"); setNoPainel(true); setNaEquipe(true);
+      setNome(""); setUsername(""); setPassword(""); setRole("membro"); setNoPainel(true); setNaEquipe(true); setPodeLancar(false);
     }).catch((e)=>{ setErr(e.message||"Não foi possível cadastrar."); setOk(""); });
   };
 
@@ -3292,6 +3297,10 @@ function UsersModal({ users, members, tasks=[], currentUser, onAdd, onReset, onP
           <input type="checkbox" checked={naEquipe} onChange={(e)=>setNaEquipe(e.target.checked)} style={{margin:0}}/>
           <Ic n="users" s={12} c={naEquipe?"#1F7A55":"var(--text-muted)"}/> Aparece na lista da equipe (barra lateral)
         </label>
+        {role==="membro" && (<label style={{...S.reuniaoTag,marginTop:0,...(podeLancar?{borderColor:"#D9C2F0",background:"#F7F0FC",color:"#8B3ABF"}:{})}}>
+          <input type="checkbox" checked={podeLancar} onChange={(e)=>setPodeLancar(e.target.checked)} style={{margin:0}}/>
+          <Ic n="list" s={12} c={podeLancar?"#8B3ABF":"var(--text-muted)"}/> Autorizado a lançar tarefas "A fazer" (só para si mesmo)
+        </label>)}
         {err && <div style={S.authErr}>{err}</div>}
         {ok && <div style={{...S.authErr,background:"#E8F6EF",color:"#1F7A55"}}>{ok}</div>}
         <button style={{...S.primaryBtn,alignSelf:"flex-start"}} onClick={submit}><Ic n="userplus" s={16} c="#fff"/> Cadastrar usuário</button>
@@ -3328,6 +3337,9 @@ function UsersModal({ users, members, tasks=[], currentUser, onAdd, onReset, onP
                 <button style={{...S.smallBtn,...(m.naEquipe!==false?{color:"#1F7A55",borderColor:"#CBE9DA",background:"#F0FAF5"}:{})}}
                   title={m.naEquipe!==false?"Aparece na lista da equipe":"Fora da lista da equipe"}
                   onClick={()=>onEquipe(m.id)}><Ic n="users" s={13} c={m.naEquipe!==false?"#1F7A55":"var(--text-muted)"}/> {m.naEquipe!==false?"Na equipe":"Fora da equipe"}</button>
+                {(!u || u.role!=="master") && <button style={{...S.smallBtn,...(m.podeLancar?{color:"#8B3ABF",borderColor:"#D9C2F0",background:"#F7F0FC"}:{})}}
+                  title={m.podeLancar?"Autorizado a lançar tarefas para si mesmo":"Só master/gerente lança tarefas para esta pessoa"}
+                  onClick={()=>onPodeLancar(m.id)}><Ic n="list" s={13} c={m.podeLancar?"#8B3ABF":"var(--text-muted)"}/> {m.podeLancar?"Pode lançar tarefas":"Não pode lançar"}</button>}
                 {u && <button style={S.smallBtn} onClick={()=>setRedefinirUser(u)}><Ic n="lock" s={13} c="var(--text-secondary)"/> Redefinir senha</button>}
               </div>
             </div>
