@@ -910,7 +910,7 @@ const VERSICULOS = [
 ];
 function sortearVersiculo(){ return VERSICULOS[Math.floor(Math.random()*VERSICULOS.length)]; }
 function VersiculoModal({ versiculo, onFechar }){
-  return (<div style={S.overlay} onClick={onFechar}>
+  return (<div style={S.overlay}>
     <div style={{...S.modal,maxWidth:360}} onClick={(e)=>e.stopPropagation()}>
       <div style={{display:"flex",justifyContent:"flex-end"}}>
         <button style={S.iconBtn} onClick={onFechar}><Ic n="x" s={18}/></button>
