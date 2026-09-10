@@ -109,6 +109,7 @@ function Ic({ n, s=16, c="currentColor", style }) {
     sun:<React.Fragment><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4.5"/><line x1="12" y1="19.5" x2="12" y2="22"/><line x1="4.6" y1="4.6" x2="6.3" y2="6.3"/><line x1="17.7" y1="17.7" x2="19.4" y2="19.4"/><line x1="2" y1="12" x2="4.5" y2="12"/><line x1="19.5" y1="12" x2="22" y2="12"/><line x1="4.6" y1="19.4" x2="6.3" y2="17.7"/><line x1="17.7" y1="6.3" x2="19.4" y2="4.6"/></React.Fragment>,
     moon:<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>,
     cash:<React.Fragment><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><line x1="6" y1="10" x2="6" y2="10.01"/><line x1="18" y1="14" x2="18" y2="14.01"/></React.Fragment>,
+    book:<React.Fragment><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></React.Fragment>,
   };
   return <svg {...base}>{P[n]}</svg>;
 }
@@ -842,6 +843,87 @@ const novidadeJaPodeAparecer = (()=>{
   d.setDate(d.getDate()+1);
   return Date.now()>=d.getTime();
 })();
+// Versículos exibidos ao entrar no app (todo login, para todo mundo) — um sorteado aleatoriamente a cada vez.
+const VERSICULOS = [
+  { texto:"Tudo posso naquele que me fortalece.", ref:"Filipenses 4:13" },
+  { texto:"Entrega o teu caminho ao Senhor; confia nele, e ele o fará.", ref:"Salmos 37:5" },
+  { texto:"Tudo o que fizerem, façam de coração, como para o Senhor, e não para os homens.", ref:"Colossenses 3:23" },
+  { texto:"Não temas, porque eu sou contigo; não te assombres, porque eu sou teu Deus.", ref:"Isaías 41:10" },
+  { texto:"O Senhor é o meu pastor; nada me faltará.", ref:"Salmos 23:1" },
+  { texto:"Porque para Deus nada é impossível.", ref:"Lucas 1:37" },
+  { texto:"Tudo tem o seu tempo determinado, e há tempo para todo propósito debaixo do céu.", ref:"Eclesiastes 3:1" },
+  { texto:"O Senhor é a minha força e o meu escudo; nele confiou o meu coração, e fui socorrido.", ref:"Salmos 28:7" },
+  { texto:"Sede fortes e corajosos; não temais, nem vos atemorizeis, porque o Senhor vosso Deus é o que vai com vocês.", ref:"Deuteronômio 31:6" },
+  { texto:"Confia no Senhor de todo o teu coração, e não te estribes no teu próprio entendimento.", ref:"Provérbios 3:5" },
+  { texto:"O trabalho das nossas mãos, confirma-o sobre nós.", ref:"Salmos 90:17" },
+  { texto:"Sejam fortes e corajosos! Não tenham medo nem desanimem.", ref:"1 Crônicas 22:13" },
+  { texto:"E tudo quanto fizeres, seja em palavra, seja em obra, faze-o em nome do Senhor Jesus.", ref:"Colossenses 3:17" },
+  { texto:"Não andeis ansiosos por coisa alguma; em tudo, porém, sejam conhecidas, diante de Deus, as vossas petições.", ref:"Filipenses 4:6" },
+  { texto:"O Senhor é bom, uma fortaleza no dia da angústia; e conhece os que confiam nele.", ref:"Naum 1:7" },
+  { texto:"Aquele que habita no esconderijo do Altíssimo, à sombra do Onipotente descansará.", ref:"Salmos 91:1" },
+  { texto:"Buscai primeiro o reino de Deus, e a sua justiça, e todas estas coisas vos serão acrescentadas.", ref:"Mateus 6:33" },
+  { texto:"Alegrai-vos sempre no Senhor; outra vez digo, alegrai-vos.", ref:"Filipenses 4:4" },
+  { texto:"O amor é paciente, é bondoso; não é invejoso.", ref:"1 Coríntios 13:4" },
+  { texto:"Bem-aventurado o homem que confia no Senhor, e cuja esperança é o Senhor.", ref:"Jeremias 17:7" },
+  { texto:"Lâmpada para os meus pés é a tua palavra, e luz para o meu caminho.", ref:"Salmos 119:105" },
+  { texto:"Tudo o que pedirdes na oração, crede que o recebereis, e assim vos sucederá.", ref:"Marcos 11:24" },
+  { texto:"Ainda que eu andasse pelo vale da sombra da morte, não temeria mal algum, porque tu estás comigo.", ref:"Salmos 23:4" },
+  { texto:"Como uma corda de três dobras não se rompe facilmente, a união faz a força.", ref:"Eclesiastes 4:12" },
+  { texto:"Pois eu sei os planos que tenho para vocês, diz o Senhor, planos de fazê-los prosperar.", ref:"Jeremias 29:11" },
+  { texto:"Portanto, tudo o que vocês desejam que os outros lhes façam, façam-lhes também.", ref:"Mateus 7:12" },
+  { texto:"O coração alegre aformoseia o rosto, mas pela dor do coração o espírito se abate.", ref:"Provérbios 15:13" },
+  { texto:"Não andeis ansiosos por coisa alguma; antes, orai e fazei súplicas sobre tudo.", ref:"Filipenses 4:6-7" },
+  { texto:"Deem graças ao Senhor, porque ele é bom; o seu amor dura para sempre.", ref:"Salmos 107:1" },
+  { texto:"Tudo o que fizerdes, fazei-o de boa vontade, como ao Senhor, e não como aos homens.", ref:"Efésios 6:7" },
+  { texto:"O Senhor te guardará de todo mal; ele guardará a tua alma.", ref:"Salmos 121:7" },
+  { texto:"Perto está o Senhor de todos os que o invocam, de todos os que o invocam em verdade.", ref:"Salmos 145:18" },
+  { texto:"Mas os que esperam no Senhor renovarão as forças; subirão com asas como águias.", ref:"Isaías 40:31" },
+  { texto:"Ele fará com que a tua justiça se manifeste como a luz, e o teu direito, como o sol ao meio-dia.", ref:"Salmos 37:6" },
+  { texto:"Cada um dê conforme determinou em seu coração, porque Deus ama quem dá com alegria.", ref:"2 Coríntios 9:7" },
+  { texto:"O Senhor é a minha luz e a minha salvação.", ref:"Salmos 27:1" },
+  { texto:"Este é o dia que o Senhor fez; regozijemo-nos e alegremo-nos nele.", ref:"Salmos 118:24" },
+  { texto:"Deus é o nosso refúgio e fortaleza.", ref:"Salmos 46:1" },
+  { texto:"Tudo tem seu tempo determinado.", ref:"Eclesiastes 3:1" },
+  { texto:"Regozijai-vos na esperança, sede pacientes na tribulação.", ref:"Romanos 12:12" },
+  { texto:"O Senhor está perto de todos os que o invocam.", ref:"Salmos 145:18" },
+  { texto:"A alegria do Senhor é a nossa força.", ref:"Neemias 8:10" },
+  { texto:"Jesus Cristo é o mesmo, ontem, hoje e eternamente.", ref:"Hebreus 13:8" },
+  { texto:"Sejam fortes na fé.", ref:"1 Coríntios 16:13" },
+  { texto:"Deus é amor.", ref:"1 João 4:8" },
+  { texto:"Onde está o Espírito do Senhor, aí há liberdade.", ref:"2 Coríntios 3:17" },
+  { texto:"O Senhor lutará por vocês; permaneçam quietos.", ref:"Êxodo 14:14" },
+  { texto:"Fiel é aquele que promete.", ref:"Hebreus 10:23" },
+  { texto:"A fé é o firme fundamento das coisas que se esperam.", ref:"Hebreus 11:1" },
+  { texto:"O justo florescerá como a palmeira.", ref:"Salmos 92:12" },
+  { texto:"Pedi, e dar-se-vos-á.", ref:"Mateus 7:7" },
+  { texto:"O Senhor cuida de mim.", ref:"Salmos 40:17" },
+  { texto:"Vinde a mim, todos os que estais cansados e sobrecarregados.", ref:"Mateus 11:28" },
+  { texto:"Grandes coisas fez o Senhor por nós, por isso estamos alegres.", ref:"Salmos 126:3" },
+  { texto:"A esperança não traz confusão.", ref:"Romanos 5:5" },
+  { texto:"Sede fortes, e o vosso coração se fortalecerá.", ref:"Salmos 31:24" },
+  { texto:"Ele dá força ao cansado.", ref:"Isaías 40:29" },
+  { texto:"Não vos vença o mal, mas vencei o mal com o bem.", ref:"Romanos 12:21" },
+  { texto:"Deus é fiel em todas as suas promessas.", ref:"Salmos 145:13" },
+  { texto:"O amor do Senhor não tem fim.", ref:"Lamentações 3:22" },
+  { texto:"Não sejas sábio a teus próprios olhos; teme ao Senhor.", ref:"Provérbios 3:7" },
+  { texto:"O Senhor abençoe-te e te guarde.", ref:"Números 6:24" }
+];
+function sortearVersiculo(){ return VERSICULOS[Math.floor(Math.random()*VERSICULOS.length)]; }
+function VersiculoModal({ versiculo, onFechar }){
+  return (<div style={S.overlay} onClick={onFechar}>
+    <div style={{...S.modal,maxWidth:360}} onClick={(e)=>e.stopPropagation()}>
+      <div style={{display:"flex",justifyContent:"flex-end"}}>
+        <button style={S.iconBtn} onClick={onFechar}><Ic n="x" s={18}/></button>
+      </div>
+      <div style={{width:42,height:42,borderRadius:12,background:"var(--accent-tint-bg)",display:"flex",alignItems:"center",justifyContent:"center",marginBottom:14}}>
+        <Ic n="book" s={20} c="#3B3AC9"/>
+      </div>
+      <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)",letterSpacing:".03em",textTransform:"uppercase",marginBottom:10}}>Palavra do dia</div>
+      <div style={{fontSize:16.5,lineHeight:1.55,color:"var(--text-strong)",fontWeight:500,marginBottom:14}}>"{versiculo.texto}"</div>
+      <div style={{fontSize:13,color:"var(--text-secondary)",fontWeight:700}}>{versiculo.ref}</div>
+    </div>
+  </div>);
+}
 function NovidadeModal({ novidade, onFechar, naoMostrar, onToggleNaoMostrar }){
   return (<div style={S.overlay}>
     <div style={{...S.modal,maxWidth:420}} onClick={(e)=>e.stopPropagation()}>
@@ -879,6 +961,9 @@ function App({ inicial, aoSair, usuarioConectado }){
       return vistas[usuarioConectado]!==NOVIDADE.versao;
     }catch(e){ return false; }
   });
+  // Versículo do dia: sorteado uma vez a cada entrada no app (todo login, para todo mundo).
+  const [versiculo]=useState(sortearVersiculo);
+  const [versiculoAberto,setVersiculoAberto]=useState(true);
   const fecharNovidade=()=>{
     if(novidadeNaoMostrar){
       patch((s)=>{ s.novidadesVistas={...(s.novidadesVistas||{}), [usuarioConectado]:NOVIDADE.versao}; return s; });
@@ -1531,6 +1616,7 @@ function App({ inicial, aoSair, usuarioConectado }){
       </aside>
       {showSwitch && <SwitchUserModal users={state.users} members={state.members} currentUser={currentUser}
         onEscolher={(id)=>{ login(id); setShowSwitch(false); }} onClose={()=>setShowSwitch(false)}/>}
+      {versiculoAberto && !novidadeAberta && <VersiculoModal versiculo={versiculo} onFechar={()=>setVersiculoAberto(false)}/>}
       {novidadeAberta && <NovidadeModal novidade={NOVIDADE} onFechar={fecharNovidade}
         naoMostrar={novidadeNaoMostrar} onToggleNaoMostrar={setNovidadeNaoMostrar}/>}
 
