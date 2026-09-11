@@ -1201,7 +1201,7 @@ function App({ inicial, aoSair, usuarioConectado }){
       patch((s)=>{ s.users=s.users.map((u)=>u.id===s.session.currentUserId?{...u,passHash:hashPw(pw),mustChange:false}:u); return s; });
     });
   };
-  const addUser=(nome,username,password,role,noPainel,naEquipe,podeLancar)=>{
+  const addUser=(nome,username,password,role,noPainel,naEquipe,podeLancar,podeComentar)=>{
     const login=(username||"").trim().toLowerCase();
     // cria o login na tela de conexão (servidor). Se falhar, avisa e não cadastra local.
     return apiCall("cadastrarUsuario",{ user:login, senha:password, master: role==="master" })
@@ -1210,7 +1210,7 @@ function App({ inicial, aoSair, usuarioConectado }){
           const nomeLimpo=(nome||username).trim();
           let membro=s.members.find((m)=>m.name.toLowerCase()===nomeLimpo.toLowerCase());
           if(!membro){
-            membro={ id:uid(), name:nomeLimpo, color:AVATAR_COLORS[s.members.length%AVATAR_COLORS.length], noPainel:noPainel!==false, naEquipe:naEquipe!==false, podeLancar:!!podeLancar };
+            membro={ id:uid(), name:nomeLimpo, color:AVATAR_COLORS[s.members.length%AVATAR_COLORS.length], noPainel:noPainel!==false, naEquipe:naEquipe!==false, podeLancar:!!podeLancar, podeComentar:!!podeComentar };
             s.members=[...s.members,membro];
           }
           s.users=[...s.users,{ id:uid(), username:login, passHash:hashPw(password), role, memberId:membro.id, mustChange:true }];
@@ -1369,6 +1369,9 @@ function App({ inicial, aoSair, usuarioConectado }){
   // Autorização (dada pelo master) para o próprio membro lançar tarefas "A fazer" — sem isso,
   // só master/gerente lançam. Fica no cadastro do membro, não no login.
   const alternarPodeLancar=(memberId)=>patch((s)=>{ s.members=s.members.map((m)=>m.id===memberId?{...m,podeLancar:!m.podeLancar}:m); return s; });
+  // Autorização (dada pelo master) pra deixar o membro escrever no quadro de "Observação" das
+  // tarefas — sem isso, só master/gerente comentam ali. Fica no cadastro do membro.
+  const alternarPodeComentar=(memberId)=>patch((s)=>{ s.members=s.members.map((m)=>m.id===memberId?{...m,podeComentar:!m.podeComentar}:m); return s; });
   const renomearPessoa=(memberId,nome)=>{ if(!nome||!nome.trim())return;
     patch((s)=>{ s.members=s.members.map((m)=>m.id===memberId?{...m,name:nome.trim()}:m); return s; }); };
   const alterarLogin=(userId,username)=>{ if(!username||!username.trim())return;
@@ -1873,7 +1876,7 @@ function App({ inicial, aoSair, usuarioConectado }){
         tasks={state.tasks.filter((t)=>(t.assignees||[]).includes(membroTarefas) && t.tipo!=="reuniao")} onClose={()=>setMembroTarefas(null)}/>}
       {showUsers && <UsersModal users={state.users} members={state.members} tasks={state.tasks} currentUser={currentUser}
         onAdd={addUser} onReset={resetUserPassword} onPhoto={setMemberPhoto} onRenomear={renomearPessoa}
-        onLogin={alterarLogin} onAcesso={alterarAcesso} onPainel={alternarPainel} onEquipe={alternarEquipe} onPodeLancar={alternarPodeLancar} onRemoverPessoa={removerPessoa} onClose={()=>setShowUsers(false)}/>}
+        onLogin={alterarLogin} onAcesso={alterarAcesso} onPainel={alternarPainel} onEquipe={alternarEquipe} onPodeLancar={alternarPodeLancar} onPodeComentar={alternarPodeComentar} onRemoverPessoa={removerPessoa} onClose={()=>setShowUsers(false)}/>}
     </div>
   );
 }
@@ -2286,16 +2289,17 @@ function Card({ task, members, projects, catalog, meuMembroId, projetoNome, onCo
   const [menu,setMenu]=useState(null); const [menuPos,setMenuPos]=useState(null); const ref=useRef();
   const [editDesc,setEditDesc]=useState(false); const [rascunho,setRascunho]=useState("");
   const [novaNota,setNovaNota]=useState(""); const [editNota,setEditNota]=useState(null); const [notaTexto,setNotaTexto]=useState("");
+  const [novaObs,setNovaObs]=useState(""); const [editObs,setEditObs]=useState(null); const [obsTexto,setObsTexto]=useState("");
   const [novaFazer,setNovaFazer]=useState(""); const [editFazer,setEditFazer]=useState(null); const [fazerTexto,setFazerTexto]=useState("");
   const [editTrab,setEditTrab]=useState(false); const [trabTexto,setTrabTexto]=useState("");
   const [editTitulo,setEditTitulo]=useState(false); const [tituloTexto,setTituloTexto]=useState("");
   const [editHoras,setEditHoras]=useState(false); const [horasTexto,setHorasTexto]=useState("");
   const [editTudo,setEditTudo]=useState(false);
   useEffect(()=>{
-    const emEdicao = editTitulo || editTrab || editNota!==null || editFazer!==null || editHoras || editTudo || !!menu;
+    const emEdicao = editTitulo || editTrab || editNota!==null || editObs!==null || editFazer!==null || editHoras || editTudo || !!menu;
     if(onEditLock) onEditLock(task.id, emEdicao);
     return ()=>{ if(onEditLock) onEditLock(task.id, false); };
-  }, [editTitulo, editTrab, editNota, editFazer, editHoras, editTudo, menu, task.id]);
+  }, [editTitulo, editTrab, editNota, editObs, editFazer, editHoras, editTudo, menu, task.id]);
   useEffect(()=>{
     if(task.tipo!=="reuniao" && task.col==="todo" && mine && meuMembroId && !(task.vistoPor||[]).includes(meuMembroId)){
       onUpdate({ vistoPor:[...(task.vistoPor||[]), meuMembroId] });
@@ -2305,6 +2309,7 @@ function Card({ task, members, projects, catalog, meuMembroId, projetoNome, onCo
   const pri=PRIORITIES[task.priority]; const col=COL[task.col];
   const done=task.col==="done"; const inReview=task.col==="review"; const fixing=inReview&&task.needsFix; const inProtocolado=task.col==="protocolado";
   const assignedMembers=members.filter((m)=>(task.assignees||[]).includes(m.id));
+  const meuMembro=members.find((m)=>m.id===meuMembroId);
   const corTrab=corDoTrabalho(task.folderName);
   const ehReuniao=task.tipo==="reuniao";
   const confirmados=task.confirmados||[];
@@ -2426,6 +2431,46 @@ function Card({ task, members, projects, catalog, meuMembroId, projetoNome, onCo
             <input style={S.diarioInput} value={novaNota} onChange={(e)=>setNovaNota(e.target.value)}
               onKeyDown={(e)=>{ if(e.key==="Enter")addNota(); }} placeholder="O que você fez hoje…"/>
             <button style={S.diarioAdd} onClick={addNota}><Ic n="plus" s={13} c="#fff"/></button>
+          </div>}
+        </div>);
+      })()}
+      {!ehReuniao && (()=>{
+        const observacoes=task.observacoes||[];
+        // escreve quem tem autonomia dada pelo master (podeComentar) ou master/gerente — não é
+        // aberto pra qualquer um da tarefa, diferente do diário acima.
+        const podeEscreverObs = isPrivileged || (mine && !!(meuMembro&&meuMembro.podeComentar));
+        if(observacoes.length===0 && !podeEscreverObs) return null;
+        const addObs=()=>{ const txt=novaObs.trim(); if(!txt)return;
+          const nova={ id:uid(), data:Date.now(), texto:txt, autor:meuMembroId||null };
+          onUpdate({observacoes:[...observacoes,nova]}); setNovaObs(""); };
+        const salvarEdicaoObs=(id)=>{ onUpdate({observacoes:observacoes.map((n)=>n.id===id?{...n,texto:obsTexto.trim()}:n)}); setEditObs(null); };
+        const removerObs=(id)=>{ onUpdate({observacoes:observacoes.filter((n)=>n.id!==id)}); };
+        const podeEditarObs = isPrivileged || (mine && !!(meuMembro&&meuMembro.podeComentar));
+        return (<div style={{...S.diarioBox,...(ehReuniao?{margin:"8px 11px 0"}:{})}}>
+          <span style={S.descLabel}>Observação</span>
+          {observacoes.length===0 && <div style={{fontSize:11.5,color:"var(--text-faint)",marginBottom:6}}>Nenhuma observação ainda.</div>}
+          {observacoes.map((n)=>{ const autor=members.find((m)=>m.id===n.autor);
+            return (<div key={n.id} style={S.diarioLinha}>
+            <span style={S.diarioData}>{ddmm(new Date(n.data))}</span>
+            {editObs===n.id ? (<div style={{flex:1}}>
+              <textarea autoFocus style={S.diarioEdit} value={obsTexto} onChange={(e)=>setObsTexto(e.target.value)}
+                onKeyDown={(e)=>{ if(e.key==="Enter"&&(e.ctrlKey||e.metaKey))salvarEdicaoObs(n.id); if(e.key==="Escape")setEditObs(null); }}/>
+              <div style={{display:"flex",gap:6,marginTop:4}}>
+                <button style={S.diarioSalvar} onClick={()=>salvarEdicaoObs(n.id)}>Salvar</button>
+                <button style={S.diarioCancelar} onClick={()=>setEditObs(null)}>Cancelar</button>
+              </div>
+            </div>) : (<React.Fragment>
+              <span style={S.diarioTexto}>{n.texto}{autor && <span style={{color:"var(--text-faint)",fontWeight:400}}> · {autor.name.split(" ")[0]}</span>}</span>
+              {podeEditarObs && <span style={S.diarioAcoes}>
+                <button style={S.diarioMini} title="Editar" onClick={()=>{ setEditObs(n.id); setObsTexto(n.texto); }}><Ic n="key" s={11} c="var(--text-muted)"/></button>
+                <button style={S.diarioMini} title="Remover" onClick={()=>removerObs(n.id)}><Ic n="trash" s={11} c="#C0397E"/></button>
+              </span>}
+            </React.Fragment>)}
+          </div>); })}
+          {podeEscreverObs && <div style={{display:"flex",gap:5,marginTop:6}}>
+            <input style={S.diarioInput} value={novaObs} onChange={(e)=>setNovaObs(e.target.value)}
+              onKeyDown={(e)=>{ if(e.key==="Enter")addObs(); }} placeholder="Deixe uma observação sobre a tarefa…"/>
+            <button style={S.diarioAdd} onClick={addObs}><Ic n="plus" s={13} c="#fff"/></button>
           </div>}
         </div>);
       })()}
@@ -3718,10 +3763,11 @@ function SwitchUserModal({ users, members, currentUser, onEscolher, onClose }){
   </div>);
 }
 
-function UsersModal({ users, members, tasks=[], currentUser, onAdd, onReset, onPhoto, onRenomear, onLogin, onAcesso, onPainel, onEquipe, onPodeLancar, onRemoverPessoa, onClose }){
+function UsersModal({ users, members, tasks=[], currentUser, onAdd, onReset, onPhoto, onRenomear, onLogin, onAcesso, onPainel, onEquipe, onPodeLancar, onPodeComentar, onRemoverPessoa, onClose }){
   const [nome,setNome]=useState(""); const [username,setUsername]=useState("");
   const [password,setPassword]=useState(""); const [role,setRole]=useState("membro"); const [noPainel,setNoPainel]=useState(true); const [naEquipe,setNaEquipe]=useState(true);
   const [podeLancar,setPodeLancar]=useState(false);
+  const [podeComentar,setPodeComentar]=useState(false);
   const [err,setErr]=useState(""); const [ok,setOk]=useState("");
   const arquivoRef=useRef(); const alvoRef=useRef(null);
   const masters=users.filter((u)=>u.role==="master").length;
@@ -3744,10 +3790,10 @@ function UsersModal({ users, members, tasks=[], currentUser, onAdd, onReset, onP
     if(password.length<4){ setErr("A senha deve ter ao menos 4 caracteres."); setOk(""); return; }
     if(users.some((u)=>u.username.toLowerCase()===username.trim().toLowerCase())){ setErr("Já existe um usuário com esse login."); setOk(""); return; }
     const nomeGuardado=nome.trim(), papelGuardado=role;
-    const r=onAdd(nome,username,password,role,noPainel,naEquipe,podeLancar);
+    const r=onAdd(nome,username,password,role,noPainel,naEquipe,podeLancar,podeComentar);
     Promise.resolve(r).then(()=>{
       setErr(""); setOk(`${nomeGuardado} entrou na equipe como ${ROLES[papelGuardado].label.toLowerCase()} e vai trocar a senha no primeiro acesso.`);
-      setNome(""); setUsername(""); setPassword(""); setRole("membro"); setNoPainel(true); setNaEquipe(true); setPodeLancar(false);
+      setNome(""); setUsername(""); setPassword(""); setRole("membro"); setNoPainel(true); setNaEquipe(true); setPodeLancar(false); setPodeComentar(false);
     }).catch((e)=>{ setErr(e.message||"Não foi possível cadastrar."); setOk(""); });
   };
 
@@ -3796,6 +3842,10 @@ function UsersModal({ users, members, tasks=[], currentUser, onAdd, onReset, onP
           <input type="checkbox" checked={podeLancar} onChange={(e)=>setPodeLancar(e.target.checked)} style={{margin:0}}/>
           <Ic n="list" s={12} c={podeLancar?"#8B3ABF":"var(--text-muted)"}/> Autorizado a lançar tarefas "A fazer" (escolhe pra quem da equipe)
         </label>)}
+        {role==="membro" && (<label style={{...S.reuniaoTag,marginTop:0,...(podeComentar?{borderColor:"#A9D4E8",background:"#EAF6FC",color:"#0E6B8F"}:{})}}>
+          <input type="checkbox" checked={podeComentar} onChange={(e)=>setPodeComentar(e.target.checked)} style={{margin:0}}/>
+          <Ic n="edit" s={12} c={podeComentar?"#0E6B8F":"var(--text-muted)"}/> Autorizado a escrever no quadro de Observação das tarefas
+        </label>)}
         {err && <div style={S.authErr}>{err}</div>}
         {ok && <div style={{...S.authErr,background:"#E8F6EF",color:"#1F7A55"}}>{ok}</div>}
         <button style={{...S.primaryBtn,alignSelf:"flex-start"}} onClick={submit}><Ic n="userplus" s={16} c="#fff"/> Cadastrar usuário</button>
@@ -3835,6 +3885,9 @@ function UsersModal({ users, members, tasks=[], currentUser, onAdd, onReset, onP
                 {(!u || u.role!=="master") && <button style={{...S.smallBtn,...(m.podeLancar?{color:"#8B3ABF",borderColor:"#D9C2F0",background:"#F7F0FC"}:{})}}
                   title={m.podeLancar?"Autorizado a lançar tarefas para qualquer pessoa da equipe":"Só master/gerente lança tarefas para esta pessoa"}
                   onClick={()=>onPodeLancar(m.id)}><Ic n="list" s={13} c={m.podeLancar?"#8B3ABF":"var(--text-muted)"}/> {m.podeLancar?"Pode lançar tarefas":"Não pode lançar"}</button>}
+                {(!u || u.role!=="master") && <button style={{...S.smallBtn,...(m.podeComentar?{color:"#0E6B8F",borderColor:"#A9D4E8",background:"#EAF6FC"}:{})}}
+                  title={m.podeComentar?"Autorizado a escrever no quadro de Observação das tarefas":"Só master/gerente escreve no quadro de Observação"}
+                  onClick={()=>onPodeComentar(m.id)}><Ic n="edit" s={13} c={m.podeComentar?"#0E6B8F":"var(--text-muted)"}/> {m.podeComentar?"Pode comentar":"Não pode comentar"}</button>}
                 {u && <button style={S.smallBtn} onClick={()=>setRedefinirUser(u)}><Ic n="lock" s={13} c="var(--text-secondary)"/> Redefinir senha</button>}
               </div>
             </div>
@@ -4033,7 +4086,7 @@ const S = {
   diarioEdit:{width:"100%",boxSizing:"border-box",border:"1px solid #CFE6D9",borderRadius:6,padding:"5px 7px",fontSize:12,fontFamily:FONT,color:"var(--text-strong)",background:"var(--surface)",minHeight:44,resize:"vertical",outline:"none",lineHeight:1.4},
   diarioSalvar:{border:"none",background:"#2F9E6E",color:"#fff",borderRadius:6,padding:"4px 10px",fontSize:11.5,fontWeight:700,cursor:"pointer",fontFamily:FONT},
   diarioCancelar:{border:"1px solid var(--border)",background:"var(--surface)",color:"var(--text-secondary)",borderRadius:6,padding:"4px 10px",fontSize:11.5,fontWeight:600,cursor:"pointer",fontFamily:FONT},
-  descLabel:{display:"block",fontSize:9.5,fontWeight:800,letterSpacing:".06em",textTransform:"uppercase",color:"var(--text-faint)",marginBottom:3},
+  descLabel:{display:"inline-block",fontSize:9.5,fontWeight:800,letterSpacing:".06em",textTransform:"uppercase",color:"#fff",background:"#1F8A4C",borderRadius:5,padding:"3px 7px",marginBottom:5},
   descTexto:{overflowWrap:"anywhere",wordBreak:"break-word",whiteSpace:"pre-wrap"},
   descEditArea:{width:"100%",boxSizing:"border-box",border:"1px solid var(--accent-tint-border)",borderRadius:7,padding:"6px 8px",fontSize:12,fontFamily:FONT,color:"var(--text-strong)",background:"var(--surface)",minHeight:60,resize:"vertical",lineHeight:1.45,outline:"none"},
   descSalvar:{display:"inline-flex",alignItems:"center",gap:5,border:"none",background:"#3B3AC9",color:"#fff",borderRadius:7,padding:"5px 11px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:FONT},
