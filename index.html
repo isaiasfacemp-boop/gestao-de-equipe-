@@ -195,10 +195,28 @@ const durMs = (ms)=>{ if(!ms||ms<0) return "0m"; const min=Math.floor(ms/60000);
   return H?`${H}h ${M}m`:`${M}m`; };
 // tempoReal soma o que já ficou arquivado no histórico por etapa (t.fases) + o que está
 // acumulado/rodando na etapa atual — sempre em horário comercial (ver msUteis, mais abaixo).
+// ---------- Cronômetro por membro (cada pessoa atribuída tem o seu próprio) ----------
+// t.timers = { [memberId]: { workedMs, runningSince } } — cada um liga/pausa o próprio, sem misturar.
+const somaTimers = (timers, agoraTs) => Object.values(timers||{}).reduce((acc,tm)=>
+  acc+(tm.workedMs||0)+(tm.runningSince? msUteis(tm.runningSince,agoraTs) : 0), 0);
+const algumRodando = (t) => Object.values(t.timers||{}).some((tm)=>!!tm.runningSince);
+// Reseta o cronômetro de cada membro atualmente atribuído (usado ao trocar de etapa/coluna) —
+// ninguém continua rodando automaticamente na etapa nova; cada um religa o próprio quando quiser.
+const resetarTimers = (t) => Object.fromEntries((t.assignees||[]).map((mid)=>[mid,{workedMs:0,runningSince:null}]));
+// Tempo total (soma de todos) e tempo de cada membro na etapa atual (aberta, rodando ou não).
+const snapshotTimers = (timers, agoraTs) => { const out={};
+  Object.entries(timers||{}).forEach(([mid,tm])=>{ out[mid]=(tm.workedMs||0)+(tm.runningSince? msUteis(tm.runningSince,agoraTs) : 0); });
+  return out; };
+// Tempo total já trabalhado por cada membro na tarefa inteira (etapas já arquivadas + etapa atual).
+function tempoPorMembro(t){
+  const mapa={};
+  (t.fases||[]).forEach((f)=>{ Object.entries(f.porMembro||{}).forEach(([mid,ms])=>{ mapa[mid]=(mapa[mid]||0)+ms; }); });
+  Object.entries(snapshotTimers(t.timers,Date.now())).forEach(([mid,ms])=>{ mapa[mid]=(mapa[mid]||0)+ms; });
+  return mapa;
+}
 const tempoReal = (t)=>{
   const fechado=(t.fases||[]).reduce((a,f)=>a+(f.ms||0),0);
-  const aberto=t.runningSince? msUteis(t.runningSince,Date.now()) : 0;
-  return fechado+(t.workedMs||0)+aberto;
+  return fechado+somaTimers(t.timers, Date.now());
 };
 const horasReais = (t)=>{ const ms=tempoReal(t); return ms>0 ? ms/3600000 : (t.hours||0); };
 
@@ -290,9 +308,10 @@ const FASE_INFO = {
 };
 function arquivarFase(t, agora, retrabalhoAtual){
   const faseAntiga=FASE_POR_COL[t.col];
-  if(!faseAntiga || (!t.workedMs && !t.runningSince)) return t.fases||[];
-  const ms=(t.workedMs||0)+(t.runningSince? msUteis(t.runningSince,agora) : 0);
-  const entrada={ fase:faseAntiga, ms, fim:agora };
+  const porMembro=snapshotTimers(t.timers, agora);
+  const ms=Object.values(porMembro).reduce((a,v)=>a+v,0);
+  if(!faseAntiga || ms<=0) return t.fases||[];
+  const entrada={ fase:faseAntiga, ms, porMembro, fim:agora };
   if(faseAntiga==="revisao") entrada.retrabalho=!!retrabalhoAtual;
   return [...(t.fases||[]), entrada];
 }
@@ -310,13 +329,13 @@ function historicoTarefa(t){
     itens.push({ label:info.label, sub, cor:info.cor, ms:f.ms, conta:f.fase!=="revisao"||!!f.retrabalho });
   });
   const faseAberta=FASE_POR_COL[t.col];
-  if(faseAberta && (t.workedMs>0 || t.runningSince)){
+  const msFaseAberta=somaTimers(t.timers, Date.now());
+  if(faseAberta && msFaseAberta>0){
     const info=FASE_INFO[faseAberta];
-    const ms=(t.workedMs||0)+(t.runningSince? msUteis(t.runningSince,Date.now()) : 0);
     let sub="";
     if(faseAberta==="revisao") sub=t.retrabalhoAtual?"veio de Protocolado, conta como retrabalho":"1ª revisão, não conta";
     else if(faseAberta==="andamento" && jaTeveAndamento) sub="retomada";
-    itens.push({ label:info.label, sub, cor:info.cor, ms, conta:faseAberta!=="revisao"||!!t.retrabalhoAtual, atual:!!t.runningSince });
+    itens.push({ label:info.label, sub, cor:info.cor, ms:msFaseAberta, conta:faseAberta!=="revisao"||!!t.retrabalhoAtual, atual:algumRodando(t) });
   }
   return itens;
 }
@@ -560,7 +579,7 @@ function gerarRelatorioEquipePdf(tasks, members, projects){
 
   // Indicadores por membro
   const porMembro=members.map((m)=>{
-    const doMembro=fluxo.filter((t)=>t.assignee===m.id);
+    const doMembro=fluxo.filter((t)=>(t.assignees||[]).includes(m.id));
     const n=doMembro.length;
     const concluidas=doMembro.filter((t)=>t.col==="done").length;
     const ativas=doMembro.filter((t)=>t.col!=="done").length;
@@ -729,8 +748,10 @@ const seed = () => {
     const criada=fim?fim-(hours+1)*3600000:Date.now()-(hours+2)*3600000;
     const aceita=col==="todo"?null:criada+(15+Math.round(hours*7))*60000;
     const trabalhado=col==="done"?hours*3600000:(col==="doing"?Math.round(hours*0.6*3600000):0);
-    return ({id:uid(),project:p,col,title,assignee,priority,hours,desc:desc||"",folderName:fName||"",folderPath:fPath||"",folderKey:null,
-      createdAt:criada,acceptedAt:aceita,workedMs:trabalhado,runningSince:col==="doing"?Date.now()-1800000:null,needsFix:!!fix,fixNote:fix?"Ajustar os títulos das seções e padronizar as fontes":"",completedAt:fim});
+    const assignees=assignee?[assignee]:[];
+    const timers=assignee?{[assignee]:{workedMs:trabalhado,runningSince:col==="doing"?Date.now()-1800000:null}}:{};
+    return ({id:uid(),project:p,col,title,assignees,priority,hours,desc:desc||"",folderName:fName||"",folderPath:fPath||"",folderKey:null,
+      createdAt:criada,acceptedAt:aceita,timers,needsFix:!!fix,fixNote:fix?"Ajustar os títulos das seções e padronizar as fontes":"",completedAt:fim});
   };
   return {
     messages:[], loginsIniciais:true,
@@ -1088,14 +1109,24 @@ function App({ inicial, aoSair, usuarioConectado }){
       const afetados=new Set();
       vencidas.forEach((r)=>{ const alvos=(r.convidados&&r.convidados.length)?r.convidados:todosIds; alvos.forEach((m)=>afetados.add(m)); });
       s.tasks=s.tasks.map((t)=>{
-        if(ids.has(t.id)) return {...t,col:"done",completedAt:new Date(t.quando).getTime(),needsFix:false,fixNote:"",runningSince:null};
-        // Pausa automaticamente a tarefa de quem está com o relógio rodando e entrou na reunião —
-        // a pessoa está na reunião, não trabalhando na tarefa. O tempo já rodado fica guardado
-        // e a tarefa fica "Pausada", esperando a pessoa retomar depois com "Continuar tarefa".
-        if(t.tipo!=="reuniao" && t.runningSince && afetados.has(t.assignee)){
-          const soma=(t.workedMs||0)+msUteis(t.runningSince,agora);
-          const nota={ id:uid(), data:agora, texto:"Pausada automaticamente: início de reunião" };
-          return {...t, workedMs:soma, runningSince:null, diario:[...(t.diario||[]),nota]};
+        if(ids.has(t.id)) return {...t,col:"done",completedAt:new Date(t.quando).getTime(),needsFix:false,fixNote:""};
+        // Pausa automaticamente o cronômetro de quem entrou na reunião e estava com o relógio
+        // rodando nesta tarefa — a pessoa está na reunião, não trabalhando. O tempo já rodado
+        // de cada um fica guardado; ela retoma depois clicando em "Iniciar" de novo.
+        if(t.tipo!=="reuniao" && t.timers){
+          let mudou=false; const timers={...t.timers};
+          Object.keys(timers).forEach((mid)=>{
+            const tm=timers[mid];
+            if(afetados.has(mid) && tm && tm.runningSince){
+              const soma=(tm.workedMs||0)+msUteis(tm.runningSince,agora);
+              timers[mid]={workedMs:soma, runningSince:null};
+              mudou=true;
+            }
+          });
+          if(mudou){
+            const nota={ id:uid(), data:agora, texto:"Pausada automaticamente: início de reunião" };
+            return {...t, timers, diario:[...(t.diario||[]),nota]};
+          }
         }
         return t;
       });
@@ -1106,7 +1137,7 @@ function App({ inicial, aoSair, usuarioConectado }){
     const cu=state.users.find((u)=>u.id===state.session.currentUserId);
     const mid=cu&&cu.memberId;
     const pendentesMsgs = mid ? (state.messages||[]).filter((m)=>m.paraMembro===mid && !m.lida).length : 0;
-    const novasTarefas = mid ? (state.tasks||[]).filter((t)=>t.assignee===mid && t.col==="todo" && !(t.vistoPor||[]).includes(mid)).length : 0;
+    const novasTarefas = mid ? (state.tasks||[]).filter((t)=>(t.assignees||[]).includes(mid) && t.col==="todo" && !(t.vistoPor||[]).includes(mid)).length : 0;
     atualizarNotificacao(pendentesMsgs+novasTarefas);
   },[state.messages, state.tasks, state.session, state.users]);
   const patch=(fn)=>setState((s)=>fn({...s}));
@@ -1141,8 +1172,18 @@ function App({ inicial, aoSair, usuarioConectado }){
       if(d.vista) notasParts.push(`À vista: ${d.vista}`);
       if(d.parc && d.parc.val) notasParts.push(`Parcelado: ${d.parc.val}${d.parc.qtd?` em ${d.parc.qtd}x`:""}`);
       const notas=notasParts.join(" · ");
+      const tituloProposta=(d.cliente||d.nome||"Proposta").trim();
       patch((s)=>{
-        s.financeiro=[...(s.financeiro||[]),{ id:uid(), col:"orcamento_enviado", title:(d.cliente||d.nome||"Proposta").trim(), notas, itens, valor:valorTotal, createdAt:Date.now() }];
+        const lista=s.financeiro||[];
+        // Se já existe um cartão no Financeiro com o mesmo nome de cliente, a edição sempre
+        // substitui os dados desse cartão (mantendo id/coluna) — a última versão editada
+        // prevalece. Só cria um cartão novo quando o nome ainda não existe na lista.
+        const idxExistente=lista.findIndex((c)=>(c.title||"").trim().toLowerCase()===tituloProposta.toLowerCase());
+        if(idxExistente>=0){
+          s.financeiro=lista.map((c,i)=> i===idxExistente ? {...c, title:tituloProposta, notas, itens, valor:valorTotal, updatedAt:Date.now()} : c);
+        }else{
+          s.financeiro=[...lista,{ id:uid(), col:"orcamento_enviado", title:tituloProposta, notas, itens, valor:valorTotal, createdAt:Date.now() }];
+        }
         return s;
       });
     }
@@ -1266,7 +1307,7 @@ function App({ inicial, aoSair, usuarioConectado }){
   const podeVerReuniao=(t)=> !t.convidados || t.convidados.length===0 || (myMemberId && t.convidados.includes(myMemberId));
   const visibleTasks=isPrivileged?allProjTasks:allProjTasks.filter((t)=> t.tipo==="reuniao"
     ? podeVerReuniao(t)
-    : (t.assignee&&t.assignee===myMemberId));
+    : (!!myMemberId && (t.assignees||[]).includes(myMemberId)));
   let filtered=visibleTasks;
   if(emReunioes && reuniaoMembro) filtered=filtered.filter((t)=>{ const conf=t.confirmados||[]; return t.col==="done" ? conf.includes(reuniaoMembro) : !conf.includes(reuniaoMembro); });
   if(folderFilter) filtered=filtered.filter((t)=>t.folderName===folderFilter);
@@ -1286,10 +1327,10 @@ function App({ inicial, aoSair, usuarioConectado }){
     if(donePeriodo==="mes") return d.getMonth()===hoje.getMonth() && d.getFullYear()===hoje.getFullYear();
     return true;
   };
-  const filtrarConcluidas=(lista)=> lista.filter((t)=> dentroDoPeriodo(t.completedAt) && (!doneMembro || t.assignee===doneMembro));
+  const filtrarConcluidas=(lista)=> lista.filter((t)=> dentroDoPeriodo(t.completedAt) && (!doneMembro || (t.assignees||[]).includes(doneMembro)));
 
   // regras de edição — concluída (confirmada) fica travada para todos
-  const isMine=(t)=> t.assignee && t.assignee===myMemberId;
+  const isMine=(t)=> !!myMemberId && (t.assignees||[]).includes(myMemberId);
   const ehReuniaoT=(t)=> t.tipo==="reuniao";
   const canEdit=(t)=> t.col!=="done" && (isPrivileged || (isMine(t) && !ehReuniaoT(t)));
   const canAct=(t)=> isPrivileged || (isMine(t) && !ehReuniaoT(t));
@@ -1335,7 +1376,11 @@ function App({ inicial, aoSair, usuarioConectado }){
   const removerPessoa=(memberId)=>patch((s)=>{
     s.members=s.members.filter((m)=>m.id!==memberId);
     s.users=s.users.filter((u)=>u.memberId!==memberId);
-    s.tasks=s.tasks.map((t)=>t.assignee===memberId?{...t,assignee:null}:t);
+    s.tasks=s.tasks.map((t)=>{
+      if(!(t.assignees||[]).includes(memberId)) return t;
+      const timers={...(t.timers||{})}; delete timers[memberId];
+      return {...t, assignees:(t.assignees||[]).filter((id)=>id!==memberId), timers};
+    });
     s.messages=(s.messages||[]).filter((m)=>m.paraMembro!==memberId && m.deMembro!==memberId);
     return s; });
 
@@ -1355,7 +1400,7 @@ function App({ inicial, aoSair, usuarioConectado }){
   const editCatalogItem=(id,title,desc)=>patch((s)=>{ s.taskCatalog=(s.taskCatalog||[]).map((c)=>c.id===id?{...c,title:title.trim(),desc:(desc||"").trim()}:c); return s; });
 
   // lançamento sempre na coluna "A fazer", a partir do catálogo
-  const launchMany=({itens,assignee,desc,contarAgora})=>{
+  const launchMany=({itens,assignees,desc,contarAgora})=>{
     patch((s)=>{
       const agora=Date.now();
       const inicioContagem = contarAgora===false ? proximoDiaUtilInicio(agora) : agora;
@@ -1364,8 +1409,8 @@ function App({ inicial, aoSair, usuarioConectado }){
         return { id:uid(), project:activeProjectLocal, col:"todo", title:item.title,
           tipo:it.reuniao?"reuniao":"tarefa", quando:it.quando||"", confirmados:[], criadoPor:myMemberId||null,
           convidados:it.reuniao?(it.convidados&&it.convidados.length?it.convidados:[]):[],
-          priority:it.priority||"media", hours:Math.max(0,+it.hours||0), assignee:it.reuniao?null:(assignee||null),
-          createdAt:inicioContagem, acceptedAt:null, workedMs:0, runningSince:null,
+          priority:it.priority||"media", hours:Math.max(0,+it.hours||0), assignees:it.reuniao?[]:(assignees||[]),
+          createdAt:inicioContagem, acceptedAt:null, timers:{},
           desc:((desc&&desc.trim())||item.desc||"").trim(),
           needsFix:false, fixNote:"", completedAt:null, reworkCount:0, protocoladoAt:null };
       }).filter(Boolean);
@@ -1406,51 +1451,45 @@ function App({ inicial, aoSair, usuarioConectado }){
   // Ao aceitar uma tarefa nova, qualquer outra tarefa do mesmo membro que esteja com o relógio rodando
   // é pausada automaticamente (o tempo já rodado fica guardado) — só volta a rodar quando o membro
   // abrir ela de novo, ficando "em pausa" até a mais recente ser concluída.
-  const acceptTask=(id)=>{ const agora=Date.now();
+  // Aceitar: só muda a tarefa de coluna (A fazer -> Em andamento) e zera o cronômetro de quem
+  // estiver atribuído — cada um religa o próprio relógio quando começar a trabalhar de fato.
+  const acceptTask=(id)=>{ const t=state.tasks.find((x)=>x.id===id); if(!t) return; const agora=Date.now();
+    updateTask(id,{col:"doing", acceptedAt:t.acceptedAt??agora, timers:resetarTimers(t), completedAt:null}); };
+  // Iniciar/retomar o MEU cronômetro nesta tarefa — cada membro tem o seu, independente dos outros.
+  // Ao ligar o meu relógio aqui, para automaticamente qualquer outro relógio meu que esteja rodando
+  // em outra tarefa — só posso estar "trabalhando" em uma coisa por vez.
+  const iniciarMeuTempo=(taskId,memberId)=>{ if(!memberId) return; const agora=Date.now();
     patch((s)=>{
-      const alvo=s.tasks.find((x)=>x.id===id); if(!alvo) return s;
-      const memberId=alvo.assignee;
       s.tasks=s.tasks.map((t)=>{
-        if(t.id===id) return {...t, col:"doing", acceptedAt:t.acceptedAt??agora, workedMs:0, runningSince:agora, completedAt:null};
-        if(memberId && t.assignee===memberId && t.runningSince){
-          const soma=(t.workedMs||0)+msUteis(t.runningSince,agora);
-          return {...t, workedMs:soma, runningSince:null};
+        if(t.id===taskId){
+          const timers={...(t.timers||{})};
+          timers[memberId]={ workedMs:(timers[memberId]&&timers[memberId].workedMs)||0, runningSince:agora };
+          return {...t, timers};
+        }
+        const tm=(t.timers||{})[memberId];
+        if(tm && tm.runningSince){
+          const soma=(tm.workedMs||0)+msUteis(tm.runningSince,agora);
+          return {...t, timers:{...t.timers, [memberId]:{workedMs:soma, runningSince:null}}};
         }
         return t;
       });
       return s;
     });
   };
-  // Retomar uma tarefa "Em andamento" que ficou pausada (porque outra foi aceita depois).
-  // Também pausa qualquer outra tarefa do mesmo membro que esteja rodando no momento.
-  const resumeTask=(id)=>{ const agora=Date.now();
-    patch((s)=>{
-      const alvo=s.tasks.find((x)=>x.id===id); if(!alvo) return s;
-      const memberId=alvo.assignee;
-      s.tasks=s.tasks.map((t)=>{
-        if(t.id===id) return {...t, runningSince:agora};
-        if(memberId && t.assignee===memberId && t.runningSince){
-          const soma=(t.workedMs||0)+msUteis(t.runningSince,agora);
-          return {...t, workedMs:soma, runningSince:null};
-        }
-        return t;
-      });
-      return s;
-    });
+  // Pausar o MEU cronômetro nesta tarefa. Guarda o tempo já rodado e, se tiver motivo, fica
+  // registrado no histórico (quem pausou e por quê).
+  const pausarMeuTempo=(taskId,memberId,motivo)=>{ if(!memberId) return;
+    const t=state.tasks.find((x)=>x.id===taskId); if(!t) return;
+    const tm=(t.timers||{})[memberId]; if(!tm || !tm.runningSince) return;
+    const agora=Date.now(); const soma=(tm.workedMs||0)+msUteis(tm.runningSince,agora);
+    const pausas=(motivo&&motivo.trim())? [...(t.pausas||[]),{ memberId, motivo:motivo.trim(), em:agora }] : (t.pausas||[]);
+    updateTask(taskId,{ timers:{...t.timers, [memberId]:{workedMs:soma, runningSince:null}}, pausas });
   };
-  // Pausar manualmente uma tarefa "Em andamento" a qualquer momento (emergência, imprevisto etc.).
-  // Só para o cronômetro (contando só horário comercial) e guarda o tempo já trabalhado — a tarefa
-  // continua "Em andamento", esperando a pessoa retomar depois com "Continuar tarefa". Guarda o
-  // motivo da pausa no histórico.
-  const pauseTask=(id,motivo)=>{ const t=state.tasks.find((x)=>x.id===id); if(!t||!t.runningSince) return;
-    const agora=Date.now(); const soma=(t.workedMs||0)+msUteis(t.runningSince,agora);
-    const pausas=[...(t.pausas||[]),{ motivo:(motivo||"").trim(), em:agora }];
-    updateTask(id,{workedMs:soma,runningSince:null,pausas}); };
   // Concluir: arquiva a etapa que estava aberta (Em andamento/Revisão/Protocolado) no histórico
   // antes de fechar a tarefa — é isso que fecha t.fases pra dar pra comparar com o prazo depois.
   const completeTask=(id)=>{ const t=state.tasks.find((x)=>x.id===id); const agora=Date.now();
     const fases=arquivarFase(t,agora,t.retrabalhoAtual);
-    updateTask(id,{col:"done",needsFix:false,fixNote:"",fases,workedMs:0,runningSince:null,
+    updateTask(id,{col:"done",needsFix:false,fixNote:"",fases,timers:resetarTimers(t),
       acceptedAt:t.acceptedAt??agora,completedAt:agora}); };
   // Reabrir uma reunião já concluída (só o Master): volta para "A fazer", mantendo quem já confirmou.
   const reabrirReuniao=(id)=>updateTask(id,{col:"todo",completedAt:null});
@@ -1459,53 +1498,61 @@ function App({ inicial, aoSair, usuarioConectado }){
   const confirmarRevisao=(id,note)=>{
     const t=state.tasks.find((x)=>x.id===id); const agora=Date.now();
     const fases=arquivarFase(t,agora,false);
-    updateTask(id,{col:"review",needsFix:true,fixNote:(note||"").trim(),fases,workedMs:0,runningSince:agora,completedAt:null,retrabalhoAtual:false});
+    updateTask(id,{col:"review",needsFix:true,fixNote:(note||"").trim(),fases,timers:resetarTimers(t),completedAt:null,retrabalhoAtual:false});
     setRevisaoDe(null);
   };
   const backToDoing=(id)=>{ const t=state.tasks.find((x)=>x.id===id); const agora=Date.now();
     const fases=arquivarFase(t,agora,t.retrabalhoAtual);
-    updateTask(id,{col:"doing",needsFix:false,fixNote:"",fases,workedMs:0,runningSince:agora,completedAt:null}); };
+    updateTask(id,{col:"doing",needsFix:false,fixNote:"",fases,timers:resetarTimers(t),completedAt:null}); };
   // Correção pronta na Revisão Interna vai para Protocolado (não direto ao Concluído).
   const toProtocolado=(id)=>{ const t=state.tasks.find((x)=>x.id===id); const agora=Date.now();
     const fases=arquivarFase(t,agora,t.retrabalhoAtual);
-    updateTask(id,{col:"protocolado",needsFix:false,fixNote:"",fases,workedMs:0,runningSince:agora,completedAt:null,protocoladoAt:t.protocoladoAt??agora}); };
+    updateTask(id,{col:"protocolado",needsFix:false,fixNote:"",fases,timers:resetarTimers(t),completedAt:null,protocoladoAt:t.protocoladoAt??agora}); };
   // De Protocolado: pode voltar para a Revisão Interna — essa revisão conta como retrabalho no total.
   const backToReview=(id)=>{ const t=state.tasks.find((x)=>x.id===id); const agora=Date.now();
     const fases=arquivarFase(t,agora,null);
-    updateTask(id,{col:"review",needsFix:true,fases,workedMs:0,runningSince:agora,completedAt:null,retrabalhoAtual:true,reworkCount:(t?.reworkCount||0)+1}); };
+    updateTask(id,{col:"review",needsFix:true,fases,timers:resetarTimers(t),completedAt:null,retrabalhoAtual:true,reworkCount:(t?.reworkCount||0)+1}); };
   // Em andamento -> Revisão Interna (envio normal, sem marcar "conserto")
   const doingToReview=(id)=>{ const t=state.tasks.find((x)=>x.id===id); const agora=Date.now();
     const fases=arquivarFase(t,agora,false);
-    updateTask(id,{col:"review",needsFix:false,fixNote:"",fases,workedMs:0,runningSince:agora,completedAt:null,retrabalhoAtual:false}); };
+    updateTask(id,{col:"review",needsFix:false,fixNote:"",fases,timers:resetarTimers(t),completedAt:null,retrabalhoAtual:false}); };
   // Protocolado -> Em andamento
   const protocoladoToDoing=(id)=>{ const t=state.tasks.find((x)=>x.id===id); const agora=Date.now();
     const fases=arquivarFase(t,agora,null);
-    updateTask(id,{col:"doing",needsFix:false,fixNote:"",fases,workedMs:0,runningSince:agora,completedAt:null}); };
-  // Repassar a tarefa para um colega: arquiva no histórico o pedaço que a pessoa que saiu fez
-  // (fica registrado de quem é) e zera o cronômetro pra quem está entrando — sem misturar os tempos.
-  const repassarTarefa=(id,novoMembroId)=>{
-    const t=state.tasks.find((x)=>x.id===id); if(!t || t.assignee===novoMembroId) return;
-    const agora=Date.now(); const rodando=!!t.runningSince;
-    const meuTempo=(t.workedMs||0)+(rodando?msUteis(t.runningSince,agora):0);
-    const fases=arquivarFase(t,agora,t.retrabalhoAtual);
-    const deNome=(memberById(t.assignee)||{}).name; const paraNome=(memberById(novoMembroId)||{}).name||"—";
-    const nota={ id:uid(), data:agora, texto:`Repassada${deNome?` por ${deNome}`:""} para ${paraNome}${meuTempo>0?` · tempo até aqui: ${durMs(meuTempo)}`:""}` };
-    updateTask(id,{
-      assignee:novoMembroId,
-      workLog:[...(t.workLog||[]),{memberId:t.assignee,ms:meuTempo,ate:agora}],
-      fases,
-      workedMs:0, runningSince:rodando?agora:null,
-      diario:[...(t.diario||[]),nota],
-    });
+    updateTask(id,{col:"doing",needsFix:false,fixNote:"",fases,timers:resetarTimers(t),completedAt:null}); };
+  // Adicionar/remover um membro da tarefa (sem "principal" — todos têm o mesmo peso). Quando alguém
+  // sai, o cronômetro dele para (se estava rodando) e o tempo que já fez fica guardado, sem se
+  // misturar com o de quem continuar.
+  const toggleAssignee=(id,memberId)=>{
+    const t=state.tasks.find((x)=>x.id===id); if(!t) return;
+    const agora=Date.now(); const nome=(memberById(memberId)||{}).name||"—";
+    const jaTem=(t.assignees||[]).includes(memberId);
+    if(jaTem){
+      const tm=(t.timers||{})[memberId]; const timers={...(t.timers||{})};
+      let texto=`${nome} saiu da tarefa`;
+      if(tm && tm.runningSince){
+        const soma=(tm.workedMs||0)+msUteis(tm.runningSince,agora);
+        timers[memberId]={workedMs:soma, runningSince:null};
+        if(soma>0) texto+=` · tempo até aqui: ${durMs(soma)}`;
+      } else if(tm && tm.workedMs){
+        texto+=` · tempo até aqui: ${durMs(tm.workedMs)}`;
+      }
+      const nota={ id:uid(), data:agora, texto };
+      updateTask(id,{ assignees:(t.assignees||[]).filter((m)=>m!==memberId), timers,
+        vistoPor:(t.vistoPor||[]).filter((m)=>m!==memberId), diario:[...(t.diario||[]),nota] });
+    } else {
+      const nota={ id:uid(), data:agora, texto:`${nome} entrou na tarefa` };
+      updateTask(id,{ assignees:[...(t.assignees||[]), memberId], diario:[...(t.diario||[]),nota] });
+    }
   };
 
-  const aFazerProj=(pid)=>state.tasks.filter((t)=>t.project===pid && t.col==="todo" && (isPrivileged || (t.tipo==="reuniao"?podeVerReuniao(t):t.assignee===myMemberId))).length;
-  const andamentoProj=(pid)=>state.tasks.filter((t)=>t.project===pid && (t.col==="doing"||t.col==="review"||t.col==="protocolado") && (isPrivileged || (t.tipo==="reuniao"?podeVerReuniao(t):t.assignee===myMemberId))).length;
-  const emAbertoProj=(pid)=>state.tasks.filter((t)=>t.project===pid && t.col!=="done" && (isPrivileged || (t.tipo==="reuniao"?podeVerReuniao(t):t.assignee===myMemberId))).length;
-  const concluidoProj=(pid)=>state.tasks.filter((t)=>t.project===pid && t.col==="done" && (isPrivileged || (t.tipo==="reuniao"?podeVerReuniao(t):t.assignee===myMemberId))).length;
-  const emAbertoMembro=(mid)=>state.tasks.filter((t)=>t.assignee===mid && t.col!=="done").length;
-  const concluidoMembro=(mid)=>state.tasks.filter((t)=>t.assignee===mid && t.col==="done").length;
-  const porColunaMembro=(mid)=>{ const doMembro=state.tasks.filter((t)=>t.assignee===mid);
+  const aFazerProj=(pid)=>state.tasks.filter((t)=>t.project===pid && t.col==="todo" && (isPrivileged || (t.tipo==="reuniao"?podeVerReuniao(t):(t.assignees||[]).includes(myMemberId)))).length;
+  const andamentoProj=(pid)=>state.tasks.filter((t)=>t.project===pid && (t.col==="doing"||t.col==="review"||t.col==="protocolado") && (isPrivileged || (t.tipo==="reuniao"?podeVerReuniao(t):(t.assignees||[]).includes(myMemberId)))).length;
+  const emAbertoProj=(pid)=>state.tasks.filter((t)=>t.project===pid && t.col!=="done" && (isPrivileged || (t.tipo==="reuniao"?podeVerReuniao(t):(t.assignees||[]).includes(myMemberId)))).length;
+  const concluidoProj=(pid)=>state.tasks.filter((t)=>t.project===pid && t.col==="done" && (isPrivileged || (t.tipo==="reuniao"?podeVerReuniao(t):(t.assignees||[]).includes(myMemberId)))).length;
+  const emAbertoMembro=(mid)=>state.tasks.filter((t)=>(t.assignees||[]).includes(mid) && t.col!=="done").length;
+  const concluidoMembro=(mid)=>state.tasks.filter((t)=>(t.assignees||[]).includes(mid) && t.col==="done").length;
+  const porColunaMembro=(mid)=>{ const doMembro=state.tasks.filter((t)=>(t.assignees||[]).includes(mid));
     return Object.fromEntries(COLUMNS.map((c)=>[c.id, doMembro.filter((t)=>t.col===c.id).length])); };
 
   const onDrop=(col)=>{
@@ -1735,15 +1782,16 @@ function App({ inicial, aoSair, usuarioConectado }){
                       onReabrirReuniao={reabrirReuniao} onExcluirReuniao={removeTask}/>
                   ) : (
                   <div style={S.cardList}>
-                    {items.map((t)=>(<Card key={t.id} task={t} member={memberById(t.assignee)} members={state.members} projects={state.projects} catalog={catalog} meuMembroId={myMemberId} projetoNome={(state.projects.find((p)=>p.id===t.project)||{}).name||""} onConfirmar={()=>confirmarReuniao(t.id,myMemberId)} currentUser={currentUser}
+                    {items.map((t)=>(<Card key={t.id} task={t} members={state.members} projects={state.projects} catalog={catalog} meuMembroId={myMemberId} projetoNome={(state.projects.find((p)=>p.id===t.project)||{}).name||""} onConfirmar={()=>confirmarReuniao(t.id,myMemberId)} currentUser={currentUser}
                       canEdit={canEdit(t)} canDrag={canDrag(t)} canAct={canAct(t)} isPrivileged={isPrivileged} isMaster={isMaster} mine={isMine(t)}
                       onDragStart={()=>setDrag(t.id)} onDragEnd={()=>{setDrag(null);setDragOver(null);}}
                       onUpdate={(f)=>updateTask(t.id,f)} onRemove={()=>removeTask(t.id)}
-                      onAccept={()=>acceptTask(t.id)} onComplete={()=>setConfirmarConcluir(t.id)} onResume={()=>resumeTask(t.id)} onPause={()=>setPausandoTarefa(t.id)}
+                      onAccept={()=>acceptTask(t.id)} onComplete={()=>setConfirmarConcluir(t.id)}
+                      onIniciarTempo={(mid)=>iniciarMeuTempo(t.id,mid)} onPausarTempo={(mid)=>setPausandoTarefa({taskId:t.id,memberId:mid})}
                       onSendToReview={()=>sendToReview(t.id)} onBackToDoing={()=>backToDoing(t.id)}
                       onToProtocolado={()=>toProtocolado(t.id)} onBackToReview={()=>backToReview(t.id)}
                       onDoingToReview={()=>doingToReview(t.id)} onProtocoladoToDoing={()=>protocoladoToDoing(t.id)}
-                      onRepassar={(mid)=>repassarTarefa(t.id,mid)} onEditLock={marcarEdicao}/>))}
+                      onToggleAssignee={(mid)=>toggleAssignee(t.id,mid)} onEditLock={marcarEdicao}/>))}
                     {items.length===0 && <p style={S.colEmpty}>Nenhuma tarefa</p>}
                   </div>)}
                   {col.id==="todo" && (isPrivileged || (meuMembro&&meuMembro.podeLancar)) && <LaunchTask catalog={catalog} members={state.members} onLaunch={launchMany} onOpenCatalog={()=>setShowCatalog(true)} isMaster={isMaster}
@@ -1758,8 +1806,8 @@ function App({ inicial, aoSair, usuarioConectado }){
 
       {revisaoDe && <RevisaoModal tarefa={state.tasks.find((t)=>t.id===revisaoDe)}
         onConfirmar={(note)=>confirmarRevisao(revisaoDe,note)} onClose={()=>setRevisaoDe(null)}/>}
-      {pausandoTarefa && <PausarModal tarefa={state.tasks.find((t)=>t.id===pausandoTarefa)}
-        onConfirmar={(motivo)=>{ pauseTask(pausandoTarefa,motivo); setPausandoTarefa(null); }} onClose={()=>setPausandoTarefa(null)}/>}
+      {pausandoTarefa && <PausarModal tarefa={state.tasks.find((t)=>t.id===pausandoTarefa.taskId)}
+        onConfirmar={(motivo)=>{ pausarMeuTempo(pausandoTarefa.taskId,pausandoTarefa.memberId,motivo); setPausandoTarefa(null); }} onClose={()=>setPausandoTarefa(null)}/>}
       {confirmarExcluir && <ConfirmSenhaModal
         titulo="Excluir projeto"
         mensagem={`Digite sua senha para excluir "${confirmarExcluir.name||"este projeto"}" e todas as suas tarefas. Esta ação não pode ser desfeita.`}
@@ -1783,7 +1831,7 @@ function App({ inicial, aoSair, usuarioConectado }){
         onEnviar={enviarMensagem} onApagar={apagarMensagem} onClose={()=>setShowMsgs(false)}/>}
       {showCatalog && <CatalogModal catalog={catalog} onAdd={addCatalogItem} onRemove={removeCatalogItem} onEdit={editCatalogItem} onClose={()=>setShowCatalog(false)}/>}
       {membroTarefas && <TarefasMembroModal membro={memberById(membroTarefas)} projects={state.projects}
-        tasks={state.tasks.filter((t)=>t.assignee===membroTarefas && t.tipo!=="reuniao")} onClose={()=>setMembroTarefas(null)}/>}
+        tasks={state.tasks.filter((t)=>(t.assignees||[]).includes(membroTarefas) && t.tipo!=="reuniao")} onClose={()=>setMembroTarefas(null)}/>}
       {showUsers && <UsersModal users={state.users} members={state.members} tasks={state.tasks} currentUser={currentUser}
         onAdd={addUser} onReset={resetUserPassword} onPhoto={setMemberPhoto} onRenomear={renomearPessoa}
         onLogin={alterarLogin} onAcesso={alterarAcesso} onPainel={alternarPainel} onEquipe={alternarEquipe} onPodeLancar={alternarPodeLancar} onRemoverPessoa={removerPessoa} onClose={()=>setShowUsers(false)}/>}
@@ -2054,27 +2102,38 @@ function DropMenu({ pos, children }){
   return ReactDOM.createPortal(<div data-dropmenu="1" style={style} onClick={(e)=>e.stopPropagation()}>{children}</div>, document.body);
 }
 
-// Repassar tarefa: janela central (igual à de trocar de usuário), sem rolagem escondendo opções.
-function RepassarModal({ members, task, onEscolher, onClose }){
-  const opcoes = members.filter((m)=>m.id!==task.assignee);
+// Membros da tarefa: janela central com um checklist — marca/desmarca quem está na tarefa.
+// Sem "principal": todo mundo marcado tem o mesmo peso e o próprio cronômetro.
+function MembrosTarefaModal({ members, task, onToggle, onClose }){
+  const marcados = task.assignees||[];
+  const porMembro = tempoPorMembro(task);
   return ReactDOM.createPortal(<div data-dropmenu="1" style={S.overlay}>
     <div style={{...S.modal,maxWidth:360}} onClick={(e)=>e.stopPropagation()}>
-      <div style={S.modalHead}><h2 style={S.modalTitle}>Repassar tarefa</h2><button style={S.iconBtn} onClick={onClose}><Ic n="x" s={18}/></button></div>
-      <div style={{fontSize:12.5,color:"var(--text-muted)",marginBottom:12}}>Escolha quem vai continuar "{task.title}".</div>
+      <div style={S.modalHead}><h2 style={S.modalTitle}>Membros da tarefa</h2><button style={S.iconBtn} onClick={onClose}><Ic n="x" s={18}/></button></div>
+      <div style={{fontSize:12.5,color:"var(--text-muted)",marginBottom:12}}>Marque quem está trabalhando em "{task.title}". Cada um tem o próprio cronômetro.</div>
       <div style={{display:"flex",flexDirection:"column",gap:6,maxHeight:400,overflowY:"auto"}}>
-        {opcoes.map((m)=>(<button key={m.id} onClick={()=>onEscolher(m.id)}
-          style={{display:"flex",alignItems:"center",gap:10,padding:"9px 10px",borderRadius:11,border:"1px solid var(--border-soft)",background:"var(--surface)",cursor:"pointer",textAlign:"left",width:"100%"}}>
-          <Avatar m={m} size={30}/><div style={{fontSize:13.5,fontWeight:600}}>{m.name}</div>
-        </button>))}
-        {opcoes.length===0 && <div style={{fontSize:11.5,color:"var(--text-faint)",padding:"4px 6px"}}>Nenhum colega disponível.</div>}
+        {members.map((m)=>{ const marcado=marcados.includes(m.id); const ms=porMembro[m.id]||0;
+          return (<button key={m.id} onClick={()=>onToggle(m.id)}
+            style={{display:"flex",alignItems:"center",gap:10,padding:"9px 10px",borderRadius:11,
+              border:`1px solid ${marcado?"var(--accent-tint-border)":"var(--border-soft)"}`,
+              background:marcado?"var(--accent-tint)":"var(--surface)",cursor:"pointer",textAlign:"left",width:"100%"}}>
+            <span style={{width:16,height:16,borderRadius:5,border:"1.5px solid "+(marcado?"#3B3AC9":"var(--border)"),background:marcado?"#3B3AC9":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              {marcado && <Ic n="check" s={11} c="#fff"/>}</span>
+            <Avatar m={m} size={30}/>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:13.5,fontWeight:600}}>{m.name}</div>
+              {ms>0 && <div style={{fontSize:11,color:"var(--text-muted)"}}>{durMs(ms)} nesta tarefa</div>}
+            </div>
+          </button>); })}
+        {members.length===0 && <div style={{fontSize:11.5,color:"var(--text-faint)",padding:"4px 6px"}}>Nenhum membro cadastrado.</div>}
       </div>
     </div>
   </div>, document.body);
 }
 
 // ---------- Task card ----------
-function Card({ task, member, members, projects, catalog, meuMembroId, projetoNome, onConfirmar, canEdit, canDrag, canAct, isPrivileged, isMaster, mine, currentUser,
-                onDragStart, onDragEnd, onUpdate, onRemove, onAccept, onComplete, onResume, onPause, onSendToReview, onBackToDoing, onToProtocolado, onBackToReview, onDoingToReview, onProtocoladoToDoing, onRepassar, onEditLock }){
+function Card({ task, members, projects, catalog, meuMembroId, projetoNome, onConfirmar, canEdit, canDrag, canAct, isPrivileged, isMaster, mine, currentUser,
+                onDragStart, onDragEnd, onUpdate, onRemove, onAccept, onComplete, onIniciarTempo, onPausarTempo, onSendToReview, onBackToDoing, onToProtocolado, onBackToReview, onDoingToReview, onProtocoladoToDoing, onToggleAssignee, onEditLock }){
   const [confirmarExcluirTarefa,setConfirmarExcluirTarefa]=useState(false);
   const [menu,setMenu]=useState(null); const [menuPos,setMenuPos]=useState(null); const ref=useRef();
   const [editDesc,setEditDesc]=useState(false); const [rascunho,setRascunho]=useState("");
@@ -2097,6 +2156,7 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
   const [enviandoPdf,setEnviandoPdf]=useState(false); const pdfRef=useRef();
   const pri=PRIORITIES[task.priority]; const col=COL[task.col];
   const done=task.col==="done"; const inReview=task.col==="review"; const fixing=inReview&&task.needsFix; const inProtocolado=task.col==="protocolado";
+  const assignedMembers=members.filter((m)=>(task.assignees||[]).includes(m.id));
   const corTrab=corDoTrabalho(task.folderName);
   const ehReuniao=task.tipo==="reuniao";
   const confirmados=task.confirmados||[];
@@ -2221,7 +2281,7 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
           </div>}
         </div>);
       })()}
-            {(task.createdAt || task.acceptedAt || (task.fases&&task.fases.length) || task.workedMs || task.runningSince) && (()=>{
+            {(task.createdAt || task.acceptedAt || (task.fases&&task.fases.length) || tempoReal(task)>0) && (()=>{
         const concluida=task.col==="done";
         const itensHist=historicoTarefa(task);
         const resumo=concluida?totalPrazoTarefa(task):null;
@@ -2246,8 +2306,25 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
                 {it.atual && <span style={S.pulsando}>●</span>} {durMs(it.ms)}</span>
             </div>
           ))}
-          {!task.runningSince && task.col==="doing" && task.pausas && task.pausas.length>0 && task.pausas[task.pausas.length-1].motivo && (
-            <div style={{fontSize:11,color:"var(--text-muted)",marginTop:2}}><Ic n="hourglass" s={10} c="var(--text-faint)" style={{verticalAlign:-1,marginRight:3}}/> {task.pausas[task.pausas.length-1].motivo}</div>
+          {!ehReuniao && (task.col==="doing"||task.col==="review"||task.col==="protocolado") && assignedMembers.length>0 && (
+            <div style={{marginTop:6,paddingTop:6,borderTop:"1px solid var(--border-soft2)",display:"flex",flexDirection:"column",gap:5}}>
+              {assignedMembers.map((m)=>{
+                const tm=(task.timers||{})[m.id]||{workedMs:0,runningSince:null};
+                const ms=(tm.workedMs||0)+(tm.runningSince? msUteis(tm.runningSince,Date.now()) : 0);
+                const souEu=meuMembroId===m.id; const podeControlar=souEu||isPrivileged;
+                return (<div key={m.id} style={{display:"flex",alignItems:"center",gap:6}}>
+                  <Avatar m={m} size={20}/>
+                  <span style={{fontSize:11.5,fontWeight:600,flex:1,color:"var(--text)",minWidth:0,overflow:"hidden",textOverflow:"ellipsis"}}>{m.name.split(" ")[0]}</span>
+                  <span style={{fontSize:11.5,fontWeight:700,color:tm.runningSince?"#2F9E6E":"var(--text-muted)",whiteSpace:"nowrap"}}>
+                    {tm.runningSince && <span style={S.pulsando}>●</span>} {durMs(ms)}</span>
+                  {podeControlar && (tm.runningSince
+                    ? <button style={S.iconBtn} title="Pausar meu tempo" onClick={()=>onPausarTempo(m.id)}><Ic n="hourglass" s={13} c="var(--icon-muted)"/></button>
+                    : <button style={S.iconBtn} title="Iniciar meu tempo" onClick={()=>onIniciarTempo(m.id)}><Ic n="bar" s={13} c="#2F9E6E"/></button>)}
+                </div>); })}
+              {task.pausas && task.pausas.length>0 && !algumRodando(task) && task.pausas[task.pausas.length-1].motivo && (()=>{
+                const ult=task.pausas[task.pausas.length-1]; const quem=members.find((x)=>x.id===ult.memberId);
+                return (<div style={{fontSize:11,color:"var(--text-muted)"}}><Ic n="hourglass" s={10} c="var(--text-faint)" style={{verticalAlign:-1,marginRight:3}}/> {quem?`${quem.name.split(" ")[0]}: `:""}{ult.motivo}</div>); })()}
+            </div>
           )}
           {task.hours>0 && !concluida && <div style={S.tempoLinha}>
             <span style={S.tempoRot}>Previsto</span><span style={S.tempoVal}>{hm(task.hours)}</span></div>}
@@ -2296,12 +2373,14 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
             onClick={(e)=>{ if(!canEdit)return; setMenuPos(e.currentTarget.getBoundingClientRect()); setMenu(menu==="hrs"?null:"hrs"); }}><Ic n="clock" s={11} c="var(--text-secondary)"/> prev. {task.hours||0}h</button>
         </div>
         {ehReuniao ? (<span style={S.todosTag} title="Reunião para toda a equipe"><Ic n="users" s={11} c="#8B3ABF"/> Todos</span>)
-          : (<div style={{display:"flex",gap:6,alignItems:"center"}}>
-          {!done && <button style={S.iconBtn} title="Repassar para colega"
+          : (<div style={{display:"flex",gap:4,alignItems:"center"}}>
+          <div style={{display:"flex"}}>
+            {assignedMembers.slice(0,4).map((m,i)=>(<span key={m.id} style={{marginLeft:i>0?-8:0,border:"2px solid var(--surface)",borderRadius:"50%"}} title={m.name}><Avatar m={m} size={24}/></span>))}
+            {assignedMembers.length===0 && <span style={S.avatarEmpty}><Ic n="circle" s={11} c="var(--text-faint)"/></span>}
+            {assignedMembers.length>4 && <span style={{...S.avatarEmpty,marginLeft:-8,fontSize:10,fontWeight:700}}>+{assignedMembers.length-4}</span>}
+          </div>
+          {(!done && canEdit) && <button style={S.iconBtn} title="Membros da tarefa"
             onClick={()=>setMenu(menu==="rep"?null:"rep")}><Ic n="users" s={14} c="var(--text-secondary)"/></button>}
-          <button disabled={!canEdit||!isPrivileged} style={S.assignBtn} onClick={(e)=>{ if(!canEdit||!isPrivileged)return; setMenuPos(e.currentTarget.getBoundingClientRect()); setMenu(menu==="asg"?null:"asg"); }} title={member?.name??"Sem responsável"}>
-            {member ? <Avatar m={member} size={24}/> : <span style={S.avatarEmpty}><Ic n="circle" s={11} c="var(--text-faint)"/></span>}
-          </button>
           </div>)}
       </div>
 
@@ -2327,10 +2406,6 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
       {/* fluxo da tarefa */}
       {!ehReuniao && task.col==="todo" && canAct && (
         <button style={{...S.doneBtn,background:COL.doing.tint}} onClick={onAccept}><Ic n="check" s={13} c="#fff"/> Aceitar tarefa</button>)}
-      {!ehReuniao && task.col==="doing" && canAct && !task.runningSince && (
-        <button style={{...S.doneBtn,background:"#2F9E6E"}} onClick={onResume}><Ic n="bar" s={13} c="#fff"/> Continuar tarefa</button>)}
-      {!ehReuniao && task.col==="doing" && canAct && task.runningSince && (
-        <button style={S.cancelBtn} onClick={onPause} title="Pausar agora, por qualquer motivo"><Ic n="hourglass" s={12} c="var(--icon-muted)"/> Pausar tarefa</button>)}
       {!ehReuniao && task.col==="doing" && canAct && (
         <button style={{...S.doneBtn,background:COL.review.tint}} onClick={onDoingToReview}><Ic n="checkc" s={13} c="#fff"/> Ir para Revisão Interna</button>)}
       {!ehReuniao && inReview && canAct && (
@@ -2362,12 +2437,8 @@ function Card({ task, member, members, projects, catalog, meuMembroId, projetoNo
           <button style={S.iconBtn} onClick={()=>setEditHoras(false)}><Ic n="x" s={13} c="var(--text-muted)"/></button>
         </div>}
       </DropMenu>)}
-      {menu==="asg" && (<DropMenu pos={menuPos}>
-        <button style={S.menuItem} onClick={()=>{ const agora=Date.now(); const fases=arquivarFase(task,agora,task.retrabalhoAtual); onUpdate({assignee:null,fases,workedMs:0,runningSince:null});setMenu(null);}}><span style={S.avatarEmpty}><Ic n="circle" s={11} c="var(--text-faint)"/></span> Ninguém</button>
-        {members.filter((m)=>m.id!==task.assignee).map((m)=>(<button key={m.id} style={S.menuItem} onClick={()=>{onRepassar(m.id);setMenu(null);}}><Avatar m={m} size={24}/> {m.name}</button>))}
-      </DropMenu>)}
-      {menu==="rep" && <RepassarModal members={members} task={task} onClose={()=>setMenu(null)}
-        onEscolher={(mid)=>{ onRepassar(mid); setMenu(null); }}/>}
+      {menu==="rep" && <MembrosTarefaModal members={members} task={task} onClose={()=>setMenu(null)}
+        onToggle={(mid)=>onToggleAssignee(mid)}/>}
       {editTudo && <EditarTarefaModal task={task} projects={projects||[]} members={members} catalog={catalog||[]}
         onSalvar={(campos)=>{ onUpdate(campos); setEditTudo(false); }} onFechar={()=>setEditTudo(false)}/>}
       {confirmarExcluirTarefa && <ConfirmSenhaModal
@@ -2384,7 +2455,7 @@ function EditarTarefaModal({ task, projects, members, catalog, onSalvar, onFecha
   const ehReuniao=task.tipo==="reuniao";
   const [titulo,setTitulo]=useState(task.title||"");
   const [projeto,setProjeto]=useState(task.project||"");
-  const [assignee,setAssignee]=useState(task.assignee||"");
+  const [assignees,setAssignees]=useState(task.assignees||[]);
   const [priority,setPriority]=useState(task.priority||"media");
   const [horas,setHoras]=useState(String(task.hours||0));
   const [criadaEm,setCriadaEm]=useState(paraDatetimeLocal(task.createdAt));
@@ -2400,7 +2471,7 @@ function EditarTarefaModal({ task, projects, members, catalog, onSalvar, onFecha
     const criadaTs=deDatetimeLocal(criadaEm);
     if(criadaTs) campos.createdAt=criadaTs;
     if(ehReuniao){ campos.quando=quando; campos.convidados=convidados||[]; }
-    else{ campos.assignee=assignee||null; }
+    else{ campos.assignees=assignees||[]; }
     onSalvar(campos);
   };
 
@@ -2424,11 +2495,14 @@ function EditarTarefaModal({ task, projects, members, catalog, onSalvar, onFecha
       </select>
 
       {!ehReuniao ? (<React.Fragment>
-        <div style={{...S.launchLabel,marginTop:10}}>Responsável</div>
-        <select style={{...S.authInput,margin:0}} value={assignee} onChange={(e)=>setAssignee(e.target.value)}>
-          <option value="">Ninguém</option>
-          {members.map((m)=>(<option key={m.id} value={m.id}>{m.name}</option>))}
-        </select>
+        <div style={{...S.launchLabel,marginTop:10}}>Membros da tarefa</div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+          {members.map((m)=>{ const marcado=(assignees||[]).includes(m.id);
+            return (<button key={m.id} type="button" style={{...S.convidadoChip,...(marcado?S.convidadoChipOn:{})}}
+              onClick={()=>setAssignees((as)=>marcado?(as||[]).filter((id)=>id!==m.id):[...(as||[]),m.id])}>
+              {m.name.split(" ")[0]}</button>); })}
+          {members.length===0 && <div style={{fontSize:11.5,color:"var(--text-faint)"}}>Nenhum membro cadastrado.</div>}
+        </div>
       </React.Fragment>) : (<React.Fragment>
         <div style={{...S.launchLabel,marginTop:10}}>Quando</div>
         <input style={{...S.authInput,margin:0}} type="datetime-local" value={quando} onChange={(e)=>setQuando(e.target.value)}/>
@@ -2487,9 +2561,16 @@ function ConcluidoCalendario({ tarefas, membros, membroFiltro, onMembroFiltro, i
   const totalSemana=daSemana.reduce((a,t)=>a+horasReais(t),0);
   const porMembro=(()=>{
     const mapa=new Map();
-    daSemana.forEach((t)=>{ const chave=t.tipo==="reuniao"?"__reuniao":(t.assignee||"__sem");
-      const atual=mapa.get(chave)||{id:chave,membro:membroById(t.assignee),qtd:0,horas:0};
-      atual.qtd++; atual.horas+=horasReais(t); mapa.set(chave,atual); });
+    daSemana.forEach((t)=>{
+      if(t.tipo==="reuniao"){ const atual=mapa.get("__reuniao")||{id:"__reuniao",membro:null,qtd:0,horas:0};
+        atual.qtd++; atual.horas+=horasReais(t); mapa.set("__reuniao",atual); return; }
+      const porM=tempoPorMembro(t); const comTempo=Object.keys(porM).filter((mid)=>porM[mid]>0);
+      const alvos = comTempo.length? comTempo : (t.assignees||[]);
+      if(alvos.length===0){ const atual=mapa.get("__sem")||{id:"__sem",membro:null,qtd:0,horas:0};
+        atual.qtd++; atual.horas+=horasReais(t); mapa.set("__sem",atual); return; }
+      alvos.forEach((mid)=>{ const atual=mapa.get(mid)||{id:mid,membro:membroById(mid),qtd:0,horas:0};
+        atual.qtd++; atual.horas += porM[mid]? porM[mid]/3600000 : horasReais(t)/alvos.length; mapa.set(mid,atual); });
+    });
     return [...mapa.values()].sort((a,b)=>b.horas-a.horas);
   })();
 
@@ -2533,11 +2614,12 @@ function ConcluidoCalendario({ tarefas, membros, membroFiltro, onMembroFiltro, i
               : <span style={S.calDiaVazio}>—</span>}
             {temItens && <span style={S.calDiaSeta}><Ic n="chev" s={15} c={aberto?"#6B3FBF":"var(--text-muted)"} style={{transform:aberto?"none":"rotate(-90deg)",transition:"transform .15s"}}/></span>}
           </div>
-          {aberto && itens.map((t)=>{ const m=membroById(t.assignee); const reuniao=t.tipo==="reuniao";
+          {aberto && itens.map((t)=>{ const ms=(t.assignees||[]).map(membroById).filter(Boolean); const m=ms[0]; const reuniao=t.tipo==="reuniao";
+            const nomes=ms.map((x)=>x.name.split(" ")[0]).join(", ");
             return (<div key={t.id} className="cal-item" style={{...S.calItem,...(reuniao?{borderLeft:"3px solid #8B3ABF"}:{})}}>
               {reuniao ? <span style={{...S.avatarSm,background:"#8B3ABF"}}><Ic n="calendar" s={11} c="#fff"/></span>
                        : (m ? <Avatar m={m} size={22}/> : <span style={S.avatarEmpty}><Ic n="circle" s={10} c="var(--text-faint)"/></span>)}
-              <span style={S.calItemTitulo} title={(m?m.name+" · ":"")+t.title}>{t.title}</span>
+              <span style={S.calItemTitulo} title={(nomes?nomes+" · ":"")+t.title}>{t.title}</span>
               <span style={S.calItemHora}>{hhmm(t.completedAt)}</span>
               <span style={S.calItemTempo}>{hms(horasReais(t))}</span>
               {isMaster && !reuniao && <button className="cal-rev" style={S.calRev} title="Enviar para Revisão Interna"
@@ -2573,7 +2655,7 @@ function LaunchTask({ catalog, members, onLaunch, onOpenCatalog, isMaster, permi
   const HORAS_POR_DIA=8;
   const linhaVazia=()=>({ key:uid(), catalogId:"", tempo:"", unidade:"h", priority:"media", reuniao:false, quando:"", convidados:[] });
   const [linhas,setLinhas]=useState([linhaVazia()]);
-  const [assignee,setAssignee]=useState(""); const [desc,setDesc]=useState("");
+  const [assignees,setAssignees]=useState([]); const [desc,setDesc]=useState("");
   const [err,setErr]=useState("");
   const [pendente,setPendente]=useState(null); // payload aguardando a escolha de contagem
 
@@ -2592,13 +2674,13 @@ function LaunchTask({ catalog, members, onLaunch, onOpenCatalog, isMaster, permi
   const horasDaLinha=(l)=>(+l.tempo||0)*(l.unidade==="d"?HORAS_POR_DIA:1);
   const totalPrev=validas.reduce((a,l)=>a+horasDaLinha(l),0);
 
-  const limpar=()=>{ setLinhas([linhaVazia()]); setAssignee(""); setDesc(""); setErr(""); };
+  const limpar=()=>{ setLinhas([linhaVazia()]); setAssignees([]); setDesc(""); setErr(""); };
 
   const submit=()=>{
     if(validas.length===0){ setErr("Escolha ao menos uma tarefa cadastrada."); return; }
-    if(precisaResp && !assignee){ setErr("Escolha o responsável das tarefas."); return; }
+    if(precisaResp && assignees.length===0){ setErr("Escolha ao menos um membro para as tarefas."); return; }
     setPendente({ itens:validas.map((l)=>({catalogId:l.catalogId,hours:horasDaLinha(l),priority:l.priority,reuniao:l.reuniao,quando:l.quando,convidados:l.reuniao?(l.convidados||[]):[]})),
-               assignee, desc });
+               assignees, desc });
   };
   const confirmarContagem=(contarAgora)=>{
     if(!pendente) return;
@@ -2670,11 +2752,13 @@ function LaunchTask({ catalog, members, onLaunch, onOpenCatalog, isMaster, permi
 
     {validas.length>0 && <div style={S.resumoLote}>{validas.length} {validas.length===1?"tarefa":"tarefas"} · previsto {hm(totalPrev)}</div>}
 
-    {precisaResp ? (<div><div style={S.launchLabel}>Responsável (tarefas)</div>
-      <select style={S.launchInput} value={assignee} onChange={(e)=>{setAssignee(e.target.value); setErr("");}}>
-        <option value="">Escolher…</option>
-        {members.map((m)=>(<option key={m.id} value={m.id}>{m.name}</option>))}
-      </select>
+    {precisaResp ? (<div><div style={S.launchLabel}>Membros (tarefas)</div>
+      <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+        {members.map((m)=>{ const marcado=assignees.includes(m.id);
+          return (<button key={m.id} type="button" style={{...S.convidadoChip,...(marcado?S.convidadoChipOn:{})}}
+            onClick={()=>{ setAssignees((as)=>marcado?as.filter((id)=>id!==m.id):[...as,m.id]); setErr(""); }}>
+            {m.name.split(" ")[0]}</button>); })}
+      </div>
       {validas.some((l)=>l.reuniao) && <div style={S.fileHint}>As reuniões marcadas não têm responsável — vão para os convidados escolhidos (ou toda a equipe, se marcar "Todos").</div>}
     </div>) : (validas.length>0 && <div style={S.avisoTodos}><Ic n="users" s={13} c="#8B3ABF"/> Reunião sem responsável — confira os convidados de cada uma acima</div>)}
 
@@ -2777,8 +2861,9 @@ function SemanaPanel({ tasks, members }){
   const capacidade=uteis*CAPACIDADE_DIA;
 
   const horasNoDia=(mid,dia)=> tasks
-    .filter((t)=>t.assignee===mid && t.completedAt && mesmoDia(new Date(t.completedAt),dia))
-    .reduce((a,t)=>a+horasReais(t),0);
+    .filter((t)=>(t.assignees||[]).includes(mid) && t.completedAt && mesmoDia(new Date(t.completedAt),dia))
+    .reduce((a,t)=>{ const pm=tempoPorMembro(t); const ms=pm[mid]; const n=(t.assignees||[]).length||1;
+      return a+(ms? ms/3600000 : horasReais(t)/n); },0);
 
   const linhas=members.map((m)=>{
     const porDia=dias.map((d)=>horasNoDia(m.id,d));
@@ -2897,13 +2982,15 @@ function ResumoTarefasModal({ titulo, tint, tarefas, projects, members, onClose 
         <button style={S.iconBtn} onClick={onClose}><Ic n="x" s={18}/></button>
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:8,maxHeight:"60vh",overflowY:"auto"}}>
-        {lista.map((t)=>{ const col=COL[t.col]||{tint:"var(--text-muted)",name:t.col}; const m=membroPorId(t.assignee);
+        {lista.map((t)=>{ const col=COL[t.col]||{tint:"var(--text-muted)",name:t.col};
+          const ms=(t.assignees||[]).map(membroPorId).filter(Boolean); const m=ms[0];
+          const nomes=ms.map((x)=>x.name.split(" ")[0]).join(", ");
           return (<div key={t.id} style={S.memberRow}>
             <span style={{...S.dot,background:col.tint,width:10,height:10}}/>
             {m && <Avatar m={m} size={24}/>}
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontWeight:600,fontSize:13.5,color:"var(--text)"}}>{t.title}</div>
-              <div style={{fontSize:11.5,color:"var(--text-muted)",marginTop:2}}>{nomeProjeto(t.project)}{m?` · ${m.name}`:""}</div>
+              <div style={{fontSize:11.5,color:"var(--text-muted)",marginTop:2}}>{nomeProjeto(t.project)}{nomes?` · ${nomes}`:""}</div>
             </div>
             <span style={{fontSize:11.5,fontWeight:700,color:col.tint,whiteSpace:"nowrap"}}>{col.name}</span>
           </div>); })}
@@ -2914,15 +3001,16 @@ function ResumoTarefasModal({ titulo, tint, tarefas, projects, members, onClose 
 }
 
 function Dashboard({ tasks, members }){
-  const stats=useMemo(()=> members.map((m)=>{ const mine=tasks.filter((t)=>t.assignee===m.id);
+  const stats=useMemo(()=> members.map((m)=>{ const mine=tasks.filter((t)=>(t.assignees||[]).includes(m.id));
+    const horasDe=(t)=>{ const pm=tempoPorMembro(t); const ms=pm[m.id]; const n=(t.assignees||[]).length||1; return ms? ms/3600000 : tempoReal(t)/3600000/n; };
     return { id:m.id, name:m.name.split(" ")[0], full:m.name, color:m.color, photo:m.photo,
       value:mine.filter((t)=>t.col==="done").length, done:mine.filter((t)=>t.col==="done").length,
-      active:mine.filter((t)=>t.col!=="done").length, hours:mine.reduce((a,t)=>a+tempoReal(t)/3600000,0),
+      active:mine.filter((t)=>t.col!=="done").length, hours:mine.reduce((a,t)=>a+horasDe(t),0),
       values:{ todo:mine.filter((t)=>t.col==="todo").length, doing:mine.filter((t)=>t.col==="doing").length, review:mine.filter((t)=>t.col==="review").length, done:mine.filter((t)=>t.col==="done").length } };
   }),[tasks,members]);
   const evolution=useMemo(()=>{ const days=14; const rows=[];
     for(let i=days-1;i>=0;i--){ const cutoff=daysAgo(i)+86400000; const row={date:dm(daysAgo(i))};
-      members.forEach((m)=>{ row[m.name.split(" ")[0]]=tasks.filter((t)=>t.assignee===m.id&&t.completedAt&&t.completedAt<cutoff).length; }); rows.push(row); }
+      members.forEach((m)=>{ row[m.name.split(" ")[0]]=tasks.filter((t)=>(t.assignees||[]).includes(m.id)&&t.completedAt&&t.completedAt<cutoff).length; }); rows.push(row); }
     return rows; },[tasks,members]);
   const totalDone=stats.reduce((a,s)=>a+s.done,0); const totalHours=stats.reduce((a,s)=>a+s.hours,0);
   const memberSeries=members.map((m)=>({key:m.name.split(" ")[0],color:m.color,label:m.name.split(" ")[0]}));
@@ -3019,7 +3107,7 @@ function IndicadoresProcesso({ tasks, members }){
     // Por membro: tempo p/ aceitar, tempo de execução, % retrabalho e tempo médio até protocolado —
     // só entram na média da equipe os membros que já têm alguma tarefa no fluxo.
     const porMembro=members.map((m)=>{
-      const doMembro=fluxo.filter((t)=>t.assignee===m.id);
+      const doMembro=fluxo.filter((t)=>(t.assignees||[]).includes(m.id));
       const n=doMembro.length;
       const retrabalho=doMembro.filter((t)=>(t.reworkCount||0)>0).length;
       const aceiteM=doMembro.filter((t)=>t.acceptedAt&&t.createdAt).map((t)=>msUteis(t.createdAt,t.acceptedAt));
@@ -3490,7 +3578,7 @@ function UsersModal({ users, members, tasks=[], currentUser, onAdd, onReset, onP
   const arquivoRef=useRef(); const alvoRef=useRef(null);
   const masters=users.filter((u)=>u.role==="master").length;
   const userDe=(memberId)=>users.find((u)=>u.memberId===memberId);
-  const ativas=(id)=>tasks.filter((t)=>t.assignee===id&&t.col!=="done").length;
+  const ativas=(id)=>tasks.filter((t)=>(t.assignees||[]).includes(id)&&t.col!=="done").length;
 
   const [redefinirUser,setRedefinirUser]=useState(null);
   const [editarAlvo,setEditarAlvo]=useState(null);
