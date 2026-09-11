@@ -2411,9 +2411,7 @@ function Card({ task, members, projects, catalog, meuMembroId, projetoNome, onCo
           <span style={S.descLabel}>Tarefa feita no dia</span>
           {diario.length===0 && <div style={{fontSize:11.5,color:"var(--text-faint)",marginBottom:6}}>Nenhuma anotação ainda.</div>}
           {diario.map((n)=>(<div key={n.id} style={S.diarioLinha}>
-            <span style={S.diarioData}>{ddmm(new Date(n.data))}</span>
-            {editNota===n.id ? (<div style={{flex:1}}>
-              <textarea autoFocus style={S.diarioEdit} value={notaTexto} onChange={(e)=>setNotaTexto(e.target.value)}
+            <span style={S.fazerData}>{ddmm(new Date(n.data))}</span>
                 onKeyDown={(e)=>{ if(e.key==="Enter"&&(e.ctrlKey||e.metaKey))salvarEdicao(n.id); if(e.key==="Escape")setEditNota(null); }}/>
               <div style={{display:"flex",gap:6,marginTop:4}}>
                 <button style={S.diarioSalvar} onClick={()=>salvarEdicao(n.id)}>Salvar</button>
@@ -2447,12 +2445,11 @@ function Card({ task, members, projects, catalog, meuMembroId, projetoNome, onCo
         const removerObs=(id)=>{ onUpdate({observacoes:observacoes.filter((n)=>n.id!==id)}); };
         const podeEditarObs = isPrivileged || (mine && !!(meuMembro&&meuMembro.podeComentar));
         return (<div style={{...S.diarioBox,...(ehReuniao?{margin:"8px 11px 0"}:{})}}>
-          <span style={S.descLabel}>Observação</span>
+          <span style={S.obsLabel}>Observação</span>
           {observacoes.length===0 && <div style={{fontSize:11.5,color:"var(--text-faint)",marginBottom:6}}>Nenhuma observação ainda.</div>}
           {observacoes.map((n)=>{ const autor=members.find((m)=>m.id===n.autor);
             return (<div key={n.id} style={S.diarioLinha}>
-            <span style={S.diarioData}>{ddmm(new Date(n.data))}</span>
-            {editObs===n.id ? (<div style={{flex:1}}>
+            <span style={S.obsData}>{ddmm(new Date(n.data))}</span>
               <textarea autoFocus style={S.diarioEdit} value={obsTexto} onChange={(e)=>setObsTexto(e.target.value)}
                 onKeyDown={(e)=>{ if(e.key==="Enter"&&(e.ctrlKey||e.metaKey))salvarEdicaoObs(n.id); if(e.key==="Escape")setEditObs(null); }}/>
               <div style={{display:"flex",gap:6,marginTop:4}}>
@@ -4073,11 +4070,12 @@ const S = {
   openFolderBtn:{display:"flex",alignItems:"center",justifyContent:"center",gap:6,flex:1,border:"1px solid",padding:"6px 9px",borderRadius:8,fontSize:11.5,fontWeight:700,cursor:"pointer",fontFamily:FONT},
   copyBtn:{display:"grid",placeItems:"center",border:"1px solid var(--border)",background:"var(--surface)",borderRadius:8,padding:"6px 9px",cursor:"pointer"},
   descBox:{fontSize:12,color:"var(--text-secondary)",background:"var(--surface-alt)",border:"1px solid var(--border-soft2)",borderRadius:8,padding:"7px 9px",marginTop:8,lineHeight:1.45,overflowWrap:"anywhere",wordBreak:"break-word",whiteSpace:"pre-wrap"},
-  diarioBox:{background:"#F3F8F5",border:"1px solid #DDEEE4",borderRadius:8,padding:"7px 9px",marginTop:8},
+  diarioBox:{background:"var(--surface-alt)",border:"1px solid var(--border-soft2)",borderRadius:8,padding:"7px 9px",marginTop:8},
   diarioLinha:{display:"flex",alignItems:"flex-start",gap:7,padding:"3px 0",borderTop:"1px solid #E6F0EA"},
   diarioData:{fontSize:10,fontWeight:800,color:"#2F9E6E",background:"#E3F3EA",borderRadius:5,padding:"2px 5px",flexShrink:0,marginTop:1},
   diarioTexto:{flex:1,fontSize:12,fontWeight:600,color:"#2F9E6E",lineHeight:1.4,overflowWrap:"anywhere",wordBreak:"break-word",whiteSpace:"pre-wrap"},
   fazerData:{fontSize:10,fontWeight:800,color:"#fff",background:"#1F8A4C",borderRadius:5,padding:"2px 5px",flexShrink:0,marginTop:1},
+  obsData:{fontSize:10,fontWeight:800,color:"#fff",background:"#D8442F",borderRadius:5,padding:"2px 5px",flexShrink:0,marginTop:1},
   fazerTexto:{flex:1,fontSize:12.5,fontWeight:700,color:"#1F8A4C",lineHeight:1.4,overflowWrap:"anywhere",wordBreak:"break-word",whiteSpace:"pre-wrap"},
   diarioAcoes:{display:"inline-flex",gap:2,flexShrink:0},
   diarioMini:{border:"none",background:"transparent",cursor:"pointer",padding:2,borderRadius:5,display:"grid",placeItems:"center"},
@@ -4087,6 +4085,7 @@ const S = {
   diarioSalvar:{border:"none",background:"#2F9E6E",color:"#fff",borderRadius:6,padding:"4px 10px",fontSize:11.5,fontWeight:700,cursor:"pointer",fontFamily:FONT},
   diarioCancelar:{border:"1px solid var(--border)",background:"var(--surface)",color:"var(--text-secondary)",borderRadius:6,padding:"4px 10px",fontSize:11.5,fontWeight:600,cursor:"pointer",fontFamily:FONT},
   descLabel:{display:"inline-block",fontSize:9.5,fontWeight:800,letterSpacing:".06em",textTransform:"uppercase",color:"#fff",background:"#1F8A4C",borderRadius:5,padding:"3px 7px",marginBottom:5},
+  obsLabel:{display:"inline-block",fontSize:9.5,fontWeight:800,letterSpacing:".06em",textTransform:"uppercase",color:"#fff",background:"#D8442F",borderRadius:5,padding:"3px 7px",marginBottom:5},
   descTexto:{overflowWrap:"anywhere",wordBreak:"break-word",whiteSpace:"pre-wrap"},
   descEditArea:{width:"100%",boxSizing:"border-box",border:"1px solid var(--accent-tint-border)",borderRadius:7,padding:"6px 8px",fontSize:12,fontFamily:FONT,color:"var(--text-strong)",background:"var(--surface)",minHeight:60,resize:"vertical",lineHeight:1.45,outline:"none"},
   descSalvar:{display:"inline-flex",alignItems:"center",gap:5,border:"none",background:"#3B3AC9",color:"#fff",borderRadius:7,padding:"5px 11px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:FONT},
