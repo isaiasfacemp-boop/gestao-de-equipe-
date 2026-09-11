@@ -1600,15 +1600,19 @@ function App({ inicial, aoSair, usuarioConectado }){
         <div style={{flex:1,overflowY:"auto"}}>
           <div style={S.brand}><div style={{...S.logoBox,padding:"7px 12px"}}><img src={LOGO_JG2} alt="JG2 Engenharia e Arquitetura" style={{...S.logoImg,height:50}}/></div></div>
 
-          {isPrivileged && (<div style={{...S.abasLat,marginBottom:14}}>
-            <button style={{...S.abaLat,...((!emFinanceiro&&!emPropostas&&!emCobranca)?S.abaLatOn:{})}} onClick={voltarGestaoTrabalho}>
-              <Ic n="grid" s={14} c={(!emFinanceiro&&!emPropostas&&!emCobranca)?"#3B3AC9":"var(--text-secondary)"}/> Equipe</button>
-            <button style={{...S.abaLat,...(emPropostas?S.abaLatOn:{})}} onClick={()=>setActiveProjectLocal(MODO_PROPOSTAS)}>
-              <Ic n="list" s={13} c={emPropostas?"#3B3AC9":"var(--text-secondary)"}/> Proposta</button>
-            <button style={{...S.abaLat,...(emFinanceiro?S.abaLatOn:{})}} onClick={()=>setActiveProjectLocal(MODO_FINANCEIRO)}>
-              <Ic n="cash" s={14} c={emFinanceiro?"#3B3AC9":"var(--text-secondary)"}/> Financeiro</button>
-            <button style={{...S.abaLat,...(emCobranca?S.abaLatOn:{})}} onClick={()=>setActiveProjectLocal(MODO_COBRANCA)}>
-              <Ic n="bar" s={13} c={emCobranca?"#3B3AC9":"var(--text-secondary)"}/> Cobrança</button>
+          {isPrivileged && (<div style={{marginBottom:14,display:"flex",flexDirection:"column",gap:5}}>
+            <div style={S.abasLat}>
+              <button style={{...S.abaLat,...((!emFinanceiro&&!emPropostas&&!emCobranca)?S.abaLatOn:{})}} onClick={voltarGestaoTrabalho}>
+                <Ic n="grid" s={14} c={(!emFinanceiro&&!emPropostas&&!emCobranca)?"#3B3AC9":"var(--text-secondary)"}/> Equipe</button>
+              <button style={{...S.abaLat,...(emPropostas?S.abaLatOn:{})}} onClick={()=>setActiveProjectLocal(MODO_PROPOSTAS)}>
+                <Ic n="list" s={13} c={emPropostas?"#3B3AC9":"var(--text-secondary)"}/> Proposta</button>
+            </div>
+            <div style={S.abasLat}>
+              <button style={{...S.abaLat,...(emFinanceiro?S.abaLatOn:{})}} onClick={()=>setActiveProjectLocal(MODO_FINANCEIRO)}>
+                <Ic n="cash" s={14} c={emFinanceiro?"#3B3AC9":"var(--text-secondary)"}/> Financeiro</button>
+              <button style={{...S.abaLat,...(emCobranca?S.abaLatOn:{})}} onClick={()=>setActiveProjectLocal(MODO_COBRANCA)}>
+                <Ic n="bar" s={13} c={emCobranca?"#3B3AC9":"var(--text-secondary)"}/> Cobrança</button>
+            </div>
           </div>)}
 
           {!emFinanceiro && !emPropostas && !emCobranca && (<React.Fragment>
