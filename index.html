@@ -162,6 +162,7 @@ const COLUMNS = [
 ];
 const COL = Object.fromEntries(COLUMNS.map((c)=>[c.id,c]));
 const FIN_COLUMNS = [
+  { id:"para_orcamento",        name:"PARA ORÇAMENTO",         tint:"#5C6BC0", bg:"#E8EAF6" },
   { id:"orcamento_enviado",    name:"ORÇAMENTO ENVIADO",      tint:"#2F6BD8", bg:"#E9F0FC" },
   { id:"contrato",             name:"CONTRATO",               tint:"#8B3ABF", bg:"#F3EAFB" },
   { id:"cobranca_assinatura",  name:"COBRANÇA DE ASSINATURA", tint:"#0E8F9E", bg:"#E1F2F4" },
@@ -761,7 +762,7 @@ const seed = () => {
       { id:uid(), username:"bruno", passHash:hashPw("1234"),  role:"membro", memberId:m2.id, mustChange:true },
       { id:uid(), username:"carla", passHash:hashPw("1234"),  role:"membro", memberId:m3.id, mustChange:true },
     ],
-    session:{ currentUserId:null }, financeiro:[], feriadosTrabalhados:{},
+    session:{ currentUserId:null }, financeiro:[], cobranca:[], feriadosTrabalhados:{},
     members:[adminM,m1,m2,m3], projects:[{id:p,name:"Lançamento do site"}], activeProject:p, view:"board",
     taskCatalog:[
       { id:uid(), title:"Reunião de alinhamento", desc:"Reunir a equipe, revisar o andamento e anotar as pendências da semana." },
@@ -793,10 +794,8 @@ function prepararDados(saved, usuarioConectado){
   if(!saved.users) saved.users=[];
   if(!saved.projects) saved.projects=[];
   if(!saved.financeiro) saved.financeiro=[];
+  if(!saved.cobranca) saved.cobranca=[];
   if(!saved.feriadosTrabalhados) saved.feriadosTrabalhados={};
-  // migração: a coluna "PARA ORÇAMENTO" foi removida do quadro Financeiro — cartões que
-  // ainda estavam nela passam para "ORÇAMENTO ENVIADO" pra não sumirem do quadro.
-  saved.financeiro=saved.financeiro.map((c)=> c.col==="para_orcamento" ? {...c, col:"orcamento_enviado"} : c);
   if(!saved.session) saved.session={currentUserId:null};
   // dá login inicial aos membros sem conta (uma vez)
   if(!saved.loginsIniciais){
@@ -1244,10 +1243,11 @@ function App({ inicial, aoSair, usuarioConectado }){
   const MODO_REUNIOES="__reunioes__";
   const MODO_FINANCEIRO="__financeiro__";
   const MODO_PROPOSTAS="__propostas__";
+  const MODO_COBRANCA="__cobranca__";
   // Guarda qual projeto/reuniões estava aberto antes de entrar na Gestão Financeira ou em Propostas,
   // pra voltar exatamente pra lá ao clicar de novo em "Gestão de Trabalho".
-  const ultimoProjetoRef=useRef((activeProjectLocal!==MODO_FINANCEIRO && activeProjectLocal!==MODO_PROPOSTAS)?activeProjectLocal:null);
-  useEffect(()=>{ if(activeProjectLocal!==MODO_FINANCEIRO && activeProjectLocal!==MODO_PROPOSTAS) ultimoProjetoRef.current=activeProjectLocal; },[activeProjectLocal]);
+  const ultimoProjetoRef=useRef((activeProjectLocal!==MODO_FINANCEIRO && activeProjectLocal!==MODO_PROPOSTAS && activeProjectLocal!==MODO_COBRANCA)?activeProjectLocal:null);
+  useEffect(()=>{ if(activeProjectLocal!==MODO_FINANCEIRO && activeProjectLocal!==MODO_PROPOSTAS && activeProjectLocal!==MODO_COBRANCA) ultimoProjetoRef.current=activeProjectLocal; },[activeProjectLocal]);
   // URL local (blob) que serve o Gerador de Propostas embutido dentro do próprio app.
   const propostaAppUrl = useMemo(()=>{
     try{
@@ -1294,6 +1294,7 @@ function App({ inicial, aoSair, usuarioConectado }){
   const emReunioes = activeProjectLocal===MODO_REUNIOES;
   const emFinanceiro = isPrivileged && activeProjectLocal===MODO_FINANCEIRO;
   const emPropostas = isPrivileged && activeProjectLocal===MODO_PROPOSTAS;
+  const emCobranca = isPrivileged && activeProjectLocal===MODO_COBRANCA;
   const voltarGestaoTrabalho=()=>setActiveProjectLocal(ultimoProjetoRef.current ?? (state.projects[0]?.id ?? MODO_REUNIOES));
 
   const project=state.projects.find((p)=>p.id===activeProjectLocal);
@@ -1426,6 +1427,25 @@ function App({ inicial, aoSair, usuarioConectado }){
   const FIN_ANDAMENTO_IDX=FIN_COLUMNS.findIndex((c)=>c.id==="em_andamento_fin");
   const addFinCard=(col,title)=>{ if(!title||!title.trim())return;
     patch((s)=>{ s.financeiro=[...(s.financeiro||[]),{ id:uid(), col, title:title.trim(), notas:"", itens:[], valor:0, createdAt:Date.now() }]; return s; }); };
+
+  // ---------- Cobrança (só master/gerente): lista de clientes com valor a receber. Quando o
+  // valor pago (digitado em "Situação") fecha com o que falta, a linha some (recebido). Quando
+  // é menor, desconta do valor que ainda falta receber.
+  const addCobranca=(cliente)=>{ if(!cliente||!cliente.trim())return;
+    patch((s)=>{ s.cobranca=[...(s.cobranca||[]),{ id:uid(), cliente:cliente.trim(), valor:0, createdAt:Date.now() }]; return s; }); };
+  const updateCobranca=(id,fields)=>patch((s)=>{ s.cobranca=(s.cobranca||[]).map((c)=>c.id===id?{...c,...fields}:c); return s; });
+  const removeCobranca=(id)=>patch((s)=>{ s.cobranca=(s.cobranca||[]).filter((c)=>c.id!==id); return s; });
+  const registrarPagamentoCobranca=(id,pagoCentavos)=>{
+    patch((s)=>{
+      s.cobranca=(s.cobranca||[]).flatMap((c)=>{
+        if(c.id!==id) return [c];
+        const restante=(c.valor||0)-pagoCentavos;
+        if(restante<=0) return []; // pagou tudo (ou mais) — linha some, recebido
+        return [{...c, valor:restante}];
+      });
+      return s;
+    });
+  };
   // Sempre que o cartão muda de coluna, guarda quando ele chegou em "Em andamento" (é a partir
   // daí que o valor entra nos números do Painel) e quando chegou em "Arquivado" (conta como
   // recebido). Se voltar de Arquivado pra trás, tira a marca de recebido.
@@ -1524,26 +1544,35 @@ function App({ inicial, aoSair, usuarioConectado }){
   // sai, o cronômetro dele para (se estava rodando) e o tempo que já fez fica guardado, sem se
   // misturar com o de quem continuar.
   const toggleAssignee=(id,memberId)=>{
-    const t=state.tasks.find((x)=>x.id===id); if(!t) return;
     const agora=Date.now(); const nome=(memberById(memberId)||{}).name||"—";
-    const jaTem=(t.assignees||[]).includes(memberId);
-    if(jaTem){
-      const tm=(t.timers||{})[memberId]; const timers={...(t.timers||{})};
-      let texto=`${nome} saiu da tarefa`;
-      if(tm && tm.runningSince){
-        const soma=(tm.workedMs||0)+msUteis(tm.runningSince,agora);
-        timers[memberId]={workedMs:soma, runningSince:null};
-        if(soma>0) texto+=` · tempo até aqui: ${durMs(soma)}`;
-      } else if(tm && tm.workedMs){
-        texto+=` · tempo até aqui: ${durMs(tm.workedMs)}`;
-      }
-      const nota={ id:uid(), data:agora, texto };
-      updateTask(id,{ assignees:(t.assignees||[]).filter((m)=>m!==memberId), timers,
-        vistoPor:(t.vistoPor||[]).filter((m)=>m!==memberId), diario:[...(t.diario||[]),nota] });
-    } else {
-      const nota={ id:uid(), data:agora, texto:`${nome} entrou na tarefa` };
-      updateTask(id,{ assignees:[...(t.assignees||[]), memberId], diario:[...(t.diario||[]),nota] });
-    }
+    // Calcula tudo dentro do updater funcional do patch (sobre o estado mais atual),
+    // e não sobre a variável "state" da renderização — assim, se o usuário marcar dois
+    // membros bem rápido (antes do React re-renderizar), o segundo clique não sobrescreve
+    // o resultado do primeiro (bug do "entra e sai" ao marcar mais de um membro).
+    patch((s)=>{
+      s.tasks=s.tasks.map((t)=>{
+        if(t.id!==id) return t;
+        const jaTem=(t.assignees||[]).includes(memberId);
+        if(jaTem){
+          const tm=(t.timers||{})[memberId]; const timers={...(t.timers||{})};
+          let texto=`${nome} saiu da tarefa`;
+          if(tm && tm.runningSince){
+            const soma=(tm.workedMs||0)+msUteis(tm.runningSince,agora);
+            timers[memberId]={workedMs:soma, runningSince:null};
+            if(soma>0) texto+=` · tempo até aqui: ${durMs(soma)}`;
+          } else if(tm && tm.workedMs){
+            texto+=` · tempo até aqui: ${durMs(tm.workedMs)}`;
+          }
+          const nota={ id:uid(), data:agora, texto };
+          return {...t, assignees:(t.assignees||[]).filter((m)=>m!==memberId), timers,
+            vistoPor:(t.vistoPor||[]).filter((m)=>m!==memberId), diario:[...(t.diario||[]),nota] };
+        } else {
+          const nota={ id:uid(), data:agora, texto:`${nome} entrou na tarefa` };
+          return {...t, assignees:[...(t.assignees||[]), memberId], diario:[...(t.diario||[]),nota] };
+        }
+      });
+      return s;
+    });
   };
 
   const aFazerProj=(pid)=>state.tasks.filter((t)=>t.project===pid && t.col==="todo" && (isPrivileged || (t.tipo==="reuniao"?podeVerReuniao(t):(t.assignees||[]).includes(myMemberId)))).length;
@@ -1572,15 +1601,17 @@ function App({ inicial, aoSair, usuarioConectado }){
           <div style={S.brand}><div style={{...S.logoBox,padding:"7px 12px"}}><img src={LOGO_JG2} alt="JG2 Engenharia e Arquitetura" style={{...S.logoImg,height:50}}/></div></div>
 
           {isPrivileged && (<div style={{...S.abasLat,marginBottom:14}}>
-            <button style={{...S.abaLat,...((!emFinanceiro&&!emPropostas)?S.abaLatOn:{})}} onClick={voltarGestaoTrabalho}>
-              <Ic n="grid" s={14} c={(!emFinanceiro&&!emPropostas)?"#3B3AC9":"var(--text-secondary)"}/> Equipe</button>
+            <button style={{...S.abaLat,...((!emFinanceiro&&!emPropostas&&!emCobranca)?S.abaLatOn:{})}} onClick={voltarGestaoTrabalho}>
+              <Ic n="grid" s={14} c={(!emFinanceiro&&!emPropostas&&!emCobranca)?"#3B3AC9":"var(--text-secondary)"}/> Equipe</button>
             <button style={{...S.abaLat,...(emPropostas?S.abaLatOn:{})}} onClick={()=>setActiveProjectLocal(MODO_PROPOSTAS)}>
               <Ic n="list" s={13} c={emPropostas?"#3B3AC9":"var(--text-secondary)"}/> Proposta</button>
             <button style={{...S.abaLat,...(emFinanceiro?S.abaLatOn:{})}} onClick={()=>setActiveProjectLocal(MODO_FINANCEIRO)}>
               <Ic n="cash" s={14} c={emFinanceiro?"#3B3AC9":"var(--text-secondary)"}/> Financeiro</button>
+            <button style={{...S.abaLat,...(emCobranca?S.abaLatOn:{})}} onClick={()=>setActiveProjectLocal(MODO_COBRANCA)}>
+              <Ic n="bar" s={13} c={emCobranca?"#3B3AC9":"var(--text-secondary)"}/> Cobrança</button>
           </div>)}
 
-          {!emFinanceiro && !emPropostas && (<React.Fragment>
+          {!emFinanceiro && !emPropostas && !emCobranca && (<React.Fragment>
           <div style={S.sideLabel}>
             <span style={{display:"inline-flex",alignItems:"center",gap:5,cursor:"pointer"}} onClick={()=>setProjAberto((v)=>!v)}>
               <Ic n="chev" s={13} c="var(--text-muted)" style={{transform:projAberto?"none":"rotate(-90deg)",transition:"transform .15s"}}/>
@@ -1639,7 +1670,7 @@ function App({ inicial, aoSair, usuarioConectado }){
               <button style={{...S.ghostBtn,display:"block",width:"100%",textAlign:"left",padding:"9px 11px",color:"var(--text)",borderTop:"1px solid var(--border-soft)"}} onClick={()=>baixarRelatorio("financeiro")}>Gestão Financeira</button>
             </div>)}
           </div>)}
-          {!emFinanceiro && !emPropostas && (<button style={{...S.sideBtn,...(naoLidas>0?{borderColor:"var(--accent-tint-border)",background:"var(--accent-tint-bg)"}:{})}} onClick={()=>{ setShowMsgs(true); if(myMemberId&&naoLidas>0) marcarLidas(myMemberId); }}>
+          {!emFinanceiro && !emPropostas && !emCobranca && (<button style={{...S.sideBtn,...(naoLidas>0?{borderColor:"var(--accent-tint-border)",background:"var(--accent-tint-bg)"}:{})}} onClick={()=>{ setShowMsgs(true); if(myMemberId&&naoLidas>0) marcarLidas(myMemberId); }}>
             <Ic n="mail" s={15} c="var(--text-secondary)"/> {isMaster?"Mensagens":"Minhas mensagens"}
             {naoLidas>0 && <span style={S.badgeMsg}>{naoLidas}</span>}
           </button>)}
@@ -1669,12 +1700,13 @@ function App({ inicial, aoSair, usuarioConectado }){
 
       <main style={S.main}>
         <header style={S.topbar}>
-          <div style={{flex:1,minWidth:0}}><h1 style={S.h1}>{emFinanceiro ? "Gestão Financeira" : emPropostas ? "Criar Proposta" : emReunioes ? "Reuniões" : (isPrivileged ? "JG2 PROJETOS" : (project?.name ?? "Sem projeto"))}</h1>
+          <div style={{flex:1,minWidth:0}}><h1 style={S.h1}>{emFinanceiro ? "Gestão Financeira" : emPropostas ? "Criar Proposta" : emCobranca ? "Cobrança" : emReunioes ? "Reuniões" : (isPrivileged ? "JG2 PROJETOS" : (project?.name ?? "Sem projeto"))}</h1>
             {emFinanceiro && <div style={{fontSize:12.5,color:"#1F7A4C",fontWeight:600,marginTop:2}}>Visível só para master e gerente</div>}
             {emPropostas && <div style={{fontSize:12.5,color:"#3B3AC9",fontWeight:600,marginTop:2}}>Gerador de Propostas JG2 · visível só para master e gerente</div>}
+            {emCobranca && <div style={{fontSize:12.5,color:"#D9843B",fontWeight:600,marginTop:2}}>Clientes a receber · visível só para master e gerente</div>}
             {emReunioes && <div style={{fontSize:12.5,color:"#8A5FD6",fontWeight:600,marginTop:2}}>Reuniões de todos os projetos</div>}
-            {isPrivileged && !emReunioes && !emFinanceiro && !emPropostas && <div style={{fontSize:12.5,color:"#3B3AC9",fontWeight:600,marginTop:2}}>Resumo de todos os projetos</div>}
-            {isPrivileged && !emReunioes && !emFinanceiro && !emPropostas && <ResumoSemanal tarefas={resumoTarefas} projects={state.projects} members={state.members}/>}
+            {isPrivileged && !emReunioes && !emFinanceiro && !emPropostas && !emCobranca && <div style={{fontSize:12.5,color:"#3B3AC9",fontWeight:600,marginTop:2}}>Resumo de todos os projetos</div>}
+            {isPrivileged && !emReunioes && !emFinanceiro && !emPropostas && !emCobranca && <ResumoSemanal tarefas={resumoTarefas} projects={state.projects} members={state.members}/>}
           </div>
           <ThemeToggle style={{marginLeft:16}}/>
         </header>
@@ -1689,7 +1721,7 @@ function App({ inicial, aoSair, usuarioConectado }){
           </div>
         )}
 
-        {nomeFeriadoHoje && !emFinanceiro && !emPropostas && (
+        {nomeFeriadoHoje && !emFinanceiro && !emPropostas && !emCobranca && (
           <div style={{margin:"0 26px 14px",padding:"12px 16px",borderRadius:12,border:"1px solid #F0D28A",background:"#FCF4E2",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
             <Ic n="calendar" s={16} c="#B8860B"/>
             <div style={{flex:1,minWidth:200}}>
@@ -1708,7 +1740,7 @@ function App({ inicial, aoSair, usuarioConectado }){
         {emFinanceiro ? (
           (viewFinanceiroLocal||"board")==="board" ? (
             <FinanceiroBoard cards={state.financeiro||[]} catalog={catalog} currentUser={currentUser} onAdd={addFinCard} onUpdate={updateFinCard} onRemove={removeFinCard}
-              drag={dragFin} setDrag={setDragFin} dragOver={dragOverFin} setDragOver={setDragOverFin} onDrop={(col)=>{ if(dragFin) moveFinCard(dragFin,col); setDragFin(null); setDragOverFin(null); }}/>
+              drag={dragFin} setDrag={setDragFin} dragOver={dragOverFin} setDragOver={setDragOverFin} onDrop={(col)=>{ if(dragFin && col!=="para_orcamento") moveFinCard(dragFin,col); setDragFin(null); setDragOverFin(null); }}/>
           ) : (
             <FinanceiroDashboard cards={state.financeiro||[]}/>
           )
@@ -1721,6 +1753,9 @@ function App({ inicial, aoSair, usuarioConectado }){
               <p style={{fontSize:12.5,color:"var(--text-muted)"}}>Não foi possível carregar o Gerador de Propostas.</p>
             )}
           </div>
+        ) : emCobranca ? (
+          <CobrancaTabela itens={state.cobranca||[]} currentUser={currentUser} onAdd={addCobranca} onUpdate={updateCobranca} onRemove={removeCobranca}
+            onPagamento={registrarPagamentoCobranca}/>
         ) : (!project && !emReunioes) ? (
           <div style={S.empty}><p style={{margin:0,color:"var(--icon-muted)"}}>Nenhum projeto ainda.</p>
             {isPrivileged && <button style={S.primaryBtn} onClick={addProject}><Ic n="plus" s={16} c="#fff"/> Criar projeto</button>}</div>
@@ -1859,8 +1894,15 @@ function FinCard({ card, col, catalog, nextCol, prevCol, currentUser, onUpdate, 
   const mudarValorItem=(id,e)=>{ const digitos=e.target.value.replace(/\D/g,""); const cent=digitos?parseInt(digitos,10):0;
     const novos=itens.map((i)=>i.id===id?{...i,valor:cent}:i); salvarItens(novos); };
   const temAlgo = total>0 || (notas&&notas.trim());
+  // Fora da coluna "Para Orçamento" os itens (serviço/valor) ficam travados — o orçamento já
+  // foi definido ali; dali pra frente é só acompanhar, sem editar valores por engano.
+  const bloqueado = col.id!=="para_orcamento";
+  // "Para Orçamento" é só uma lista de lembrete de quem ainda precisa ter o orçamento feito —
+  // não faz parte do fluxo (o cartão de verdade nasce em "Orçamento Enviado" quando a proposta
+  // é criada). Por isso não se arrasta nem se avança esse cartão pra nenhuma coluna.
+  const ehParaOrcamento = col.id==="para_orcamento";
   return (
-    <div className="card" draggable onDragStart={onDragStart} onDragEnd={onDragEnd}
+    <div className="card" draggable={!ehParaOrcamento} onDragStart={onDragStart} onDragEnd={onDragEnd}
       style={{...S.finCard}}>
       {editando ? (
         <input autoFocus style={{...S.authInput,margin:0,fontSize:12.5,fontWeight:600,padding:"6px 8px"}} value={titulo}
@@ -1880,21 +1922,30 @@ function FinCard({ card, col, catalog, nextCol, prevCol, currentUser, onUpdate, 
           <div style={{display:"flex",flexDirection:"column",gap:5}}>
             {itens.map((item)=>(
               <div key={item.id} style={{display:"flex",gap:5,alignItems:"center"}}>
-                <input list={`servicos-${card.id}`} style={{...S.authInput,margin:0,fontSize:11.5,flex:1,minWidth:0}} placeholder="O que é o serviço…" value={item.descricao}
-                  onChange={(e)=>mudarDescricao(item.id,e.target.value)} onBlur={()=>salvarDescricao(item.id)}/>
-                <input inputMode="numeric" style={{...S.authInput,margin:0,fontSize:11.5,fontWeight:700,color:"#1F7A4C",width:96,flexShrink:0}}
-                  value={item.valor>0?formatarReal(item.valor):""} onChange={(e)=>mudarValorItem(item.id,e)} placeholder="R$ 0,00"/>
-                <button style={{...S.cardDel,position:"static",opacity:.7}} onClick={()=>removerItem(item.id)} title="Remover item"><Ic n="x" s={12}/></button>
+                {bloqueado ? (<React.Fragment>
+                  <span style={{...S.authInput,margin:0,fontSize:11.5,flex:1,minWidth:0,background:"var(--surface-alt)",color:"var(--text-muted)",display:"flex",alignItems:"center"}}>
+                    {item.descricao || "—"}</span>
+                  <span style={{...S.authInput,margin:0,fontSize:11.5,fontWeight:700,color:"#1F7A4C",width:96,flexShrink:0,background:"var(--surface-alt)",display:"flex",alignItems:"center",justifyContent:"flex-end"}}>
+                    {item.valor>0?formatarReal(item.valor):"—"}</span>
+                </React.Fragment>) : (<React.Fragment>
+                  <input list={`servicos-${card.id}`} style={{...S.authInput,margin:0,fontSize:11.5,flex:1,minWidth:0}} placeholder="O que é o serviço…" value={item.descricao}
+                    onChange={(e)=>mudarDescricao(item.id,e.target.value)} onBlur={()=>salvarDescricao(item.id)}/>
+                  <input inputMode="numeric" style={{...S.authInput,margin:0,fontSize:11.5,fontWeight:700,color:"#1F7A4C",width:96,flexShrink:0}}
+                    value={item.valor>0?formatarReal(item.valor):""} onChange={(e)=>mudarValorItem(item.id,e)} placeholder="R$ 0,00"/>
+                  <button style={{...S.cardDel,position:"static",opacity:.7}} onClick={()=>removerItem(item.id)} title="Remover item"><Ic n="x" s={12}/></button>
+                </React.Fragment>)}
               </div>
             ))}
           </div>
-          {catalog && catalog.length>0 && (
+          {catalog && catalog.length>0 && !bloqueado && (
             <datalist id={`servicos-${card.id}`}>
               {catalog.map((c)=>(<option key={c.id} value={c.title}/>))}
             </datalist>
           )}
-          <button style={{...S.ghostBtn,padding:"5px 2px",fontSize:11.5,textAlign:"left"}} onClick={addItem}>
-            <Ic n="plus" s={12} c="var(--text-muted)" style={{verticalAlign:-2,marginRight:4}}/> Adicionar item</button>
+          {!bloqueado && <button style={{...S.ghostBtn,padding:"5px 2px",fontSize:11.5,textAlign:"left"}} onClick={addItem}>
+            <Ic n="plus" s={12} c="var(--text-muted)" style={{verticalAlign:-2,marginRight:4}}/> Adicionar item</button>}
+          {bloqueado && itens.length>0 && <div style={{fontSize:10.5,color:"var(--text-faint)",display:"flex",alignItems:"center",gap:4}}>
+            <Ic n="lock" s={10} c="var(--text-faint)"/> Serviços e valores travados fora de "PARA ORÇAMENTO"</div>}
           {itens.length>0 && <div style={{display:"flex",justifyContent:"space-between",fontSize:12.5,fontWeight:800,borderTop:"1px solid var(--border-soft2)",paddingTop:6}}>
             <span style={{color:"var(--text-secondary)"}}>Total</span><span style={{color:"#1F7A4C"}}>{formatarReal(total)}</span>
           </div>}
@@ -1911,10 +1962,10 @@ function FinCard({ card, col, catalog, nextCol, prevCol, currentUser, onUpdate, 
           </React.Fragment>) : <span style={{fontSize:11}}>Nada anotado ainda.</span>}
         </div>
       )}
-      {nextCol && <button style={{...S.doneBtn,background:nextCol.tint,fontSize:11.5,padding:"6px 8px",marginTop:8}}
+      {nextCol && !ehParaOrcamento && <button style={{...S.doneBtn,background:nextCol.tint,fontSize:11.5,padding:"6px 8px",marginTop:8}}
         onClick={()=>onUpdate({col:nextCol.id})} title={`Enviar para ${nextCol.name}`}>
         <Ic n="check" s={12} c="#fff"/> Enviar para {nextCol.name}</button>}
-      {prevCol && <button style={{...S.cancelBtn,fontSize:11.5,padding:"5px 8px",marginTop:6}}
+      {prevCol && !ehParaOrcamento && <button style={{...S.cancelBtn,fontSize:11.5,padding:"5px 8px",marginTop:6}}
         onClick={()=>onUpdate({col:prevCol.id})} title={`Voltar para ${prevCol.name}`}>
         <Ic n="undo" s={12} c="var(--icon-muted)"/> Voltar para {prevCol.name}</button>}
     </div>
@@ -1934,7 +1985,7 @@ function FinColuna({ col, cards, catalog, nextCol, prevCol, currentUser, drag, d
           onDragStart={()=>setDrag(c.id)} onDragEnd={()=>{setDrag(null);setDragOver(null);}}/>))}
         {cards.length===0 && <p style={S.colEmpty}>Nenhum cartão</p>}
       </div>
-      {addAberto ? (
+      {col.id==="para_orcamento" && (addAberto ? (
         <div style={{display:"flex",gap:6,marginTop:8}}>
           <input autoFocus style={{...S.authInput,margin:0,fontSize:12.5}} placeholder="Nome do cliente/obra…" value={novo}
             onChange={(e)=>setNovo(e.target.value)} onKeyDown={(e)=>{ if(e.key==="Enter") enviar(); if(e.key==="Escape") setAddAberto(false); }}/>
@@ -1943,19 +1994,24 @@ function FinColuna({ col, cards, catalog, nextCol, prevCol, currentUser, drag, d
       ) : (
         <button style={{...S.ghostBtn,padding:"7px 4px",fontSize:12.5,textAlign:"left"}} onClick={()=>setAddAberto(true)}>
           <Ic n="plus" s={13} c="var(--text-muted)" style={{verticalAlign:-2,marginRight:4}}/> Adicionar um cartão</button>
-      )}
+      ))}
     </section>
   );
 }
 function FinanceiroBoard({ cards, catalog, currentUser, onAdd, onUpdate, onRemove, drag, setDrag, dragOver, setDragOver, onDrop }){
+  // "Para Orçamento" é uma lista isolada (lembrete), não faz parte do encadeamento do fluxo —
+  // por isso os vizinhos de anterior/próxima coluna são calculados só entre as colunas do fluxo.
+  const fluxoCols=FIN_COLUMNS.filter((c)=>c.id!=="para_orcamento");
   return (
     <div style={S.board}>
-      {FIN_COLUMNS.map((col,i)=>(
-        <FinColuna key={col.id} col={col} cards={cards.filter((c)=>c.col===col.id)} catalog={catalog} currentUser={currentUser}
-          nextCol={FIN_COLUMNS[i+1]||null} prevCol={FIN_COLUMNS[i-1]||null}
+      {FIN_COLUMNS.map((col)=>{
+        const idxFluxo=fluxoCols.findIndex((c)=>c.id===col.id);
+        const nextCol=idxFluxo===-1?null:(fluxoCols[idxFluxo+1]||null);
+        const prevCol=idxFluxo===-1?null:(fluxoCols[idxFluxo-1]||null);
+        return (<FinColuna key={col.id} col={col} cards={cards.filter((c)=>c.col===col.id)} catalog={catalog} currentUser={currentUser}
+          nextCol={nextCol} prevCol={prevCol}
           drag={drag} dragOver={dragOver} setDrag={setDrag} setDragOver={setDragOver} onDrop={onDrop}
-          onAdd={onAdd} onUpdate={onUpdate} onRemove={onRemove}/>
-      ))}
+          onAdd={onAdd} onUpdate={onUpdate} onRemove={onRemove}/>); })}
     </div>
   );
 }
@@ -2020,6 +2076,92 @@ function FinanceiroDashboard({ cards }){
       })}
     </div>
   </div>);
+}
+
+// ---------- Cobrança (lista de clientes a receber, com pagamento parcial) ----------
+function CobrancaLinha({ item, currentUser, onUpdate, onRemove, onPagamento }){
+  const [cliente,setCliente]=useState(item.cliente);
+  const [editandoCliente,setEditandoCliente]=useState(false);
+  const [situacao,setSituacao]=useState("");
+  const [confirmarExcluir,setConfirmarExcluir]=useState(false);
+  const salvarCliente=()=>{ const t=cliente.trim(); if(t) onUpdate({cliente:t}); else setCliente(item.cliente); setEditandoCliente(false); };
+  const mudarValor=(e)=>{ const digitos=e.target.value.replace(/\D/g,""); const cent=digitos?parseInt(digitos,10):0; onUpdate({valor:cent}); };
+  const mudarSituacao=(e)=>{ const digitos=e.target.value.replace(/\D/g,""); setSituacao(digitos); };
+  // Ao confirmar o valor recebido: se fecha (ou passa) o que falta, some da lista; senão, desconta.
+  const aplicarPagamento=()=>{
+    const cent=situacao?parseInt(situacao,10):0;
+    if(cent>0) onPagamento(cent);
+    setSituacao("");
+  };
+  return (
+    <div style={{display:"flex",alignItems:"center",gap:8,padding:"9px 6px",borderBottom:"1px solid var(--border-soft2)"}}>
+      <div style={{flex:1.4,minWidth:0}}>
+        {editandoCliente ? (
+          <input autoFocus style={{...S.authInput,margin:0,fontSize:12.5,padding:"6px 8px"}} value={cliente}
+            onChange={(e)=>setCliente(e.target.value)} onBlur={salvarCliente}
+            onKeyDown={(e)=>{ if(e.key==="Enter") salvarCliente(); if(e.key==="Escape"){ setCliente(item.cliente); setEditandoCliente(false); } }}/>
+        ) : (
+          <p style={{margin:0,fontSize:13,fontWeight:600,color:"var(--text)",cursor:"pointer",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}
+            onClick={()=>setEditandoCliente(true)} title="Clique para editar">{item.cliente}</p>
+        )}
+      </div>
+      <input inputMode="numeric" style={{...S.authInput,margin:0,fontSize:12.5,fontWeight:700,color:"#1F7A4C",width:118,flexShrink:0,textAlign:"right"}}
+        value={item.valor>0?formatarReal(item.valor):""} onChange={mudarValor} placeholder="R$ 0,00"/>
+      <input inputMode="numeric" style={{...S.authInput,margin:0,fontSize:12.5,width:118,flexShrink:0,textAlign:"right"}}
+        value={situacao?formatarReal(parseInt(situacao,10)):""} onChange={mudarSituacao}
+        onBlur={aplicarPagamento} onKeyDown={(e)=>{ if(e.key==="Enter") aplicarPagamento(); }}
+        placeholder="Recebido…" title="Digite quanto o cliente pagou"/>
+      <button style={{...S.cardDel,position:"static",opacity:.7}} onClick={()=>setConfirmarExcluir(true)} title="Remover cliente"><Ic n="x" s={12}/></button>
+      {confirmarExcluir && <ConfirmSenhaModal titulo="Remover cliente" mensagem={`Digite sua senha para remover "${item.cliente}" da lista de cobrança.`}
+        confirmarLabel="Remover" currentUser={currentUser}
+        onConfirmar={()=>{ setConfirmarExcluir(false); onRemove(); }} onCancelar={()=>setConfirmarExcluir(false)}/>}
+    </div>
+  );
+}
+function CobrancaTabela({ itens, currentUser, onAdd, onUpdate, onRemove, onPagamento }){
+  const [novo,setNovo]=useState(""); const [addAberto,setAddAberto]=useState(false);
+  const enviar=()=>{ if(!novo.trim())return; onAdd(novo); setNovo(""); setAddAberto(false); };
+  const total=itens.reduce((a,c)=>a+(c.valor||0),0);
+  return (
+    <div style={{flex:1,padding:"14px 26px 26px",minHeight:0,overflowY:"auto"}}>
+      <div style={{maxWidth:720,border:"1px solid var(--border-soft)",borderRadius:14,background:"var(--surface)",overflow:"hidden"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 6px",background:"var(--surface-tabs)",fontSize:11.5,fontWeight:700,color:"var(--text-secondary)",textTransform:"uppercase",letterSpacing:".02em"}}>
+          <div style={{flex:1.4,paddingLeft:6}}>Cliente</div>
+          <div style={{width:118,flexShrink:0,textAlign:"right"}}>Valor</div>
+          <div style={{width:118,flexShrink:0,textAlign:"right"}}>Situação</div>
+          <div style={{width:26,flexShrink:0}}/>
+        </div>
+        {itens.length===0 ? (
+          <p style={{fontSize:12.5,color:"var(--text-faint)",padding:"14px 12px",margin:0}}>Nenhum cliente na lista ainda.</p>
+        ) : itens.map((c)=>(
+          <CobrancaLinha key={c.id} item={c} currentUser={currentUser}
+            onUpdate={(f)=>onUpdate(c.id,f)} onRemove={()=>onRemove(c.id)} onPagamento={(cent)=>onPagamento(c.id,cent)}/>
+        ))}
+        <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 6px",background:"var(--surface-tabs)"}}>
+          <div style={{flex:1.4,paddingLeft:6,fontSize:12.5,fontWeight:800,color:"var(--text-strong)"}}>TOTAL</div>
+          <div style={{width:118,flexShrink:0,textAlign:"right",fontSize:12.5,fontWeight:800,color:"#1F7A4C"}}>{formatarReal(total)}</div>
+          <div style={{width:118,flexShrink:0}}/>
+          <div style={{width:26,flexShrink:0}}/>
+        </div>
+      </div>
+      <div style={{maxWidth:720,marginTop:10}}>
+        {addAberto ? (
+          <div style={{display:"flex",gap:6}}>
+            <input autoFocus style={{...S.authInput,margin:0,fontSize:12.5}} placeholder="Nome do cliente…" value={novo}
+              onChange={(e)=>setNovo(e.target.value)} onKeyDown={(e)=>{ if(e.key==="Enter") enviar(); if(e.key==="Escape") setAddAberto(false); }}/>
+            <button style={{...S.iconBtn,background:"#D9843B",color:"#fff",borderRadius:8}} onClick={enviar}><Ic n="plus" s={14} c="#fff"/></button>
+          </div>
+        ) : (
+          <button style={{...S.ghostBtn,padding:"7px 4px",fontSize:12.5,textAlign:"left"}} onClick={()=>setAddAberto(true)}>
+            <Ic n="plus" s={13} c="var(--text-muted)" style={{verticalAlign:-2,marginRight:4}}/> Adicionar cliente</button>
+        )}
+      </div>
+      <div style={{maxWidth:720,marginTop:10,fontSize:11.5,color:"var(--text-muted)",lineHeight:1.5}}>
+        Digite em <b>Situação</b> o valor que o cliente pagou: se fechar com o que falta, ele sai da lista (recebido);
+        se for menor, o <b>Valor</b> é atualizado automaticamente com o que ainda falta receber.
+      </div>
+    </div>
+  );
 }
 
 // ---------- Auth ----------
@@ -2408,7 +2550,7 @@ function Card({ task, members, projects, catalog, meuMembroId, projetoNome, onCo
         <button style={{...S.doneBtn,background:COL.doing.tint}} onClick={onAccept}><Ic n="check" s={13} c="#fff"/> Aceitar tarefa</button>)}
       {!ehReuniao && task.col==="doing" && canAct && (
         <button style={{...S.doneBtn,background:COL.review.tint}} onClick={onDoingToReview}><Ic n="checkc" s={13} c="#fff"/> Ir para Revisão Interna</button>)}
-      {!ehReuniao && inReview && canAct && (
+      {!ehReuniao && inReview && isPrivileged && (
         <button style={{...S.doneBtn,background:COL.protocolado.tint}} onClick={onToProtocolado}><Ic n="checkc" s={13} c="#fff"/> Ir para Protocolado</button>)}
       {!ehReuniao && inReview && isMaster && (
         <button style={S.cancelBtn} onClick={onBackToDoing}><Ic n="undo" s={12} c="var(--icon-muted)"/> Voltar para Em andamento</button>)}
