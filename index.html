@@ -1908,13 +1908,15 @@ function FinCard({ card, col, catalog, nextCol, prevCol, currentUser, onUpdate, 
   return (
     <div className="card" draggable={!ehParaOrcamento} onDragStart={onDragStart} onDragEnd={onDragEnd}
       style={{...S.finCard}}>
-      {editando ? (
+      {editando && !bloqueado ? (
         <input autoFocus style={{...S.authInput,margin:0,fontSize:12.5,fontWeight:600,padding:"6px 8px"}} value={titulo}
           onChange={(e)=>setTitulo(e.target.value)} onBlur={salvarTitulo}
           onKeyDown={(e)=>{ if(e.key==="Enter") salvarTitulo(); if(e.key==="Escape"){ setTitulo(card.title); setEditando(false); } }}/>
       ) : (
         <div style={{display:"flex",alignItems:"flex-start",gap:6}}>
-          <p style={{...S.finCardTitle,flex:1}} onClick={()=>setEditando(true)} title="Clique para editar">{card.title}</p>
+          <p style={{...S.finCardTitle,flex:1,...(bloqueado?{cursor:"default"}:{})}}
+            onClick={()=>{ if(!bloqueado) setEditando(true); }}
+            title={bloqueado?undefined:"Clique para editar"}>{card.title}</p>
           <button className="card-del" style={S.cardDel} onClick={()=>setConfirmarExcluir(true)}><Ic n="x" s={12}/></button>
         </div>
       )}
@@ -1949,7 +1951,7 @@ function FinCard({ card, col, catalog, nextCol, prevCol, currentUser, onUpdate, 
           {!bloqueado && <button style={{...S.ghostBtn,padding:"5px 2px",fontSize:11.5,textAlign:"left"}} onClick={addItem}>
             <Ic n="plus" s={12} c="var(--text-muted)" style={{verticalAlign:-2,marginRight:4}}/> Adicionar item</button>}
           {bloqueado && itens.length>0 && <div style={{fontSize:10.5,color:"var(--text-faint)",display:"flex",alignItems:"center",gap:4}}>
-            <Ic n="lock" s={10} c="var(--text-faint)"/> Serviços e valores travados fora de "PARA ORÇAMENTO"</div>}
+            <Ic n="lock" s={10} c="var(--text-faint)"/> Nome, serviços e valores travados fora de "PARA ORÇAMENTO"</div>}
           {itens.length>0 && <div style={{display:"flex",justifyContent:"space-between",fontSize:12.5,fontWeight:800,borderTop:"1px solid var(--border-soft2)",paddingTop:6}}>
             <span style={{color:"var(--text-secondary)"}}>Total</span><span style={{color:"#1F7A4C"}}>{formatarReal(total)}</span>
           </div>}
