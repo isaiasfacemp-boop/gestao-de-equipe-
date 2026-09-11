@@ -33,6 +33,9 @@
     --text:#14161F; --text-strong:#20232E; --text-secondary:#5A6072; --text-muted:#8A8F9E;
     --text-faint:#A0A5B2; --text-faint2:#B0B5C0; --text-faint3:#C2C6D0; --icon-muted:#737A8C;
     --overlay:rgba(20,22,31,.45); --shadow:rgba(20,22,31,.10);
+    --cell-fill-bg:#DDF1E6; --cell-fill-text:#1F7A55;
+    --card-done-bg:#F7FCF9; --card-done-border:#DCEFE5;
+    --card-pending-bg:#FFFDF6; --card-pending-border:#F0E2BE;
   }
   [data-theme="dark"]{
     --bg:#14161B; --surface:#1D2027; --surface-alt:#242832; --surface-tabs:#2B303B;
@@ -41,6 +44,9 @@
     --text:#EDEEF3; --text-strong:#F5F6FA; --text-secondary:#C3C6D1; --text-muted:#9599A6;
     --text-faint:#7B7F8C; --text-faint2:#6E7280; --text-faint3:#5E6270; --icon-muted:#9599A6;
     --overlay:rgba(0,0,0,.6); --shadow:rgba(0,0,0,.4);
+    --cell-fill-bg:#1D3327; --cell-fill-text:#6FCF9A;
+    --card-done-bg:#1B2A22; --card-done-border:#2C4536;
+    --card-pending-bg:#2A2718; --card-pending-border:#4A4326;
   }
   * { box-sizing: border-box; }
   html,body,#root { height:100%; }
@@ -53,6 +59,22 @@
   .card:hover { box-shadow:0 4px 16px var(--shadow); }
   .card .card-del { opacity:0; transition:opacity .12s; }
   .card:hover .card-del { opacity:1; }
+  .app-sidebar-overlay { display:none; }
+  .app-sidebar { transition: width .2s ease, transform .22s ease; }
+  @media (min-width: 781px){
+    .app-sidebar:not(.aberta){ width:0 !important; min-width:0 !important; padding:0 !important; border:none !important; overflow:hidden; }
+  }
+  @media (max-width: 780px){
+    .app-sidebar {
+      position:fixed; top:0; left:0; height:100%; height:100dvh; z-index:60;
+      transform:translateX(-100%);
+      box-shadow:8px 0 30px rgba(0,0,0,.30);
+    }
+    .app-sidebar.aberta { transform:translateX(0); }
+    .app-sidebar-overlay.aberta {
+      display:block; position:fixed; inset:0; background:rgba(20,22,31,.5); z-index:55;
+    }
+  }
   textarea:focus, input:focus, select:focus { outline:none; }
   button:disabled { cursor:default; }
   .spin { width:26px; height:26px; border:3px solid #D9DCE6; border-top-color:#3B3AC9; border-radius:50%; animation:girar .8s linear infinite; }
@@ -997,6 +1019,16 @@ function App({ inicial, aoSair, usuarioConectado }){
   const [showUsers,setShowUsers]=useState(false);
   const [showSwitch,setShowSwitch]=useState(false);
   const [showMsgs,setShowMsgs]=useState(false);
+  // Menu lateral: no celular (tela estreita) começa fechado e vira uma gaveta por cima do
+  // conteúdo; no PC começa aberto e, ao fechar, só encolhe (o conteúdo ocupa o espaço).
+  // Em ambos os casos dá pra abrir/fechar pelo botão — no celular ele some sozinho ao trocar
+  // de aba, pra não precisar fechar na mão toda vez.
+  const [menuAberto,setMenuAberto]=useState(()=>{
+    try{ return window.matchMedia("(min-width: 781px)").matches; }catch(e){ return true; }
+  });
+  useEffect(()=>{
+    try{ if(window.matchMedia("(max-width: 780px)").matches) setMenuAberto(false); }catch(e){}
+  },[activeProjectLocal]);
   const [membroTarefas,setMembroTarefas]=useState(null);
   const [gerandoPdf,setGerandoPdf]=useState(false);
   const [menuRelatorio,setMenuRelatorio]=useState(false);
@@ -1599,9 +1631,15 @@ function App({ inicial, aoSair, usuarioConectado }){
 
   return (
     <div className="tela-cheia" style={S.app}>
-      <aside style={S.sidebar}>
+      {menuAberto && <div className="app-sidebar-overlay aberta" onClick={()=>setMenuAberto(false)}/>}
+      <aside className={"app-sidebar"+(menuAberto?" aberta":"")} style={S.sidebar}>
         <div style={{flex:1,overflowY:"auto"}}>
-          <div style={S.brand}><div style={{...S.logoBox,padding:"7px 12px"}}><img src={LOGO_JG2} alt="JG2 Engenharia e Arquitetura" style={{...S.logoImg,height:50}}/></div></div>
+          <div style={{...S.brand,justifyContent:"space-between"}}>
+            <div style={{...S.logoBox,padding:"7px 12px"}}><img src={LOGO_JG2} alt="JG2 Engenharia e Arquitetura" style={{...S.logoImg,height:50}}/></div>
+            <button className="app-sidebar-close" style={S.menuBtn} onClick={()=>setMenuAberto(false)} title="Fechar menu" aria-label="Fechar menu">
+              <Ic n="x" s={18}/>
+            </button>
+          </div>
 
           {isPrivileged && (<div style={{marginBottom:14,display:"flex",flexDirection:"column",gap:5}}>
             <div style={S.abasLat}>
@@ -1707,6 +1745,9 @@ function App({ inicial, aoSair, usuarioConectado }){
 
       <main style={S.main}>
         <header style={S.topbar}>
+          <button className="app-menu-btn" style={S.menuBtn} onClick={()=>setMenuAberto((v)=>!v)} title={menuAberto?"Esconder menu":"Mostrar menu"} aria-label={menuAberto?"Esconder menu":"Mostrar menu"}>
+            <Ic n="list" s={18}/>
+          </button>
           <div style={{flex:1,minWidth:0}}><h1 style={S.h1}>{emFinanceiro ? "Gestão Financeira" : emPropostas ? "Criar Proposta" : emCobranca ? "Cobrança" : emReunioes ? "Reuniões" : (isPrivileged ? "JG2 PROJETOS" : (project?.name ?? "Sem projeto"))}</h1>
             {emFinanceiro && <div style={{fontSize:12.5,color:"#1F7A4C",fontWeight:600,marginTop:2}}>Visível só para master e gerente</div>}
             {emPropostas && <div style={{fontSize:12.5,color:"#3B3AC9",fontWeight:600,marginTop:2}}>Gerador de Propostas JG2 · visível só para master e gerente</div>}
@@ -2562,7 +2603,7 @@ function Card({ task, members, projects, catalog, meuMembroId, projetoNome, onCo
         <div style={{display:"flex",gap:6,alignItems:"center"}}>
           <button disabled={!canEdit||!isPrivileged} style={{...S.pill,color:pri.color,borderColor:pri.color+"44",background:pri.color+"12",...((!canEdit||!isPrivileged)?{opacity:.75}:{})}}
             onClick={(e)=>{ if(!canEdit||!isPrivileged)return; setMenuPos(e.currentTarget.getBoundingClientRect()); setMenu(menu==="pri"?null:"pri"); }}><Ic n="flag" s={11} c={pri.color}/> {pri.label}</button>
-          <button disabled={!canEdit} style={{...S.pill,color:"var(--text-secondary)",borderColor:"#DDE0E7",background:"#F5F6F9",...(!canEdit?{opacity:.75}:{})}}
+          <button disabled={!canEdit} style={{...S.pill,color:"var(--text-secondary)",borderColor:"var(--border-input)",background:"var(--surface-alt)",...(!canEdit?{opacity:.75}:{})}}
             onClick={(e)=>{ if(!canEdit)return; setMenuPos(e.currentTarget.getBoundingClientRect()); setMenu(menu==="hrs"?null:"hrs"); }}><Ic n="clock" s={11} c="var(--text-secondary)"/> prev. {task.hours||0}h</button>
         </div>
         {ehReuniao ? (<span style={S.todosTag} title="Reunião para toda a equipe"><Ic n="users" s={11} c="#8B3ABF"/> Todos</span>)
@@ -3972,6 +4013,7 @@ const S = {
   brandName:{fontWeight:800,fontSize:16,letterSpacing:"-.02em"}, brandSub:{fontSize:11,color:"var(--text-muted)",marginTop:-1},
   sideLabel:{display:"flex",alignItems:"center",justifyContent:"space-between",fontSize:11,fontWeight:700,letterSpacing:".08em",textTransform:"uppercase",color:"var(--text-muted)",marginBottom:8},
   iconBtn:{border:"none",background:"transparent",color:"var(--icon-muted)",cursor:"pointer",padding:4,borderRadius:6,display:"grid",placeItems:"center"},
+  menuBtn:{border:"1px solid var(--border)",background:"var(--surface)",color:"var(--text-secondary)",cursor:"pointer",width:36,height:36,borderRadius:9,display:"grid",placeItems:"center",flexShrink:0},
   projRow:{display:"flex",alignItems:"center",gap:9,padding:"8px 9px",borderRadius:9,cursor:"pointer",fontSize:13.5,color:"var(--text-secondary)",position:"relative"},
   projActive:{background:"var(--accent-tint-bg2)",color:"#3B3AC9",fontWeight:600},
   projName:{flex:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}, projCount:{fontSize:11,color:"var(--text-faint)",fontWeight:600},
@@ -4064,8 +4106,8 @@ const S = {
   faixaReuniao:{display:"flex",alignItems:"center",gap:6,background:"#8B3ABF",color:"#fff",fontSize:10.5,fontWeight:800,letterSpacing:".08em",padding:"6px 10px"},
   faixaQuando:{marginLeft:"auto",background:"rgba(255,255,255,.22)",padding:"1px 8px",borderRadius:20,fontSize:10.5,letterSpacing:0,fontWeight:700,textTransform:"none"},
   cardTituloReuniao:{fontSize:14.5,fontWeight:700,color:"#5B2585"},
-  cardDone:{background:"#F7FCF9",borderColor:"#DCEFE5"},
-  cardPending:{background:"#FFFDF6",borderColor:"#F0E2BE"},
+  cardDone:{background:"var(--card-done-bg)",borderColor:"var(--card-done-border)"},
+  cardPending:{background:"var(--card-pending-bg)",borderColor:"var(--card-pending-border)"},
   cardTop:{display:"flex",gap:5,alignItems:"flex-start"},
   cardTitle:{overflowWrap:"anywhere",wordBreak:"break-word",margin:0,fontSize:13.5,fontWeight:500,lineHeight:1.35,flex:1,color:"var(--text-strong)"},
   cardDel:{border:"none",background:"transparent",color:"var(--text-faint2)",cursor:"pointer",padding:1,flexShrink:0},
@@ -4169,8 +4211,8 @@ const S = {
   semDiaHead:{flex:1,minWidth:52,textAlign:"center",color:"var(--text-secondary)",padding:"4px 2px",borderRadius:8},
   semHoje:{background:"#EFEAFB",color:"#6B3FBF"},
   semTotalHead:{minWidth:110,textAlign:"center",fontSize:12,fontWeight:600,color:"var(--text-secondary)",padding:"0 8px"},
-  semCel:{flex:1,minWidth:52,textAlign:"center",fontSize:12.5,fontWeight:600,color:"var(--text-secondary)",background:"#F2F5F3",borderRadius:8,padding:"9px 2px",margin:"0 2px"},
-  semCelCheia:{background:"#DDF1E6",color:"#1F7A55"},
+  semCel:{flex:1,minWidth:52,textAlign:"center",fontSize:12.5,fontWeight:600,color:"var(--text-secondary)",background:"var(--surface-alt)",borderRadius:8,padding:"9px 2px",margin:"0 2px"},
+  semCelCheia:{background:"var(--cell-fill-bg)",color:"var(--cell-fill-text)"},
   semTotal:{minWidth:110,textAlign:"center",fontSize:13.5,fontWeight:800,color:"var(--text-strong)",padding:"0 8px"},
   semSub:{fontSize:11,fontWeight:500,color:"var(--text-faint)",marginTop:2},
   semBarra:{height:26,borderRadius:8,background:"var(--border-soft2)",overflow:"hidden"},
