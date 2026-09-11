@@ -2412,6 +2412,8 @@ function Card({ task, members, projects, catalog, meuMembroId, projetoNome, onCo
           {diario.length===0 && <div style={{fontSize:11.5,color:"var(--text-faint)",marginBottom:6}}>Nenhuma anotação ainda.</div>}
           {diario.map((n)=>(<div key={n.id} style={S.diarioLinha}>
             <span style={S.fazerData}>{ddmm(new Date(n.data))}</span>
+            {editNota===n.id ? (<div style={{flex:1}}>
+              <textarea autoFocus style={S.diarioEdit} value={notaTexto} onChange={(e)=>setNotaTexto(e.target.value)}
                 onKeyDown={(e)=>{ if(e.key==="Enter"&&(e.ctrlKey||e.metaKey))salvarEdicao(n.id); if(e.key==="Escape")setEditNota(null); }}/>
               <div style={{display:"flex",gap:6,marginTop:4}}>
                 <button style={S.diarioSalvar} onClick={()=>salvarEdicao(n.id)}>Salvar</button>
@@ -2450,6 +2452,7 @@ function Card({ task, members, projects, catalog, meuMembroId, projetoNome, onCo
           {observacoes.map((n)=>{ const autor=members.find((m)=>m.id===n.autor);
             return (<div key={n.id} style={S.diarioLinha}>
             <span style={S.obsData}>{ddmm(new Date(n.data))}</span>
+            {editObs===n.id ? (<div style={{flex:1}}>
               <textarea autoFocus style={S.diarioEdit} value={obsTexto} onChange={(e)=>setObsTexto(e.target.value)}
                 onKeyDown={(e)=>{ if(e.key==="Enter"&&(e.ctrlKey||e.metaKey))salvarEdicaoObs(n.id); if(e.key==="Escape")setEditObs(null); }}/>
               <div style={{display:"flex",gap:6,marginTop:4}}>
