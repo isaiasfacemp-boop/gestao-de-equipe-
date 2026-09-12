@@ -1634,11 +1634,8 @@ function App({ inicial, aoSair, usuarioConectado }){
       {menuAberto && <div className="app-sidebar-overlay aberta" onClick={()=>setMenuAberto(false)}/>}
       <aside className={"app-sidebar"+(menuAberto?" aberta":"")} style={S.sidebar}>
         <div style={{flex:1,overflowY:"auto"}}>
-          <div style={{...S.brand,justifyContent:"space-between"}}>
+          <div style={S.brand}>
             <div style={{...S.logoBox,padding:"7px 12px"}}><img src={LOGO_JG2} alt="JG2 Engenharia e Arquitetura" style={{...S.logoImg,height:50}}/></div>
-            <button className="app-sidebar-close" style={S.menuBtn} onClick={()=>setMenuAberto(false)} title="Fechar menu" aria-label="Fechar menu">
-              <Ic n="x" s={18}/>
-            </button>
           </div>
 
           {isPrivileged && (<div style={{marginBottom:14,display:"flex",flexDirection:"column",gap:5}}>
