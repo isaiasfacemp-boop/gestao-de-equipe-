@@ -209,9 +209,13 @@ export async function onRequestPost(context) {
 
 
 // ---------- Importação única do Neon ----------
-// Abra no navegador:  https://SEU-SITE/api?importar=neon
-// Só funciona enquanto o D1 ainda está vazio (sem estado salvo) e usa a variável
-// DATABASE_URL que já existia no projeto. Depois de importar, o endereço passa a recusar.
+// Abra no navegador:  https://SEU-SITE/api?importar=neon          → importa
+//                     https://SEU-SITE/api?importar=neon&ver=1    → só mostra as tabelas/colunas do Neon
+// Só importa enquanto o D1 ainda está vazio (sem estado salvo) e usa a variável DATABASE_URL.
+function pegar(obj, nomes) {
+  for (const n of nomes) if (obj[n] !== undefined && obj[n] !== null) return obj[n];
+  return undefined;
+}
 export async function onRequestGet(context) {
   const { request, env } = context;
   const url = new URL(request.url);
@@ -222,33 +226,65 @@ export async function onRequestGet(context) {
   if (!env.DATABASE_URL) return txt(500, "Variável DATABASE_URL (do Neon) não está configurada no projeto.");
 
   try {
+    const sql = neon(env.DATABASE_URL);
+    const colunas = await sql`SELECT table_name, column_name, data_type FROM information_schema.columns WHERE table_schema = 'public' ORDER BY table_name, ordinal_position`;
+    const esquema = {};
+    for (const c of colunas) (esquema[c.table_name] = esquema[c.table_name] || []).push(c.column_name + " (" + c.data_type + ")");
+    const descricao = Object.keys(esquema).map(t => t + ": " + esquema[t].join(", ")).join("\n");
+
+    if (url.searchParams.get("ver")) return txt(200, "Tabelas no Neon:\n" + descricao);
+
     const ja = await db.prepare("SELECT versao FROM dados WHERE id = 1").first();
     if (ja) return txt(409, "O D1 já tem dados salvos — importação recusada para não sobrescrever.");
 
-    const sql = neon(env.DATABASE_URL);
-    const usuarios = await sql`SELECT usuario, senha, master, trocar FROM usuarios`;
-    const dados = await sql`SELECT conteudo FROM dados WHERE id = 1 LIMIT 1`;
+    const tabUsu = url.searchParams.get("usuarios") || "usuarios";
+    const tabDad = url.searchParams.get("dados") || "dados";
+    if (!esquema[tabUsu] || !esquema[tabDad]) return txt(400, "Não achei as tabelas '" + tabUsu + "' e/ou '" + tabDad + "'.\n\nTabelas no Neon:\n" + descricao);
+
+    const usuarios = await sql.query("SELECT * FROM " + tabUsu.replace(/[^a-z0-9_]/gi, ""));
+    const dadosRows = await sql.query("SELECT * FROM " + tabDad.replace(/[^a-z0-9_]/gi, "") + " LIMIT 1");
 
     const stmts = [db.prepare("DELETE FROM usuarios")];
+    let importados = 0, semHash = [];
     for (const u of usuarios) {
+      const nome = pegar(u, ["usuario", "username", "user", "login", "nome"]);
+      const senha = pegar(u, ["senha", "senha_hash", "pass_hash", "passhash", "password", "hash"]);
+      if (!nome || !senha) continue;
+      const master = pegar(u, ["master"]);
+      const role = pegar(u, ["role", "papel", "perfil"]);
+      const ehMaster = master === true || master === 1 || master === "true" || role === "master";
+      const trocar = pegar(u, ["trocar", "must_change", "mustchange", "trocar_senha"]);
+      const deveTrocar = trocar === undefined ? 0 : (trocar === true || trocar === 1 || trocar === "true" ? 1 : 0);
+      if (!/^[0-9a-f]{64}$/i.test(String(senha))) semHash.push(String(nome));
       stmts.push(db.prepare("INSERT INTO usuarios (usuario, senha, master, trocar) VALUES (?, ?, ?, ?)")
-        .bind(u.usuario, u.senha, u.master ? 1 : 0, u.trocar ? 1 : 0));
+        .bind(String(nome), String(senha), ehMaster ? 1 : 0, deveTrocar));
+      importados++;
+    }
+    if (importados === 0) {
+      const h = await hash("admin");
+      stmts.push(db.prepare("INSERT INTO usuarios (usuario, senha, master, trocar) VALUES ('admin', ?, 1, 1)").bind(h));
     }
     await db.batch(stmts);
 
-    let tarefas = 0, anexos = 0;
-    if (dados[0] && dados[0].conteudo) {
-      const conteudo = typeof dados[0].conteudo === "string" ? JSON.parse(dados[0].conteudo) : dados[0].conteudo;
-      const antes = JSON.stringify(conteudo).length;
+    let tarefas = 0, anexos = 0, antes = 0, depois = 0;
+    const linha = dadosRows[0];
+    let conteudo = linha ? pegar(linha, ["conteudo", "estado", "state", "data", "json", "dados"]) : null;
+    if (conteudo) {
+      if (typeof conteudo === "string") conteudo = JSON.parse(conteudo);
+      antes = JSON.stringify(conteudo).length;
       await migrarAnexosEmbutidos(db, conteudo);
       tarefas = Array.isArray(conteudo.tasks) ? conteudo.tasks.length : 0;
       anexos = (conteudo.tasks || []).filter(t => t.protocoladoPdf && t.protocoladoPdf.id).length;
       const texto = JSON.stringify(conteudo);
+      depois = texto.length;
       if (texto.length > 1900000) return txt(413, "Estado grande demais mesmo sem os PDFs (" + texto.length + " bytes).");
       await db.prepare("INSERT INTO dados (id, conteudo, versao, atualizado_em) VALUES (1, ?, 1, ?)").bind(texto, Date.now()).run();
-      return txt(200, "Importado com sucesso.\nUsuários: " + usuarios.length + "\nTarefas: " + tarefas + "\nPDFs movidos para anexos: " + anexos + "\nEstado: " + antes + " → " + texto.length + " bytes.\n\nPode fechar esta aba e entrar no app.");
     }
-    return txt(200, "Usuários importados: " + usuarios.length + ". O Neon não tinha estado salvo.");
+    return txt(200,
+      "Importado.\n" +
+      "Usuários: " + importados + (semHash.length ? " (senha em formato diferente, talvez precisem ser redefinidas: " + semHash.join(", ") + ")" : "") + "\n" +
+      "Estado: " + (conteudo ? "sim — " + tarefas + " tarefas, " + anexos + " PDFs movidos para anexos, " + antes + " → " + depois + " bytes" : "o Neon não tinha estado salvo") + "\n\n" +
+      "Tabelas encontradas no Neon:\n" + descricao + "\n\nPode fechar esta aba e entrar no app.");
   } catch (e) {
     return txt(500, "Erro ao importar: " + (e && e.message ? e.message : String(e)));
   }
