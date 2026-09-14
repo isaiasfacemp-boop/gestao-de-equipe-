@@ -538,6 +538,16 @@ function lerPdf(file){
   });
 }
 
+// Baixa um anexo guardado no servidor (referência {id,name}) e abre o download no navegador.
+async function baixarAnexoPdf(ref){
+  const a=await apiCall("baixarAnexo",{ id:ref.id });
+  const resp=await fetch(a.data); const blob=await resp.blob();
+  const url=URL.createObjectURL(blob);
+  const el=document.createElement("a"); el.href=url; el.download=a.name||ref.name||"anexo.pdf";
+  document.body.appendChild(el); el.click(); el.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+
 // ---------- Relatório PDF da equipe ----------
 function gerarRelatorioEquipePdf(tasks, members, projects){
   const { jsPDF }=window.jspdf;
@@ -758,11 +768,18 @@ async function apiCall(acao, extra){
 // store agora fala com o banco: carregar/salvar do estado inteiro.
 // Mantém uma cópia em memória para leituras rápidas; a nuvem é a fonte da verdade.
 let MEM = null;
+let MEM_VERSAO = 0;   // versão do estado que temos localmente (o servidor incrementa a cada salvamento)
 const store = {
   get(){ return MEM; },                 // usado só como fallback síncrono
   set(s){ MEM = s; },                   // a gravação real na nuvem é feita pelo App (debounce)
-  async carregar(){ const j = await apiCall("carregar"); MEM = j.conteudo || null; return MEM; },
-  async salvar(s){ MEM = s; await apiCall("salvar", { conteudo: s }); },
+  // Carrega o estado. Na sincronização periódica, manda a versão conhecida: se nada mudou,
+  // o servidor responde só {semMudanca:true} (alguns bytes) e devolvemos undefined.
+  async carregar(soSeMudou){
+    const j = await apiCall("carregar", soSeMudou && MEM_VERSAO>0 ? { versao: MEM_VERSAO } : {});
+    if(j.semMudanca) return undefined;
+    MEM = j.conteudo || null; MEM_VERSAO = Number(j.versao)||0; return MEM;
+  },
+  async salvar(s){ MEM = s; const j = await apiCall("salvar", { conteudo: s }); if(j && j.versao) MEM_VERSAO = Number(j.versao)||MEM_VERSAO; },
 };
 
 const seed = () => {
@@ -1101,17 +1118,21 @@ function App({ inicial, aoSair, usuarioConectado }){
     salvarRef.current=setTimeout(()=>{ tentarSalvar(state); }, 600);
     return ()=>{ if(salvarRef.current) clearTimeout(salvarRef.current); };
   },[state]);
-  // Sincroniza: busca o estado da nuvem a cada 5s (todos veem as mudanças dos outros).
+  // Sincroniza a cada 10s (todos veem as mudanças dos outros). Só pergunta ao servidor
+  // "a versão mudou?" — o estado inteiro só é baixado quando alguém salvou algo.
+  // Não busca com a aba em segundo plano nem sem conexão.
   useEffect(()=>{
     const i=setInterval(async ()=>{
       try{
+        if(document.hidden || navigator.onLine===false) return;
         // não busca se há mudança local recente, salvamento pendente/em andamento, ou se a
         // última tentativa de salvar falhou (senão a leitura antiga da nuvem apaga o que
         // você acabou de fazer e que ainda não foi salvo de fato) —
         if(salvarRef.current || salvandoRef.current || salvarFalhouRef.current) return;
         if(Date.now()-mudouLocalRef.current < 4000) return;
         const pedidoEm=Date.now();
-        const nuvem=await store.carregar();
+        const nuvem=await store.carregar(true);
+        if(nuvem===undefined) return;   // nada mudou na nuvem
         // se o usuário mexeu enquanto a busca acontecia, descarta este resultado (está velho)
         if(mudouLocalRef.current > pedidoEm || salvarRef.current || salvandoRef.current || salvarFalhouRef.current) return;
         if(nuvem){
@@ -1128,7 +1149,7 @@ function App({ inicial, aoSair, usuarioConectado }){
           });
         }
       }catch(e){}
-    }, 5000);
+    }, 10000);
     return ()=>clearInterval(i);
   },[]);
   const [tique,setTique]=useState(0);
@@ -2583,7 +2604,14 @@ function Card({ task, members, projects, catalog, meuMembroId, projetoNome, onCo
       {!ehReuniao && (inProtocolado || task.protocoladoPdf) && (()=>{
         const pdf=task.protocoladoPdf;
         const anexar=async(file)=>{
-          try{ setEnviandoPdf(true); const lido=await lerPdf(file); onUpdate({protocoladoPdf:lido}); }
+          try{
+            setEnviandoPdf(true);
+            const lido=await lerPdf(file);
+            // o arquivo vai para a tabela de anexos; no estado fica só a referência (id, nome, tamanho)
+            const ref=await apiCall("enviarAnexo",{ nome:lido.name, tamanho:lido.size, data:lido.data });
+            if(pdf && pdf.id) apiCall("excluirAnexo",{id:pdf.id}).catch(()=>{});
+            onUpdate({protocoladoPdf:{ id:ref.id, name:ref.name, size:ref.size, uploadedAt:ref.uploadedAt }});
+          }
           catch(e){ alert(e.message||"Não foi possível anexar o PDF."); }
           finally{ setEnviandoPdf(false); if(pdfRef.current) pdfRef.current.value=""; }
         };
@@ -2592,8 +2620,10 @@ function Card({ task, members, projects, catalog, meuMembroId, projetoNome, onCo
           <input ref={pdfRef} type="file" accept="application/pdf" style={{display:"none"}}
             onChange={(e)=>{ const f=e.target.files&&e.target.files[0]; if(f) anexar(f); }}/>
           {pdf ? (<div style={S.pdfLinha}>
-            <a href={pdf.data} download={pdf.name} style={S.pdfNome} title={pdf.name}><Ic n="flag" s={11} c="#8B3ABF"/> {pdf.name}</a>
-            {isPrivileged && <button style={S.diarioMini} title="Remover anexo" onClick={()=>onUpdate({protocoladoPdf:null})}><Ic n="trash" s={11} c="#C0397E"/></button>}
+            <a href={pdf.data||"#"} download={pdf.name} style={S.pdfNome} title={pdf.name}
+              onClick={pdf.data?undefined:async(e)=>{ e.preventDefault(); try{ await baixarAnexoPdf(pdf); }catch(err){ alert(err.message||"Não foi possível baixar o PDF."); } }}>
+              <Ic n="flag" s={11} c="#8B3ABF"/> {pdf.name}</a>
+            {isPrivileged && <button style={S.diarioMini} title="Remover anexo" onClick={()=>{ if(pdf.id) apiCall("excluirAnexo",{id:pdf.id}).catch(()=>{}); onUpdate({protocoladoPdf:null}); }}><Ic n="trash" s={11} c="#C0397E"/></button>}
           </div>) : (<div style={{fontSize:11.5,color:"var(--text-faint)"}}>Nenhum arquivo anexado ainda.</div>)}
           {isPrivileged && <button style={S.pdfBtn} disabled={enviandoPdf} onClick={()=>pdfRef.current&&pdfRef.current.click()}>
             <Ic n="plus" s={12} c="#8B3ABF"/> {enviandoPdf?"Enviando…":pdf?"Trocar PDF":"Anexar PDF"}</button>}

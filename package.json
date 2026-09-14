@@ -1,8 +1,6 @@
 {
-    "name": "gestao-de-equipe-backend",
-    "version": "1.0.0",
-    "private": true,
-    "dependencies": {
-          "@neondatabase/serverless": "^0.10.4"
-    }
+  "name": "gestao-de-equipe",
+  "private": true,
+  "version": "2.0.0",
+  "description": "Equipe · Gestão de Trabalho — Cloudflare Pages + D1"
 }

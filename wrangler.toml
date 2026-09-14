@@ -1,0 +1,10 @@
+# Configuração do projeto Cloudflare Pages "gestao-de-equipe".
+# Liga o banco D1 à função /api sem precisar mexer no painel.
+name = "gestao-de-equipe"
+pages_build_output_dir = "."
+compatibility_date = "2026-09-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "gestao_equipe"
+database_id = "7f5df221-fe3c-4cac-9d2c-01abb5ecf817"
