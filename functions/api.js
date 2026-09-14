@@ -20,6 +20,23 @@ async function hash(s) {
   const digest = await crypto.subtle.digest("SHA-256", data);
   return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, "0")).join("");
 }
+function hex(buf){ return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join(""); }
+async function sha256hex(str){ return hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str))); }
+async function sha512hex(str){ return hex(await crypto.subtle.digest("SHA-512", new TextEncoder().encode(str))); }
+async function pbkdf2hex(senha, salt, iter, bits){
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(senha), "PBKDF2", false, ["deriveBits"]);
+  return hex(await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: new TextEncoder().encode(salt), iterations: iter }, key, bits));
+}
+// Confere uma senha contra o formato antigo (salt + hash), tentando as combinações mais comuns.
+async function conferirAntigo(senha, salt, hashAntigo){
+  const alvo = String(hashAntigo || "").toLowerCase();
+  const cands = [salt + senha, senha + salt, salt + ":" + senha, senha + ":" + salt];
+  for (const c of cands) { if ((await sha256hex(c)) === alvo) return true; if ((await sha512hex(c)) === alvo) return true; }
+  for (const it of [1000, 10000, 100000, 210000]) {
+    for (const bits of [256, 512]) { try { if ((await pbkdf2hex(senha, salt, it, bits)) === alvo) return true; } catch (e) {} }
+  }
+  return false;
+}
 function uid() {
   return Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, "0")).join("");
 }
@@ -104,7 +121,13 @@ export async function onRequestPost(context) {
     if (acao === "login") {
       const u = await achar(db, body.user);
       const h = await hash(body.senha);
-      if (!u || u.senha !== h) return json(401, { erro: "Usuário ou senha incorretos." });
+      let ok = !!u && u.senha === h;
+      if (u && !ok && u.salt) {
+        // usuário importado do sistema antigo: confere no formato antigo e converte para o novo
+        ok = await conferirAntigo(String(body.senha || ""), String(u.salt), u.senha);
+        if (ok) await db.prepare("UPDATE usuarios SET senha = ?, salt = NULL WHERE usuario = ?").bind(h, u.usuario).run();
+      }
+      if (!ok) return json(401, { erro: "Usuário ou senha incorretos." });
       const novoToken = uid();
       await db.prepare("INSERT INTO sessoes (token, usuario, criado_em) VALUES (?, ?, ?)").bind(novoToken, u.usuario, Date.now()).run();
       return json(200, { token: novoToken, user: u.usuario, master: !!u.master, trocar: !!u.trocar });
@@ -249,15 +272,16 @@ export async function onRequestGet(context) {
     for (const u of usuarios) {
       const nome = pegar(u, ["usuario", "username", "user", "login", "nome"]);
       const senha = pegar(u, ["senha", "senha_hash", "pass_hash", "passhash", "password", "hash"]);
+      const salt = pegar(u, ["salt", "sal"]);
       if (!nome || !senha) continue;
       const master = pegar(u, ["master"]);
       const role = pegar(u, ["role", "papel", "perfil"]);
       const ehMaster = master === true || master === 1 || master === "true" || role === "master";
       const trocar = pegar(u, ["trocar", "must_change", "mustchange", "trocar_senha"]);
       const deveTrocar = trocar === undefined ? 0 : (trocar === true || trocar === 1 || trocar === "true" ? 1 : 0);
-      if (!/^[0-9a-f]{64}$/i.test(String(senha))) semHash.push(String(nome));
-      stmts.push(db.prepare("INSERT INTO usuarios (usuario, senha, master, trocar) VALUES (?, ?, ?, ?)")
-        .bind(String(nome), String(senha), ehMaster ? 1 : 0, deveTrocar));
+      if (salt) semHash.push(String(nome));
+      stmts.push(db.prepare("INSERT INTO usuarios (usuario, senha, master, trocar, salt) VALUES (?, ?, ?, ?, ?)")
+        .bind(String(nome), String(senha), ehMaster ? 1 : 0, deveTrocar, salt ? String(salt) : null));
       importados++;
     }
     if (importados === 0) {
@@ -269,6 +293,12 @@ export async function onRequestGet(context) {
     let tarefas = 0, anexos = 0, antes = 0, depois = 0;
     const linha = dadosRows[0];
     let conteudo = linha ? pegar(linha, ["conteudo", "estado", "state", "data", "json", "dados"]) : null;
+    if (!conteudo && esquema["sistema"]) {
+      // versões antigas guardavam o estado na tabela "sistema" (chave/conteudo)
+      const sis = await sql.query("SELECT chave, conteudo FROM sistema");
+      const cand = sis.find(r => r.conteudo && typeof r.conteudo === "object" && Array.isArray(r.conteudo.tasks)) || sis.find(r => r.conteudo && typeof r.conteudo === "string" && r.conteudo.includes("\"tasks\""));
+      if (cand) conteudo = cand.conteudo;
+    }
     if (conteudo) {
       if (typeof conteudo === "string") conteudo = JSON.parse(conteudo);
       antes = JSON.stringify(conteudo).length;
@@ -282,7 +312,7 @@ export async function onRequestGet(context) {
     }
     return txt(200,
       "Importado.\n" +
-      "Usuários: " + importados + (semHash.length ? " (senha em formato diferente, talvez precisem ser redefinidas: " + semHash.join(", ") + ")" : "") + "\n" +
+      "Usuários: " + importados + (semHash.length ? " (com senha no formato antigo, convertida automaticamente no primeiro login: " + semHash.join(", ") + ")" : "") + "\n" +
       "Estado: " + (conteudo ? "sim — " + tarefas + " tarefas, " + anexos + " PDFs movidos para anexos, " + antes + " → " + depois + " bytes" : "o Neon não tinha estado salvo") + "\n\n" +
       "Tabelas encontradas no Neon:\n" + descricao + "\n\nPode fechar esta aba e entrar no app.");
   } catch (e) {
