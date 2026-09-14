@@ -773,7 +773,7 @@ async function apiCall(acao, extra){
       body: JSON.stringify(Object.assign({ acao, token: TOKEN }, extra||{}))
     });
     const j = await r.json().catch(()=>({erro:"Resposta inválida do servidor."}));
-    if(!r.ok){ const err=new Error(j.erro || "Erro no servidor."); err.status=r.status; throw err; }
+    if(!r.ok){ const err=new Error(j.erro || "Erro no servidor."); err.status=r.status; err.corpo=j; throw err; }
     return j;
   };
   try{
@@ -796,6 +796,53 @@ async function apiCall(acao, extra){
 // Mantém uma cópia em memória para leituras rápidas; a nuvem é a fonte da verdade.
 let MEM = null;
 let MEM_VERSAO = 0;   // versão do estado que temos localmente (o servidor incrementa a cada salvamento)
+let BASE = null;      // cópia do último estado que veio da nuvem (ou que gravamos com sucesso) — serve de
+                      // referência pra saber o que foi mudado localmente quando alguém salva antes da gente
+const clonar=(x)=>{ try{ return JSON.parse(JSON.stringify(x)); }catch(e){ return x; } };
+const COLECOES_POR_ID=["tasks","members","users","projects","taskCatalog","messages","financeiro","cobranca"];
+// Remove itens repetidos (mesmo id) de uma coleção, ficando com a última ocorrência.
+function semRepetidos(lista){
+  if(!Array.isArray(lista)) return lista;
+  const mapa=new Map(); lista.forEach((x)=>{ if(x&&x.id) mapa.set(x.id,x); });
+  return lista.filter((x)=>!(x&&x.id)).concat([...mapa.values()]);
+}
+function limparRepetidos(estado){
+  if(!estado) return estado;
+  COLECOES_POR_ID.forEach((k)=>{ if(Array.isArray(estado[k])) estado[k]=semRepetidos(estado[k]); });
+  return estado;
+}
+// Mescla em 3 vias: pega o estado mais novo da nuvem e aplica por cima só o que mudou
+// localmente desde a base. Nas coleções com id: item novo local entra, item apagado local sai,
+// item alterado local vence; o resto fica como está na nuvem. Nos demais campos: se mudou
+// localmente, vale o local; senão, vale a nuvem. A sessão é sempre a local.
+function mesclar3(base, local, nuvem){
+  const igual=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+  const res={...nuvem};
+  const chaves=new Set([...Object.keys(local||{}),...Object.keys(nuvem||{})]);
+  chaves.forEach((k)=>{
+    if(k==="session"){ res.session=local.session; return; }
+    if(COLECOES_POR_ID.includes(k)){
+      const b=new Map(); (base&&base[k]||[]).forEach((x)=>{ if(x&&x.id) b.set(x.id,x); });
+      const l=new Map(); (local&&local[k]||[]).forEach((x)=>{ if(x&&x.id) l.set(x.id,x); });
+      const ordem=[]; const n=new Map();
+      (nuvem&&nuvem[k]||[]).forEach((x)=>{ if(x&&x.id){ n.set(x.id,x); ordem.push(x.id); } });
+      // apagados localmente (estavam na base, não estão mais no local)
+      b.forEach((_,id)=>{ if(!l.has(id)) n.delete(id); });
+      // alterados/novos localmente
+      l.forEach((item,id)=>{
+        const naBase=b.get(id);
+        if(!naBase){ if(!n.has(id)){ n.set(id,item); ordem.push(id); } return; }   // novo local
+        if(!igual(naBase,item)) n.set(id,item);                                       // alterado local
+      });
+      res[k]=ordem.filter((id)=>n.has(id)).map((id)=>n.get(id))
+        .concat([...n.keys()].filter((id)=>!ordem.includes(id)).map((id)=>n.get(id)));
+      return;
+    }
+    const vb=base?base[k]:undefined, vl=local?local[k]:undefined, vn=nuvem?nuvem[k]:undefined;
+    res[k] = igual(vb,vl) ? vn : vl;
+  });
+  return res;
+}
 const store = {
   get(){ return MEM; },                 // usado só como fallback síncrono
   set(s){ MEM = s; },                   // a gravação real na nuvem é feita pelo App (debounce)
@@ -804,9 +851,29 @@ const store = {
   async carregar(soSeMudou){
     const j = await apiCall("carregar", soSeMudou && MEM_VERSAO>0 ? { versao: MEM_VERSAO } : {});
     if(j.semMudanca) return undefined;
-    MEM = j.conteudo || null; MEM_VERSAO = Number(j.versao)||0; return MEM;
+    MEM = limparRepetidos(j.conteudo) || null; MEM_VERSAO = Number(j.versao)||0; BASE = clonar(MEM); return MEM;
   },
-  async salvar(s){ MEM = s; const j = await apiCall("salvar", { conteudo: s }); if(j && j.versao) MEM_VERSAO = Number(j.versao)||MEM_VERSAO; },
+  // Grava dizendo em que versão o estado se baseou. Se alguém gravou antes, o servidor devolve
+  // 409 com o estado atual: mesclamos o que mudou aqui por cima dele e tentamos de novo.
+  // Devolve { mesclado } quando o estado local precisou ser ajustado (o App aplica na tela).
+  async salvar(s){
+    let local = limparRepetidos(s); let mesclado=null;
+    for(let tentativa=0; tentativa<4; tentativa++){
+      try{
+        const j = await apiCall("salvar", { conteudo: local, versaoBase: MEM_VERSAO });
+        if(j && j.versao) MEM_VERSAO = Number(j.versao)||MEM_VERSAO;
+        MEM = local; BASE = clonar(local);
+        return { mesclado };
+      }catch(e){
+        if(!(e && e.status===409 && e.corpo && e.corpo.conflito)) throw e;
+        const nuvem = limparRepetidos(e.corpo.conteudo) || {};
+        local = limparRepetidos(mesclar3(BASE, local, nuvem));
+        mesclado = local;
+        BASE = clonar(nuvem); MEM_VERSAO = Number(e.corpo.versao)||MEM_VERSAO;
+      }
+    }
+    throw new Error("Não foi possível salvar: muitas gravações ao mesmo tempo.");
+  },
 };
 
 const seed = () => {
@@ -859,6 +926,7 @@ const seed = () => {
 // Normaliza o estado carregado (migrações leves) e já aponta a sessão para o usuário conectado.
 function prepararDados(saved, usuarioConectado){
   if(!saved) return seed();
+  limparRepetidos(saved);
   if(!saved.taskCatalog) saved.taskCatalog=[];
   if(!saved.messages) saved.messages=[];
   if(!saved.members) saved.members=[];
@@ -1124,11 +1192,18 @@ function App({ inicial, aoSair, usuarioConectado }){
   const salvarFalhouRef=useRef(false);
   const tentativaFalhaRef=useRef(null);
   const [erroSincronizacao,setErroSincronizacao]=useState(false);
+  const ignorarProximoSalvarRef=useRef(false);
   const tentarSalvar=(dados)=>{
     salvandoRef.current=true;
-    store.salvar(dados).then(()=>{
+    store.salvar(dados).then((r)=>{
       salvarFalhouRef.current=false;
       setErroSincronizacao(false);
+      // alguém salvou antes: o que mudou aqui foi mesclado por cima do estado mais novo e já
+      // está gravado — só atualiza a tela (sem disparar outra gravação por causa disso)
+      if(r && r.mesclado){
+        ignorarProximoSalvarRef.current=true;
+        setState((atual)=>({...r.mesclado, session:atual.session}));
+      }
     }).catch(()=>{
       salvarFalhouRef.current=true;
       setErroSincronizacao(true);
@@ -1140,6 +1215,7 @@ function App({ inicial, aoSair, usuarioConectado }){
   useEffect(()=>{
     store.set(state);
     if(primeiraRef.current){ primeiraRef.current=false; return; } // não salva logo ao carregar
+    if(ignorarProximoSalvarRef.current){ ignorarProximoSalvarRef.current=false; return; } // estado mesclado, já gravado
     mudouLocalRef.current=Date.now();
     if(salvarRef.current) clearTimeout(salvarRef.current);
     if(tentativaFalhaRef.current){ clearTimeout(tentativaFalhaRef.current); tentativaFalhaRef.current=null; }
@@ -1171,7 +1247,7 @@ function App({ inicial, aoSair, usuarioConectado }){
             const idsTravados=editandoIdsRef.current;
             const tasksMescladas = idsTravados.size===0 ? nuvem.tasks
               : (nuvem.tasks||[]).map((t)=> idsTravados.has(t.id) ? ((atual.tasks||[]).find((x)=>x.id===t.id) || t) : t);
-            const nuvemMesclada = {...nuvem, tasks:tasksMescladas};
+            const nuvemMesclada = limparRepetidos({...nuvem, tasks:tasksMescladas});
             if(JSON.stringify({...nuvemMesclada,session:null})===JSON.stringify({...atual,session:null})) return atual;
             return {...nuvemMesclada, session:ses};
           });
