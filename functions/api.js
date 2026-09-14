@@ -155,6 +155,20 @@ export async function onRequestPost(context) {
       const conteudo = await migrarAnexosEmbutidos(db, body.conteudo || {});
       const texto = JSON.stringify(conteudo);
       if (texto.length > 1900000) return json(413, { erro: "Estado grande demais para salvar (limite 1,9 MB)." });
+      // Controle de concorrência: o app manda a versão em que se baseou (versaoBase). Só grava
+      // se o banco ainda estiver nessa versão — senão, alguém salvou no meio e a gravação seria
+      // feita em cima de dados velhos (apagando o que a outra pessoa acabou de fazer). Nesse caso
+      // responde 409 com o estado atual, e o app mescla o que ele mudou por cima e tenta de novo.
+      const versaoBase = Number(body.versaoBase) || 0;
+      if (versaoBase > 0) {
+        const ok = await db.prepare(
+          "UPDATE dados SET conteudo = ?, versao = versao + 1, atualizado_em = ? WHERE id = 1 AND versao = ? RETURNING versao"
+        ).bind(texto, Date.now(), versaoBase).first();
+        if (ok) return json(200, { ok: true, versao: ok.versao });
+        const atual = await db.prepare("SELECT conteudo, versao FROM dados WHERE id = 1").first();
+        if (atual) return json(409, { erro: "Outra pessoa salvou antes.", conflito: true, conteudo: JSON.parse(atual.conteudo), versao: atual.versao });
+        // sem linha ainda: cai na inserção abaixo
+      }
       const r = await db.prepare(
         "INSERT INTO dados (id, conteudo, versao, atualizado_em) VALUES (1, ?, 1, ?) " +
         "ON CONFLICT (id) DO UPDATE SET conteudo = excluded.conteudo, versao = dados.versao + 1, atualizado_em = excluded.atualizado_em " +
