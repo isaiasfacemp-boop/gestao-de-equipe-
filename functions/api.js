@@ -264,8 +264,8 @@ export async function onRequestGet(context) {
     const tabDad = url.searchParams.get("dados") || "dados";
     if (!esquema[tabUsu] || !esquema[tabDad]) return txt(400, "Não achei as tabelas '" + tabUsu + "' e/ou '" + tabDad + "'.\n\nTabelas no Neon:\n" + descricao);
 
-    const usuarios = await sql.query("SELECT * FROM " + tabUsu.replace(/[^a-z0-9_]/gi, ""));
-    const dadosRows = await sql.query("SELECT * FROM " + tabDad.replace(/[^a-z0-9_]/gi, "") + " LIMIT 1");
+    const usuarios = await sql("SELECT * FROM " + tabUsu.replace(/[^a-z0-9_]/gi, ""));
+    const dadosRows = await sql("SELECT * FROM " + tabDad.replace(/[^a-z0-9_]/gi, "") + " LIMIT 1");
 
     const stmts = [db.prepare("DELETE FROM usuarios")];
     let importados = 0, semHash = [];
@@ -295,7 +295,7 @@ export async function onRequestGet(context) {
     let conteudo = linha ? pegar(linha, ["conteudo", "estado", "state", "data", "json", "dados"]) : null;
     if (!conteudo && esquema["sistema"]) {
       // versões antigas guardavam o estado na tabela "sistema" (chave/conteudo)
-      const sis = await sql.query("SELECT chave, conteudo FROM sistema");
+      const sis = await sql("SELECT chave, conteudo FROM sistema");
       const cand = sis.find(r => r.conteudo && typeof r.conteudo === "object" && Array.isArray(r.conteudo.tasks)) || sis.find(r => r.conteudo && typeof r.conteudo === "string" && r.conteudo.includes("\"tasks\""));
       if (cand) conteudo = cand.conteudo;
     }
