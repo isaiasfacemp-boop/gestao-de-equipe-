@@ -10,6 +10,8 @@
 // Ao salvar, qualquer task.protocoladoPdf que ainda venha com "data" embutido
 // (formato antigo) é movido automaticamente para a tabela de anexos.
 
+import { neon } from "@neondatabase/serverless";
+
 const PARTE_BYTES = 1024 * 1024;               // 1 MB por linha
 const SESSAO_DIAS = 30;
 
@@ -202,5 +204,52 @@ export async function onRequestPost(context) {
     return json(400, { erro: "Ação desconhecida." });
   } catch (e) {
     return json(500, { erro: "Erro no servidor: " + (e && e.message ? e.message : String(e)) });
+  }
+}
+
+
+// ---------- Importação única do Neon ----------
+// Abra no navegador:  https://SEU-SITE/api?importar=neon
+// Só funciona enquanto o D1 ainda está vazio (sem estado salvo) e usa a variável
+// DATABASE_URL que já existia no projeto. Depois de importar, o endereço passa a recusar.
+export async function onRequestGet(context) {
+  const { request, env } = context;
+  const url = new URL(request.url);
+  const txt = (status, t) => new Response(t, { status, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+  if (url.searchParams.get("importar") !== "neon") return txt(404, "Nada aqui.");
+  const db = env.DB;
+  if (!db) return txt(500, "Banco D1 não configurado (binding DB).");
+  if (!env.DATABASE_URL) return txt(500, "Variável DATABASE_URL (do Neon) não está configurada no projeto.");
+
+  try {
+    const ja = await db.prepare("SELECT versao FROM dados WHERE id = 1").first();
+    if (ja) return txt(409, "O D1 já tem dados salvos — importação recusada para não sobrescrever.");
+
+    const sql = neon(env.DATABASE_URL);
+    const usuarios = await sql`SELECT usuario, senha, master, trocar FROM usuarios`;
+    const dados = await sql`SELECT conteudo FROM dados WHERE id = 1 LIMIT 1`;
+
+    const stmts = [db.prepare("DELETE FROM usuarios")];
+    for (const u of usuarios) {
+      stmts.push(db.prepare("INSERT INTO usuarios (usuario, senha, master, trocar) VALUES (?, ?, ?, ?)")
+        .bind(u.usuario, u.senha, u.master ? 1 : 0, u.trocar ? 1 : 0));
+    }
+    await db.batch(stmts);
+
+    let tarefas = 0, anexos = 0;
+    if (dados[0] && dados[0].conteudo) {
+      const conteudo = typeof dados[0].conteudo === "string" ? JSON.parse(dados[0].conteudo) : dados[0].conteudo;
+      const antes = JSON.stringify(conteudo).length;
+      await migrarAnexosEmbutidos(db, conteudo);
+      tarefas = Array.isArray(conteudo.tasks) ? conteudo.tasks.length : 0;
+      anexos = (conteudo.tasks || []).filter(t => t.protocoladoPdf && t.protocoladoPdf.id).length;
+      const texto = JSON.stringify(conteudo);
+      if (texto.length > 1900000) return txt(413, "Estado grande demais mesmo sem os PDFs (" + texto.length + " bytes).");
+      await db.prepare("INSERT INTO dados (id, conteudo, versao, atualizado_em) VALUES (1, ?, 1, ?)").bind(texto, Date.now()).run();
+      return txt(200, "Importado com sucesso.\nUsuários: " + usuarios.length + "\nTarefas: " + tarefas + "\nPDFs movidos para anexos: " + anexos + "\nEstado: " + antes + " → " + texto.length + " bytes.\n\nPode fechar esta aba e entrar no app.");
+    }
+    return txt(200, "Usuários importados: " + usuarios.length + ". O Neon não tinha estado salvo.");
+  } catch (e) {
+    return txt(500, "Erro ao importar: " + (e && e.message ? e.message : String(e)));
   }
 }
