@@ -548,6 +548,33 @@ async function baixarAnexoPdf(ref){
   setTimeout(()=>URL.revokeObjectURL(url),60000);
 }
 
+// ---------- Backup e restauração (arquivo .json com todo o estado) ----------
+function baixarBackup(state){
+  const copia={...state, session:{currentUserId:null}};
+  const texto=JSON.stringify({ app:"equipe-gestao-trabalho", versaoBackup:1, geradoEm:new Date().toISOString(), estado:copia }, null, 1);
+  const blob=new Blob([texto],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const d=new Date(); const pad=(n)=>String(n).padStart(2,"0");
+  const nome=`backup-equipe-${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}.json`;
+  const el=document.createElement("a"); el.href=url; el.download=nome; document.body.appendChild(el); el.click(); el.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+function lerBackup(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=()=>{
+      try{
+        const j=JSON.parse(r.result);
+        const est=(j && j.app==="equipe-gestao-trabalho" && j.estado) ? j.estado : j;
+        if(!est || !Array.isArray(est.tasks) || !Array.isArray(est.members)) return rej(new Error("Este arquivo não parece ser um backup do app."));
+        res({ estado:est, geradoEm:j.geradoEm||null });
+      }catch(e){ rej(new Error("Não foi possível ler o arquivo de backup.")); }
+    };
+    r.onerror=()=>rej(new Error("Não foi possível ler o arquivo."));
+    r.readAsText(file);
+  });
+}
+
 // ---------- Relatório PDF da equipe ----------
 function gerarRelatorioEquipePdf(tasks, members, projects){
   const { jsPDF }=window.jspdf;
@@ -1039,6 +1066,7 @@ function App({ inicial, aoSair, usuarioConectado }){
   const [folderFilter,setFolderFilter]=useState("");
   const [donePeriodo,setDonePeriodo]=useState("todos"); const [doneMembro,setDoneMembro]=useState("");
   const [showUsers,setShowUsers]=useState(false);
+  const backupRef=useRef(null);
   const [showSwitch,setShowSwitch]=useState(false);
   const [showMsgs,setShowMsgs]=useState(false);
   // Menu lateral: no celular (tela estreita) começa fechado e vira uma gaveta por cima do
@@ -1744,6 +1772,23 @@ function App({ inicial, aoSair, usuarioConectado }){
           </button>)}
           {isMaster && <button style={S.sideBtn} onClick={()=>setShowCatalog(true)}><Ic n="list" s={15} c="var(--text-secondary)"/> Cadastrar tarefa</button>}
           {isMaster && <button style={S.sideBtn} onClick={()=>setShowUsers(true)}><Ic n="userplus" s={15} c="var(--text-secondary)"/> Cadastrar usuário</button>}
+          {isMaster && <button style={S.sideBtn} title="Baixa um arquivo .json com todas as tarefas, membros, projetos, financeiro e cobrança" onClick={()=>baixarBackup(state)}><Ic n="shield" s={15} c="var(--text-secondary)"/> Fazer backup</button>}
+          {isMaster && (<>
+            <input ref={backupRef} type="file" accept="application/json,.json" style={{display:"none"}}
+              onChange={async(e)=>{
+                const f=e.target.files&&e.target.files[0]; if(backupRef.current) backupRef.current.value="";
+                if(!f) return;
+                try{
+                  const {estado,geradoEm}=await lerBackup(f);
+                  const quando=geradoEm?new Date(geradoEm).toLocaleString("pt-BR"):"data desconhecida";
+                  const n=(estado.tasks||[]).length;
+                  if(!confirm(`Restaurar o backup de ${quando} (${n} tarefas)?\n\nISSO SUBSTITUI TUDO o que está no app agora. Faça um backup atual antes, se ainda não fez.`)) return;
+                  setState(()=>prepararDados(estado, currentUser.username));
+                  alert("Backup restaurado.");
+                }catch(err){ alert(err.message||"Não foi possível restaurar."); }
+              }}/>
+            <button style={S.sideBtn} title="Substitui todo o conteúdo atual pelo de um arquivo de backup" onClick={()=>backupRef.current&&backupRef.current.click()}><Ic n="undo" s={15} c="var(--text-secondary)"/> Restaurar backup</button>
+          </>)}
           {erroMinhaFoto && <div style={{...S.authErr,margin:"0 0 8px",padding:"6px 9px",fontSize:11.5}}>{erroMinhaFoto}</div>}
           <div style={S.userChip}>
             {meuMembro
