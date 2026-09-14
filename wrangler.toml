@@ -8,3 +8,8 @@ compatibility_date = "2026-09-01"
 binding = "DB"
 database_name = "gestao_equipe"
 database_id = "7f5df221-fe3c-4cac-9d2c-01abb5ecf817"
+
+# TEMPORÁRIO — só para a importação única do Neon (/api?importar=neon).
+# Depois de importar: apague as duas linhas abaixo e o projeto no Neon.
+[vars]
+DATABASE_URL = "postgresql://neondb_owner:npg_lIayq4XhU9RY@ep-little-band-acoxdc57-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
